@@ -72,4 +72,24 @@ public class StockPriceEntity extends BaseEntity {
                 this.priceChangeRate = stockPrice.getPriceChangeRate();
                 this.stock = new StockEntity(stockPrice.getStock());
         }
+
+        public StockPrice toStockPrice(){
+                // null 체크 - db에 stock 데이터가 존재하지 않을 시 대비
+                Stock stock = null;
+                if(this.stock != null){
+                        stock = this.stock.toStock();
+                }
+                return StockPrice.builder()
+                        .stockCode(this.stockCode)
+                        .priceDate(this.priceDate)
+                        .openPrice(this.openPrice)
+                        .highPrice(this.highPrice)
+                        .lowPrice(this.lowPrice)
+                        .closePrice(this.closePrice)
+                        .volume(this.volume)
+                        .priceChange(this.priceChange)
+                        .priceChangeRate(this.priceChangeRate)
+                        .stock(stock)
+                        .build();
+        }
 }

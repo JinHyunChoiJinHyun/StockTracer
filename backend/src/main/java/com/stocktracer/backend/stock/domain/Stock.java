@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class Stock {
-    private Long id;
+//    private Long id;
     private String stockCode;
     private String stockName;
     private MarketType marketType;
@@ -19,7 +19,7 @@ public class Stock {
         validateStockCode(stockCode);
         validateStockName(stockName);
 
-        this.id = id;
+//        this.id = id;
         this.stockCode = stockCode;
         this.stockName = stockName;
         this.marketType = marketType;
