@@ -17,9 +17,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class StockEntity extends BaseEntity {
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long id;
 
     @Id
     @Column(nullable = false, unique = true, length = 20)
@@ -34,7 +31,6 @@ public class StockEntity extends BaseEntity {
 
     /** 매핑 및 변환 메서드 */
     public StockEntity(Stock stock) {
-//        this.id = stock.getId();
         this.stockCode = stock.getStockCode();
         this.stockName = stock.getStockName();
         this.marketType = stock.getMarketType();
@@ -42,7 +38,6 @@ public class StockEntity extends BaseEntity {
 
     public Stock toStock(){
         return Stock.builder()
-                .id(this.id)
                 .stockCode(this.stockCode)
                 .stockName(this.stockName)
                 .marketType(this.marketType)
