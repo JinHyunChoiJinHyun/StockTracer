@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.stock.mapper.StockPriceMapper">
+    <select id="findPricesByCodeAndPeriod" resultType="com.stocktracer.backend.stock.dto.StockPriceDto">
+        SELECT
+            s.stock_code,
+            s.stock_name,
+            s.market,
+            sp.stock_date,
+            sp.open_price,
+            sp.close_price,
+            sp.high_price,
+            sp.low_price,
+            sp.volume,
+            sp.price_change
+        FROM
+            stock_daily as sp
+        JOIN stock_info as s
+        on sp.stock_code = s.stock_code
+        WHERE sp.stock_code = #{stockCode}
+        <if test="startDate != null">
+            AND sp.stock_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND sp.stock_date &lt;= #{endDate}
+        </if>
+        ORDER BY sp.stock_date ASC
+    </select>
+
+    <select id="findPricesByCodes" resultType="com.stocktracer.backend.stock.dto.StockPriceDto">
+        SELECT
+            s.stock_code,
+            s.stock_name,
+            s.market,
+            sp.stock_date,
+            sp.open_price,
+            sp.close_price,
+            sp.high_price,
+            sp.low_price,
+            sp.volume,
+            sp.price_change
+        FROM
+            stock_daily as sp
+        JOIN stock_info as s
+        on sp.stock_code = s.stock_code
+        WHERE sp.stock_code IN
+        <foreach item="code" collection="stockCodes" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+        AND sp.stock_date = #{priceDate}
+        <choose>
+            <when test="sortBy == 'volume'">
+                ORDER BY sp.volume DESC
+            </when>
+            <when test="sortBy == 'openPrice'">
+                ORDER BY sp.open_price DESC
+            </when>
+            <when test="sortBy == 'closePrice'">
+                ORDER BY sp.close_price DESC
+            </when>
+            <when test="sortBy == 'stockName'">
+                ORDER BY s.stock_name DESC
+            </when>
+            <otherwise>
+                ORDER BY sp.stock_code ASC
+            </otherwise>
+        </choose>
+    </select>
+</mapper>
