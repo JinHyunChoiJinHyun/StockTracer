@@ -19,7 +19,7 @@ public class StockPriceDto {
     private BigDecimal highPrice;
     private BigDecimal lowPrice;
     private Long volume;
-    private float priceChange;
+    private BigDecimal priceChange;
 }
 
 
