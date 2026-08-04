@@ -16,13 +16,12 @@ import java.time.LocalDate;
 @Builder
 public class StockPrice {
     private String stockCode;
-    private LocalDate priceDate;
+    private LocalDate stockDate;
     private BigDecimal openPrice;
     private BigDecimal highPrice;
     private BigDecimal lowPrice;
     private BigDecimal closePrice;
     private Long volume;
     private BigDecimal priceChange;
-    private BigDecimal priceChangeRate;
     private Stock stock;
 }

@@ -28,7 +28,7 @@ public class StockPriceEntity extends BaseEntity {
 
         @Id
         @Column(name = "price_date")
-        private LocalDate priceDate;
+        private LocalDate stockDate;
 
         // 주가의 경우 2진수 변환 없이 10진수를 그대로 저장하는 big decimal 사용 (오차 보정)
         @Column(name = "open_price")
@@ -49,9 +49,6 @@ public class StockPriceEntity extends BaseEntity {
         @Column(name = "price_change")
         private BigDecimal priceChange;
 
-        @Column(name = "price_change_rate")
-        private BigDecimal priceChangeRate;
-
         @ManyToOne(fetch = FetchType.LAZY) // 여러 일봉 데이터들이 하나의 주식 정보 데이터를 필요하므로 사용
         // oneToMany를 Stock에 사용해 모든 일봉 데이터를 가져오는 경우는 필터링이 불가 >> 사용 용도에 맞지 않음
         // EAGER - 조회 즉시 연관 엔티티를 row마다 한번씩 조회 >> 필요없는 데이터도 조회
@@ -62,14 +59,13 @@ public class StockPriceEntity extends BaseEntity {
 
         public StockPriceEntity(StockPrice stockPrice) {
                 this.stockCode = stockPrice.getStockCode();
-                this.priceDate = stockPrice.getPriceDate();
+                this.stockDate = stockPrice.getStockDate();
                 this.openPrice = stockPrice.getOpenPrice();
                 this.highPrice = stockPrice.getHighPrice();
                 this.lowPrice = stockPrice.getLowPrice();
                 this.closePrice = stockPrice.getClosePrice();
                 this.volume = stockPrice.getVolume();
                 this.priceChange = stockPrice.getPriceChange();
-                this.priceChangeRate = stockPrice.getPriceChangeRate();
                 this.stock = new StockEntity(stockPrice.getStock());
         }
 
@@ -81,14 +77,13 @@ public class StockPriceEntity extends BaseEntity {
                 }
                 return StockPrice.builder()
                         .stockCode(this.stockCode)
-                        .priceDate(this.priceDate)
+                        .stockDate(this.stockDate)
                         .openPrice(this.openPrice)
                         .highPrice(this.highPrice)
                         .lowPrice(this.lowPrice)
                         .closePrice(this.closePrice)
                         .volume(this.volume)
                         .priceChange(this.priceChange)
-                        .priceChangeRate(this.priceChangeRate)
                         .stock(stock)
                         .build();
         }

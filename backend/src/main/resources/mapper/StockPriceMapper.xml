@@ -6,47 +6,49 @@
         SELECT
             s.stock_code,
             s.stock_name,
-            s.market_type,
-            sp.price_date,
+            s.market,
+            sp.stock_date,
             sp.open_price,
             sp.close_price,
             sp.high_price,
             sp.low_price,
-            sp.volume
+            sp.volume,
+            sp.price_change
         FROM
-            stock_price as sp
-        JOIN stock as s
+            stock_daily as sp
+        JOIN stock_info as s
         on sp.stock_code = s.stock_code
         WHERE sp.stock_code = #{stockCode}
         <if test="startDate != null">
-            AND sp.price_date &gt;= #{startDate}
+            AND sp.stock_date &gt;= #{startDate}
         </if>
         <if test="endDate != null">
-            AND sp.price_date &lt;= #{endDate}
+            AND sp.stock_date &lt;= #{endDate}
         </if>
-        ORDER BY sp.price_date ASC
+        ORDER BY sp.stock_date ASC
     </select>
 
     <select id="findPricesByCodes" resultType="com.stocktracer.backend.stock.dto.StockPriceDto">
         SELECT
             s.stock_code,
             s.stock_name,
-            s.market_type,
-            sp.price_date,
+            s.market,
+            sp.stock_date,
             sp.open_price,
             sp.close_price,
             sp.high_price,
             sp.low_price,
-            sp.volume
+            sp.volume,
+            sp.price_change
         FROM
-            stock_price as sp
-        JOIN stock as s
+            stock_daily as sp
+        JOIN stock_info as s
         on sp.stock_code = s.stock_code
         WHERE sp.stock_code IN
         <foreach item="code" collection="stockCodes" open="(" separator="," close=")">
             #{code}
         </foreach>
-        AND sp.price_date = #{priceDate}
+        AND sp.stock_date = #{priceDate}
         <choose>
             <when test="sortBy == 'volume'">
                 ORDER BY sp.volume DESC

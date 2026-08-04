@@ -13,12 +13,13 @@ public class StockPriceDto {
     private String stockCode;
     private String stockName;
     private MarketType marketType;
-    private LocalDate priceDate;
+    private LocalDate stockDate;
     private BigDecimal openPrice;
     private BigDecimal closePrice;
     private BigDecimal highPrice;
     private BigDecimal lowPrice;
     private Long volume;
+    private float priceChange;
 }
 
 

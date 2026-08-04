@@ -12,17 +12,17 @@ public class Stock {
 //    private Long id;
     private String stockCode;
     private String stockName;
-    private MarketType marketType;
+    private MarketType market;
 
     @Builder
-    public Stock(Long id, String stockCode, String stockName, MarketType marketType){
+    public Stock(Long id, String stockCode, String stockName, MarketType market){
         validateStockCode(stockCode);
         validateStockName(stockName);
 
 //        this.id = id;
         this.stockCode = stockCode;
         this.stockName = stockName;
-        this.marketType = marketType;
+        this.market = market;
     }
 
     /** 검증 메서드 */
@@ -46,9 +46,9 @@ public class Stock {
 
     // 2. 주식 시장 변경
     public void changeMarketType(MarketType newMarketType){
-        if(this.marketType == newMarketType){
+        if(this.market == newMarketType){
             return;
         }
-        this.marketType = newMarketType;
+        this.market = newMarketType;
     }
 }

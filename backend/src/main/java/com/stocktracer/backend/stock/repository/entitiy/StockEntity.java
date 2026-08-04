@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 public class StockEntity extends BaseEntity {
 
     @Id
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(name = "stock_code", nullable = false, unique = true, length = 20)
     private String stockCode;
 
     @Column(nullable = false, length = 100)
@@ -33,14 +33,14 @@ public class StockEntity extends BaseEntity {
     public StockEntity(Stock stock) {
         this.stockCode = stock.getStockCode();
         this.stockName = stock.getStockName();
-        this.marketType = stock.getMarketType();
+        this.marketType = stock.getMarket();
     }
 
     public Stock toStock(){
         return Stock.builder()
                 .stockCode(this.stockCode)
                 .stockName(this.stockName)
-                .marketType(this.marketType)
+                .market(this.marketType)
                 .build();
     }
 }
