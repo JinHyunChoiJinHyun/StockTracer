@@ -1,4 +1,4 @@
-package com.stocktracer.backend.common;
+package com.stocktracer.backend.common.entity;
 
 import java.time.LocalDateTime;
 

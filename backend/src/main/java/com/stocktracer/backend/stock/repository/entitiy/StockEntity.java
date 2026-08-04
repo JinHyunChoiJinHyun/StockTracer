@@ -1,6 +1,6 @@
 package com.stocktracer.backend.stock.repository.entitiy;
 
-import com.stocktracer.backend.common.BaseEntity;
+import com.stocktracer.backend.common.entity.BaseEntity;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.Stock;
 import jakarta.persistence.*;

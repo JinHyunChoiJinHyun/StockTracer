@@ -1,0 +1,24 @@
+package com.stocktracer.backend.stock.dto;
+
+import com.stocktracer.backend.stock.domain.MarketType;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Getter
+@Builder
+public class StockPriceDto {
+    private String stockCode;
+    private String stockName;
+    private MarketType marketType;
+    private LocalDate priceDate;
+    private BigDecimal openPrice;
+    private BigDecimal closePrice;
+    private BigDecimal highPrice;
+    private BigDecimal lowPrice;
+    private Long volume;
+}
+
+
