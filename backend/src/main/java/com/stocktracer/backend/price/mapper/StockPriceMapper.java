@@ -1,13 +1,11 @@
-package com.stocktracer.backend.stock.mapper;
+package com.stocktracer.backend.price.mapper;
 
-import com.stocktracer.backend.stock.domain.StockPrice;
-import com.stocktracer.backend.stock.dto.StockPriceDto;
+import com.stocktracer.backend.price.dto.StockPriceDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Mapper
 public interface StockPriceMapper {

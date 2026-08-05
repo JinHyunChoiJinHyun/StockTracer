@@ -1,4 +1,4 @@
-package com.stocktracer.backend.stock.dto;
+package com.stocktracer.backend.price.dto;
 
 import com.stocktracer.backend.stock.domain.MarketType;
 import lombok.Builder;

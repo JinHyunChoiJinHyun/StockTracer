@@ -1,8 +1,9 @@
-package com.stocktracer.backend.stock.repository.entitiy;
+package com.stocktracer.backend.price.repository.entity;
 
 import com.stocktracer.backend.common.entity.BaseEntity;
 import com.stocktracer.backend.stock.domain.Stock;
-import com.stocktracer.backend.stock.domain.StockPrice;
+import com.stocktracer.backend.price.domain.StockPrice;
+import com.stocktracer.backend.stock.repository.entitiy.StockEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

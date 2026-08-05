@@ -1,10 +1,10 @@
 package com.stocktracer.backend.stock.service;
 
-import com.stocktracer.backend.stock.dto.StockPriceDto;
+import com.stocktracer.backend.price.dto.StockPriceDto;
+import com.stocktracer.backend.price.service.StockPriceService;
 import com.stocktracer.backend.stock.exception.InvalidDateRangeException;
 import com.stocktracer.backend.stock.exception.StockPriceNotFoundException;
-import com.stocktracer.backend.stock.mapper.StockPriceMapper;
-import com.stocktracer.backend.stock.service.StockPriceService;
+import com.stocktracer.backend.price.mapper.StockPriceMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,8 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
