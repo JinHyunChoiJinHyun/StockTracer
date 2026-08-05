@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__) #?
 
 # 백엔드 API 설정
 BACKEND_BASE_URL = "http://localhost:8080"  # 실제 백엔드 주소로 교체
-STOCK_INFO_ENDPOINT = f"{BACKEND_BASE_URL}/api/stocks/info"
-STOCK_PRICE_ENDPOINT = f"{BACKEND_BASE_URL}/api/stocks/prices"
+STOCK_INFO_ENDPOINT = f"{BACKEND_BASE_URL}/api/v1/stocks/info"
+STOCK_PRICE_ENDPOINT = f"{BACKEND_BASE_URL}/api/v1/stocks/prices"
 
 # 통신 설정
 retry_count = 3
