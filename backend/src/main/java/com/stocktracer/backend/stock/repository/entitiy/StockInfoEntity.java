@@ -2,21 +2,21 @@ package com.stocktracer.backend.stock.repository.entitiy;
 
 import com.stocktracer.backend.common.entity.BaseEntity;
 import com.stocktracer.backend.stock.domain.MarketType;
-import com.stocktracer.backend.stock.domain.Stock;
+import com.stocktracer.backend.stock.domain.StockInfo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-        name = "stock",
+        name = "stock_info",
         indexes = {
                 @Index(name = "idx_stock_code", columnList = "stockCode", unique = true)
         }
 )
 @Getter
 @NoArgsConstructor
-public class StockEntity extends BaseEntity {
+public class StockInfoEntity extends BaseEntity {
 
     @Id
     @Column(name = "stock_code", nullable = false, unique = true, length = 20)
@@ -27,20 +27,20 @@ public class StockEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private MarketType marketType;
+    private MarketType market;
 
     /** 매핑 및 변환 메서드 */
-    public StockEntity(Stock stock) {
-        this.stockCode = stock.getStockCode();
-        this.stockName = stock.getStockName();
-        this.marketType = stock.getMarket();
+    public StockInfoEntity(StockInfo domain) {
+        this.stockCode = domain.getStockCode();
+        this.stockName = domain.getStockName();
+        this.market = domain.getMarket();
     }
 
-    public Stock toStock(){
-        return Stock.builder()
+    public StockInfo toDomain(){
+        return StockInfo.builder()
                 .stockCode(this.stockCode)
                 .stockName(this.stockName)
-                .market(this.marketType)
+                .market(this.market)
                 .build();
     }
 }

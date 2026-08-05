@@ -1,8 +1,9 @@
-package com.stocktracer.backend.stock.repository.entitiy;
+package com.stocktracer.backend.price.repository.entity;
 
 import com.stocktracer.backend.common.entity.BaseEntity;
-import com.stocktracer.backend.stock.domain.Stock;
-import com.stocktracer.backend.stock.domain.StockPrice;
+import com.stocktracer.backend.stock.domain.StockInfo;
+import com.stocktracer.backend.price.domain.StockPrice;
+import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -55,7 +56,7 @@ public class StockPriceEntity extends BaseEntity {
         // LAZY - 연관 엔티티는 깡통 객체로 두고 호출하는 순간에만 필요한 row만 조회
         // >> EAGER는 시대의 망령... 무조건 LAZY로 조회
         @JoinColumn(name = "stock_code", referencedColumnName = "stock_code", insertable = false, updatable = false)
-        private StockEntity stock;
+        private StockInfoEntity stock;
 
         public StockPriceEntity(StockPrice stockPrice) {
                 this.stockCode = stockPrice.getStockCode();
@@ -66,14 +67,14 @@ public class StockPriceEntity extends BaseEntity {
                 this.closePrice = stockPrice.getClosePrice();
                 this.volume = stockPrice.getVolume();
                 this.priceChange = stockPrice.getPriceChange();
-                this.stock = new StockEntity(stockPrice.getStock());
+                this.stock = new StockInfoEntity(stockPrice.getStock());
         }
 
-        public StockPrice toStockPrice(){
+        public StockPrice toDomain(){
                 // null 체크 - db에 stock 데이터가 존재하지 않을 시 대비
-                Stock stock = null;
+                StockInfo stock = null;
                 if(this.stock != null){
-                        stock = this.stock.toStock();
+                        stock = this.stock.toDomain();
                 }
                 return StockPrice.builder()
                         .stockCode(this.stockCode)

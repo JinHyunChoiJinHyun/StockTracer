@@ -1,10 +1,10 @@
-package com.stocktracer.backend.stock.service;
+package com.stocktracer.backend.price.service;
 
-import com.stocktracer.backend.stock.dto.StockPriceDto;
-import com.stocktracer.backend.stock.exception.InvalidDateRangeException;
-import com.stocktracer.backend.stock.exception.StockPriceNotFoundException;
-import com.stocktracer.backend.stock.mapper.StockPriceMapper;
-import com.stocktracer.backend.stock.service.StockPriceService;
+import com.stocktracer.backend.price.dto.StockPriceDto;
+import com.stocktracer.backend.price.service.StockPriceService;
+import com.stocktracer.backend.price.exception.InvalidDateRangeException;
+import com.stocktracer.backend.price.exception.StockPriceNotFoundException;
+import com.stocktracer.backend.price.mapper.StockPriceMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,8 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -56,7 +54,7 @@ public class StockPriceServiceTest {
         // Then (검증)
         assertThat(result).isNotNull();
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getStockCode()).isEqualTo("005930");
+        assertThat(result.get(0).stockCode()).isEqualTo("005930");
 
         // Mapper 제대로 1번 호출됐는지 확인
         verify(stockPriceMapper).findPricesByCodeAndPeriod(stockCode,startDate,endDate);
@@ -117,7 +115,7 @@ public class StockPriceServiceTest {
     ){
         StockPriceDto dto = StockPriceDto.builder()
                 .stockCode(stockCode)
-                .priceDate(priceDate)
+                .stockDate(priceDate)
                 .build();
         return dto;
     }

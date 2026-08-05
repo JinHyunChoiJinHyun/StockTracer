@@ -1,27 +1,39 @@
 import time
-import datetime
-import os
-from dotenv import load_dotenv
+import logging
+from datetime import datetime, timedelta
+
 import pandas as pd
 import FinanceDataReader as fdr
-from sqlalchemy import create_engine, text
+import requests
 
-# 1. DB 연결 설정
-load_dotenv()
+# 로그 설정
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__) #?
 
-DB_USER=os.getenv("DB_USER")
-DB_PW=os.getenv("DB_PW") 
-DB_HOST=os.getenv("DB_HOST") 
-DB_PORT=os.getenv("DB_PORT") 
-DB_NAME=os.getenv("DB_NAME")
+# 백엔드 API 설정
+BACKEND_BASE_URL = "http://localhost:8080"  # 실제 백엔드 주소로 교체
+STOCK_INFO_ENDPOINT = f"{BACKEND_BASE_URL}/api/stocks/info"
+STOCK_PRICE_ENDPOINT = f"{BACKEND_BASE_URL}/api/stocks/prices"
 
-# SQLAlchemy Engine 생성 (PyMySQL 드라이버 사용)
-DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PW}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
-engine = create_engine(DATABASE_URL, echo=False) # ??
+# 통신 설정
+retry_count = 3
+request_timeout = 5
+
+# 1. 백엔드로 POST
+def post_with_retry(url:str, paylaod) -> bool:
+    for attempt in range(1, retry_count+1):
+        try:
+            res = requests.post(url, json=paylaod, timeout=request_timeout)
+            res.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            logger.warning("POST 실패 (%d번째 시도) url=%s error=%s", attempt, url, e)
+    logger.error("POST 최종 실패: url=%s", url)
+    return False
 
 # 2-1. 상위 종목 추출 함수
 def get_top_market_cap_stocks(limit=50):
-    print(f"KRX 시가총액 상위 {limit}개 종목 목록 추출 중...")
+    logger.info("KRX 시가총액 상위 %d개 종목 목록 추출 중...", limit)
 
     # 1) KRX 전체 상장 종목 정보 불러오기
     df_krx = fdr.StockListing("KRX")
@@ -29,30 +41,32 @@ def get_top_market_cap_stocks(limit=50):
     # 2) 상위 종목 선택
     top_stock = df_krx.head(limit)[["Code","Name","Market"]]
 
-    # dict로 반환 > data frame으로 변환하기 위해
+    # dict로 변환
     return top_stock.to_dict(orient="records")
 
-# 2-2 상위 종목 저장 함수
+# 2-2 상위 종목 백엔드 전송 함수
 def save_stock_info(target_stocks):
-    # 1) 상위 종목 반환 및 저장
-    try:
-        print("저장 중...")
-        df_info = pd.DataFrame(target_stocks)
-        df_info.rename(columns={
-            "Code": "stock_code",
-            "Name": "stock_name",
-            'Market': 'market'
-        }, inplace=True)
-    
-        # 종목 저장
-        df_info.to_sql(name="stock_info", con=engine, if_exists="append", index=False)
-        print(f"{len(target_stocks)}개 저장 완료")
-    except Exception as e:
-        print(f"[stock_info] 저장 실패: {type(e).__name__} - {e}")
-        raise
+    # 1) 상위 종목 전송
+    logger.info("종목 정보 전송 중...")
+    payload = [
+        {
+            "stock_code": s["Code"],
+            "stock_name": s["Name"],
+            "market": s["Market"]
+        }
+        for s in target_stocks
+    ]
+
+    if post_with_retry(STOCK_INFO_ENDPOINT, payload):
+        logger.info("%d개 종목 정보 전송 완료", len(target_stocks))
+    else:
+        logger.error("[stock_info] 전송 실패")
+        raise RuntimeError("종목 정보 백엔드 전송 실패")
 
 # 2-3. 상위 종목 일봉 데이터 수집 후 db 저장 함수
-def collect_top_stocks_daily(target_stocks, start_date="2026-01-01"):
+def get_and_save_stock_prices(target_stocks, start_date="2026-01-01"):
+    total = len(target_stocks)
+    success_count, fail_count = 0, 0
     
     # 1) 순회하며 주가 수집 및 저장
     for idx, stock in enumerate(target_stocks,1):
@@ -60,17 +74,17 @@ def collect_top_stocks_daily(target_stocks, start_date="2026-01-01"):
         name = stock["Name"]
 
         try:
-            print(f"[{idx}/{len(target_stocks)}]{name}({code}) 수집 중...")
+            logger.info("[%d/%d] %s(%s) 수집 중...", idx, total, name, code)
 
             # 주가 데이터 수집
-            df_daily = fdr.DataReader(code,start_date)
+            df_price = fdr.DataReader(code,start_date)
 
-            if df_daily.empty:
+            if df_price.empty:
                 continue
 
-            # 전처리
-            df_daily = df_daily.reset_index() # 왜?
-            df_daily.rename(columns={
+            # 전처리 (애초에 df로 반환되고 벡터 연산이 필요하므로 pandas로 처리)
+            df_price = df_price.reset_index() # index도 rename 해야하므로
+            df_price.rename(columns={
                 "Date": "stock_date",
                 "Open": "open_price",
                 "High": "high_price",
@@ -80,26 +94,38 @@ def collect_top_stocks_daily(target_stocks, start_date="2026-01-01"):
                 "Change": "price_change"
             }, inplace=True)
 
-            # 외래키로 추가
-            df_daily["stock_code"] = code
+            # 외래키 추가
+            df_price["stock_code"] = code
+
+            # json 직렬화를 위해 날짜 -> 문자열로 변환 (json은 날짜 타입 없음)
+            df_price["stock_date"] = df_price["stock_date"].dt.strftime("%Y-%m-%d")
 
             # 컬럼 순서 정리
             cols=["stock_code","stock_date","open_price","high_price","low_price","close_price","volume","price_change"]
-            df_daily = df_daily[cols]
+            df_price = df_price[cols]
 
-            # DB 저장
-            df_daily.to_sql(name="stock_daily", con=engine, if_exists="append", index=False)
+            # 백엔드로 전송 (종목당 전체 기간 데이터를 배치로 한번에 전송)
+            payload = df_price.to_dict(orient="records")
+            if post_with_retry(STOCK_PRICE_ENDPOINT, payload):
+                success_count += 1
+            else:
+                fail_count += 1
+                logger.error("[%s(%s)] 주가 전송 실패", name, code)
 
-            # IP 차단 방지를 위해 0.3초 대기
-            time.sleep(0.3)
         except Exception as e:
-            print(f"[{name}({code})] 수집 실패: {type(e).__name__} - {e}")
+            fail_count += 1
+            logger.error("[%s(%s)] 수집 실패: %s - %s", name, code, type(e).__name__, e)
             continue
-    print("모든 상위 종목 데이터 수집 및 DB 저장 완료")
+        finally:
+            # IP 차단 방지
+            time.sleep(0.3)
+
+    logger.info("전체 완료 - 성공 %d건 / 실패 %d건 (총 %d건)", success_count, fail_count, total)
 
 # 3. main 실행
 if __name__ == "__main__":
     target_stocks = get_top_market_cap_stocks()
     save_stock_info(target_stocks)
-    collect_top_stocks_daily(target_stocks,start_date="2026-01-01")
+    start_date = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
+    get_and_save_stock_prices(target_stocks,start_date=start_date)
 

@@ -1,7 +1,7 @@
-package com.stocktracer.backend.stock.controller;
+package com.stocktracer.backend.price.controller;
 
-import com.stocktracer.backend.stock.dto.StockPriceDto;
-import com.stocktracer.backend.stock.service.StockPriceService;
+import com.stocktracer.backend.price.dto.StockPriceDto;
+import com.stocktracer.backend.price.service.StockPriceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +13,9 @@ import java.util.List;
 @RestController // @Controller + @ResponseBody (json 반환)
 @RequiredArgsConstructor
 @RequestMapping("api/v1/stocks") // v1 --> 버전 관리
-public class StockController {
+public class StockPriceController {
     private final StockPriceService stockPriceService;
-    @GetMapping("{stockCode}/prices")
+    @GetMapping("/prices/{stockCode}")
     public ResponseEntity<List<StockPriceDto>>getStockPrices(
             @PathVariable("stockCode")  String stockCode,
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate, // 파라미터로 받은 날짜 문자열 -> 날짜로 변환

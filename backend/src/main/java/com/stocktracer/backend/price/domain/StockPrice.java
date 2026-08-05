@@ -1,7 +1,6 @@
-package com.stocktracer.backend.stock.domain;
+package com.stocktracer.backend.price.domain;
 
-import com.stocktracer.backend.stock.repository.entitiy.StockEntity;
-import jakarta.persistence.*;
+import com.stocktracer.backend.stock.domain.StockInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,5 +22,5 @@ public class StockPrice {
     private BigDecimal closePrice;
     private Long volume;
     private BigDecimal priceChange;
-    private Stock stock;
+    private StockInfo stock;
 }

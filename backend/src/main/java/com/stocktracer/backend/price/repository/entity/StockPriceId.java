@@ -1,4 +1,4 @@
-package com.stocktracer.backend.stock.repository.entitiy;
+package com.stocktracer.backend.price.repository.entity;
 
 import java.io.Serializable;
 import java.time.LocalDate;

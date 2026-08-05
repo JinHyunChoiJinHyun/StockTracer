@@ -1,10 +1,9 @@
-package com.stocktracer.backend.stock.service;
+package com.stocktracer.backend.price.service;
 
-import com.stocktracer.backend.stock.domain.StockPrice;
-import com.stocktracer.backend.stock.dto.StockPriceDto;
-import com.stocktracer.backend.stock.exception.InvalidDateRangeException;
-import com.stocktracer.backend.stock.exception.StockPriceNotFoundException;
-import com.stocktracer.backend.stock.mapper.StockPriceMapper;
+import com.stocktracer.backend.price.dto.StockPriceDto;
+import com.stocktracer.backend.price.exception.InvalidDateRangeException;
+import com.stocktracer.backend.price.exception.StockPriceNotFoundException;
+import com.stocktracer.backend.price.mapper.StockPriceMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
