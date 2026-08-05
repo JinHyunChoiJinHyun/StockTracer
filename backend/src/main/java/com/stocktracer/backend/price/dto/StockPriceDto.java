@@ -7,19 +7,18 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Getter
 @Builder
-public class StockPriceDto {
-    private String stockCode;
-    private String stockName;
-    private MarketType marketType;
-    private LocalDate stockDate;
-    private BigDecimal openPrice;
-    private BigDecimal closePrice;
-    private BigDecimal highPrice;
-    private BigDecimal lowPrice;
-    private Long volume;
-    private BigDecimal priceChange;
-}
+public record StockPriceDto (
+    String stockCode,
+    String stockName,
+    MarketType marketType,
+    LocalDate stockDate,
+    BigDecimal openPrice,
+    BigDecimal closePrice,
+    BigDecimal highPrice,
+    BigDecimal lowPrice,
+    Long volume,
+    BigDecimal priceChange
+){}
 
 

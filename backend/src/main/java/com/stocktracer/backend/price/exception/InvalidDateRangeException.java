@@ -1,4 +1,4 @@
-package com.stocktracer.backend.stock.exception;
+package com.stocktracer.backend.price.exception;
 
 import java.time.LocalDate;
 

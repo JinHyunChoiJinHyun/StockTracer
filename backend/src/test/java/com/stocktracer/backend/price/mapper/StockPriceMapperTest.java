@@ -1,4 +1,4 @@
-package com.stocktracer.backend.stock.mapper;
+package com.stocktracer.backend.price.mapper;
 
 import com.stocktracer.backend.price.dto.StockPriceDto;
 import com.stocktracer.backend.price.mapper.StockPriceMapper;
