@@ -104,7 +104,7 @@ def get_and_save_stock_prices(target_stocks, start_date="2026-01-01"):
             cols=["stock_code","stock_date","open_price","high_price","low_price","close_price","volume","price_change"]
             df_price = df_price[cols]
 
-            # 백엔드로 전송 (종목당 전체 기간 데이터를 배치로 한번에 전송)
+            # 백엔드로 전송 (종목당 전체 기간 데이터를 리스트에 담아 배치로 한번에 전송)
             payload = df_price.to_dict(orient="records")
             if post_with_retry(STOCK_PRICE_ENDPOINT, payload):
                 success_count += 1

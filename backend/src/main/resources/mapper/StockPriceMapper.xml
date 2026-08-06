@@ -2,7 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stocktracer.backend.price.mapper.StockPriceMapper">
-    <select id="findPricesByCodeAndPeriod" resultType="com.stocktracer.backend.price.dto.StockPriceDto">
+    <!-- 1. 특정 종목의 기간별 주가 목록 조회 -->
+    <select id="findPricesByCodeAndPeriod" resultType="com.stocktracer.backend.price.dto.StockPriceResponseDto">
         SELECT
             s.stock_code,
             s.stock_name,
@@ -28,7 +29,8 @@
         ORDER BY sp.stock_date ASC
     </select>
 
-    <select id="findPricesByCodes" resultType="com.stocktracer.backend.price.dto.StockPriceDto">
+    <!-- 2. 여러 종목 동시 조회 -->
+    <select id="findPricesByCodes" resultType="com.stocktracer.backend.price.dto.StockPriceResponseDto">
         SELECT
             s.stock_code,
             s.stock_name,
@@ -67,4 +69,75 @@
             </otherwise>
         </choose>
     </select>
+    <!-- 3. 주가 데이터 대량 저장 -->
+    <!-- mysql -->
+    <insert id="bulkUpsert" databaseId="mysql">
+        INSERT INTO stock_price
+        (
+         stock_code,
+         stock_date,
+         open_price,
+         high_price,
+         low_price,
+         close_price,
+         price_change,
+         volume
+        )
+        VALUES
+        <foreach collection="prices" item="p" separator=",">
+            (
+             #{p.stockCode},
+             #{p.stockDate},
+             #{p.openPrice},
+             #{p.highPrice},
+             #{p.lowPrice},
+             #{p.closePrice},
+             #{p.priceChange},
+             #{p.volume}
+            )
+        </foreach> AS new_val
+        ON DUPLICATE KEY UPDATE
+--             open_price = VALUES(open_price),
+--             high_price = VALUES(high_price),
+--             low_price = VALUES(low_price),
+--             close_price = VALUES(close_price),
+--             price_change = VALUES(price_change),
+--             volume = VALUES(volume)
+            open_price = new_val.open_price,
+            high_price = new_val.high_price,
+            low_price = new_val.low_price,
+            close_price = new_val.close_price,
+            price_change = new_val.price_change,
+            volume = new_val.volume
+    </insert>
+    <!-- oracle -->
+    <insert id="bulkUpsert" databaseId="oracle">
+        MERGE INTO stock_price target
+        USING ( -- 가상 테이블 생성
+            <foreach collection="prices" item="p" separator=" UNION ALL ">
+                SELECT
+                    #{p.stockCode} AS stock_code,
+                    #{p.stockDate} AS stock_date,
+                    #{p.openPrice} AS open_price,
+                    #{p.highPrice} AS high_price,
+                    #{p.lowPrice} AS low_price,
+                    #{p.closePrice} AS close_price,
+                    #{p.priceChange} AS price_change,
+                    #{p.volume} AS volume
+                FROM DUAL
+            </foreach>
+            ) src
+        ON (target.stoc_code = src.stock_code AND target.stock_date = src.stock_date)
+        WHEN MATCHED THEN
+            UPDATE SET
+                target.open_price = src.open_price,
+                target.high_price = src.high_price,
+                target.low_price = src.low_price,
+                target.close_price = src.close_price,
+                target.price_change = src.price_change,
+                target.volume = src.volume
+        WHEN NOT MATCHED THEN
+            INSERT (stock_code, stock_date, open_price, high_price, low_price, close_price, price_change, volume)
+            VALUES (src.stock_code, src.stock_date, src.open_price, src.high_price, src.low_price, src.close_price, src.price_change, src.volume)
+    </insert>
 </mapper>

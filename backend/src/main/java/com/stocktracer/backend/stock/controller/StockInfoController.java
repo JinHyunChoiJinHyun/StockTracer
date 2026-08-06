@@ -1,7 +1,8 @@
 package com.stocktracer.backend.stock.controller;
 
 import com.stocktracer.backend.stock.dto.StockInfoDto;
-import com.stocktracer.backend.stock.service.StockInfoService;
+import com.stocktracer.backend.stock.service.StockInfoServiceImpl;
+import com.stocktracer.backend.stock.service.interfaces.StockInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -1,7 +1,6 @@
 package com.stocktracer.backend.price.mapper;
 
-import com.stocktracer.backend.price.dto.StockPriceDto;
-import com.stocktracer.backend.price.mapper.StockPriceMapper;
+import com.stocktracer.backend.price.dto.StockPriceResponseDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -27,7 +26,7 @@ public class StockPriceMapperTest {
     @DisplayName("실제 db에서 기간별 주가 조회가 잘 되는지 테스트")
     void findPricesByCodeAndPeriod_Success(){
         // 실제 db 혹은 테스트용 데이터 넣은 후 쿼리 실행
-        List<StockPriceDto> result = stockPriceMapper.findPricesByCodeAndPeriod(stockCode,startDate,endDate);
+        List<StockPriceResponseDto> result = stockPriceMapper.findPricesByCodeAndPeriod(stockCode,startDate,endDate);
 
         assertThat(result).isNotEmpty();
     }
