@@ -31,11 +31,13 @@ public class StockInfoServiceImpl implements StockInfoService {
                     .ifPresentOrElse(
                             stock -> {
                                 // 값이 존재할 시 업데이트
-                                stock.update(dto.stockName(),MarketType.valueOf(dto.market()));
+                                System.out.println(">>> 기존 데이터 발견! 업데이트 실행: " + dto.stockCode());
+                                stock.update(dto.stockName(),MarketType.replaceMarket(dto.market()));
                                 stockInfoRepository.save(stock);
                             },
                             () -> {
                                 // 값이 없을 시 새 객체 생성 후 저장
+                                System.out.println(">>> 기존 데이터 없음! 새로 생성: " + dto.stockCode());
                                 StockInfo stock = dto.toDomain();
                                 stockInfoRepository.save(stock);
                             }

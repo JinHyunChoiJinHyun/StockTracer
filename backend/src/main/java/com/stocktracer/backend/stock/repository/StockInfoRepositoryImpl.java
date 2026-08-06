@@ -23,7 +23,11 @@ public class StockInfoRepositoryImpl implements StockInfoRepository {
 
     @Override
     public List<StockInfo> findAllByStockCodeIn(List<String> stockCodes) {
-        return jpaRepository.findAllByStockCodeIn(stockCodes).stream()
+        // 1. jpa repository에서 in 쿼리 호출
+        List<StockInfoEntity> entities = jpaRepository.findAllByStockCodeIn(stockCodes);
+
+        // 2. entitiy를 StockInfo 객체로 변환
+        return entities.stream()
                 .map(StockInfoEntity::toDomain)
                 .toList();
     }

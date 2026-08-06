@@ -1,12 +1,18 @@
 package com.stocktracer.backend.price.service;
 
 import com.stocktracer.backend.price.domain.StockPrice;
+import com.stocktracer.backend.price.dto.StockPriceBulkSaveRequestDto;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
+import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
 import com.stocktracer.backend.price.exception.InvalidDateRangeException;
 import com.stocktracer.backend.price.exception.StockPriceInvalidRangeException;
 import com.stocktracer.backend.price.exception.StockPriceNotFoundException;
 import com.stocktracer.backend.price.mapper.StockPriceMapper;
 import com.stocktracer.backend.price.service.interfaces.StockPriceService;
+import com.stocktracer.backend.stock.domain.MarketType;
+import com.stocktracer.backend.stock.domain.StockInfo;
+import com.stocktracer.backend.stock.exception.StockInfoNotFoundException;
+import com.stocktracer.backend.stock.repository.interfaces.StockInfoRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +36,9 @@ import static org.mockito.Mockito.*;
 public class StockPriceServiceTest {
     @Mock
     private StockPriceMapper stockPriceMapper; // 가짜 객체 생성
+
+    @Mock
+    private StockInfoRepository stockInfoRepository;
 
     @InjectMocks // 직접 Impl 객체 생성
     private StockPriceServiceImpl stockPriceService; // 가짜 매퍼를 서비스에 주입
@@ -129,53 +139,52 @@ public class StockPriceServiceTest {
     @DisplayName("정상적인 주가 리스트가 들어오면 정상 호출")
     void bulkSave_Success(){
         // given
-        List<StockPrice> prices = List.of(
-                createStockPrice("005930", "60000", "61000", "59000", "60500"),
-                createStockPrice("000660", "120000", "121000", "119000", "120500")
+        LocalDate targetDate = LocalDate.of(2026, 8, 6);
+
+        StockPriceSaveRequestDto requestDto = new StockPriceSaveRequestDto(
+                "005930",                           // stockCode
+                targetDate,                         // stockDate
+                new BigDecimal("70000"),            // openPrice
+                new BigDecimal("72000"),            // closePrice
+                new BigDecimal("69500"),            // lowPrice
+                new BigDecimal("72500"),            // highPrice
+                new BigDecimal("2000"),             // priceChange
+                15000000L                           // volume
         );
+        StockPriceBulkSaveRequestDto bulkDto = new StockPriceBulkSaveRequestDto(List.of(requestDto));
+
+        StockInfo mockInfo = new StockInfo("005930", "삼성전자", MarketType.KOSPI);
+
+        given(stockInfoRepository.findAllByStockCodeIn(anyList())).willReturn(List.of(mockInfo));
 
         // when
-        stockPriceService.bulkSave(prices);
+        stockPriceService.bulkSave(bulkDto);
 
         // then
-        verify(stockPriceMapper, times(1)).bulkUpsert(prices);
+        verify(stockPriceMapper, times(1)).bulkUpsert(anyList());
     }
 
     @Test
-    @DisplayName("빈 리스트가 들어오면 Mapper를 호출하지 않는다")
-    void bulkSave_emptyList_doesNotCallMapper(){
+    @DisplayName("stockInfoMap에 없는 stockCode가 들어오면 StockInfoNotFoundException이 발생한다")
+    void bulkSave_NotFoundStockCode_ThrowsException(){
         // given
-        List<StockPrice> emptyPrices = Collections.emptyList();
+        StockPriceSaveRequestDto invalidDto = new StockPriceSaveRequestDto(
+                "INVALID_CODE",
+                LocalDate.now(),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, 0L
+        );
+        StockPriceBulkSaveRequestDto bulkDto = new StockPriceBulkSaveRequestDto(List.of(invalidDto));
+//        List<StockPriceSaveRequestDto> bulkDto = List.of(invalidDto);
 
-        // when
-        stockPriceService.bulkSave(emptyPrices);
-
-        // then
-        verify(stockPriceMapper, never()).bulkUpsert((any()));
-    }
-
-    @Test
-    @DisplayName("null이 들어오면 Mapper를 호출하지 않는다")
-    void bulkSave_null_doesNotCallMapper(){
-        // when
-        stockPriceService.bulkSave(null);
-
-        // then
-        verify(stockPriceMapper, never()).bulkUpsert((any()));
-    }
-
-    @Test
-    @DisplayName("종가가 고가보다 크면 도메인 검증에서 예외가 발생하고 Mapper는 호출되지 않는다")
-    void bulkSave_invalidPriceRange_throwsException(){
-        // given
-        StockPrice invalidPrice = createStockPrice("005930", "60000", "61000", "59000", "62000");
-        List<StockPrice> prices = List.of(invalidPrice);
+        // IN 쿼리 결과가 빈 리스트일 떄
+        given(stockInfoRepository.findAllByStockCodeIn(anyList())).willReturn(List.of()); // 해당 로직 실행 시 반환할 값 지정
 
         // when & then
-        assertThatThrownBy(() -> stockPriceService.bulkSave(prices))
-                .isInstanceOf(StockPriceInvalidRangeException.class);
-        verify(stockPriceMapper, never()).bulkUpsert((any()));
+        assertThatThrownBy(() -> stockPriceService.bulkSave(bulkDto))
+                .isInstanceOf(StockInfoNotFoundException.class);
     }
+
 
     private StockPrice createStockPrice(String stockCode, String open, String high, String low, String close){
         return StockPrice.builder()
