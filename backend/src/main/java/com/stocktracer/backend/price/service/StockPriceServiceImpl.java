@@ -5,6 +5,7 @@ import com.stocktracer.backend.price.domain.StockPrice;
 import com.stocktracer.backend.price.dto.StockPriceBulkSaveRequestDto;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
 import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
+import com.stocktracer.backend.price.exception.DuplicateStockPriceException;
 import com.stocktracer.backend.price.exception.InvalidDateRangeException;
 import com.stocktracer.backend.price.exception.StockPriceBulkSaveException;
 import com.stocktracer.backend.price.exception.StockPriceNotFoundException;
@@ -22,9 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.swing.text.html.Option;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -103,15 +102,30 @@ public class StockPriceServiceImpl implements StockPriceService {
         // map => 각 객체마다 수행해야 하는 로직이 필요할 시
         // collect => map 사용 여부와 관계없이 map이나 list를 최종 포장할 시 (list는 toList로 대체 사용 가능하나 map은 collect 필수)
 
-        // 4. 1000개 단위로 분할하여 한 묶음씩 저장
+        // 4. 중복 발견 시 거부 처리
+        validateNoDuplicationKeys(prices);
+
+        // 5. 1000개 단위로 분할하여 한 묶음씩 저장
         List<List<StockPrice>> batches = ListUtils.partition(prices, 1000); // 1000개 단위로 분할
         for(List<StockPrice> batch : batches){
             stockPriceMapper.bulkUpsert(batch);
         }
     }
 
+    // StockInfo 객체 조회
     private StockInfo findStockInfo(Map<String, StockInfo> stockInfoMap, String stockCode){
         return Optional.ofNullable(stockInfoMap.get((stockCode))) // null이면 빈 값 생성
                 .orElseThrow(() -> new StockInfoNotFoundException(stockCode));
+    }
+
+    // 중복 제거 로직
+    private void validateNoDuplicationKeys(List<StockPrice> prices){
+        Set<String> seen = new HashSet<>();
+        for (StockPrice price : prices){
+            String key = price.getStockCode() + "_" + price.getStockDate(); // 복합키
+            if(!seen.add(key)){
+                throw new DuplicateStockPriceException(price.getStockCode(), price.getStockDate());
+            }
+        }
     }
 }

@@ -32,8 +32,8 @@ public class StockInfoServiceImpl implements StockInfoService {
                             stock -> {
                                 // 값이 존재할 시 업데이트
                                 System.out.println(">>> 기존 데이터 발견! 업데이트 실행: " + dto.stockCode());
-                                stock.update(dto.stockCode(), dto.stockName(),MarketType.parseMarketType(dto.market()));
-                                stockInfoRepository.save(stock);
+                                StockInfo updatedStock = stock.update(dto.stockCode(), dto.stockName(),MarketType.parseMarketType(dto.market()));
+                                stockInfoRepository.save(updatedStock); // 값을 저장하지 않고 stock을 넣으면 이전 데이터가 다시 저장됨 (db 업데이트 안된 이유...)
                             },
                             () -> {
                                 // 값이 없을 시 새 객체 생성 후 저장
