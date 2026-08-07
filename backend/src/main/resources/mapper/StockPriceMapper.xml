@@ -71,7 +71,7 @@
     </select>
     <!-- 3. 주가 데이터 대량 저장 -->
     <!-- mysql -->
-    <insert id="bulkUpsert">
+    <insert id="bulkUpsert" databaseId="mysql">
         INSERT INTO stock_price
         (
          stock_code,
@@ -105,33 +105,33 @@
             volume = new_val.volume
     </insert>
     <!-- oracle -->
-<!--    <insert id="bulkUpsert" databaseId="oracle">-->
-<!--        MERGE INTO stock_price target-->
-<!--        USING ( &#45;&#45; 가상 테이블 생성-->
-<!--            <foreach collection="prices" item="p" separator=" UNION ALL ">-->
-<!--                SELECT-->
-<!--                    #{p.stockCode} AS stock_code,-->
-<!--                    #{p.stockDate} AS stock_date,-->
-<!--                    #{p.openPrice} AS open_price,-->
-<!--                    #{p.highPrice} AS high_price,-->
-<!--                    #{p.lowPrice} AS low_price,-->
-<!--                    #{p.closePrice} AS close_price,-->
-<!--                    #{p.priceChange} AS price_change,-->
-<!--                    #{p.volume} AS volume-->
-<!--                FROM DUAL-->
-<!--            </foreach>-->
-<!--            ) src-->
-<!--        ON (target.stoc_code = src.stock_code AND target.stock_date = src.stock_date)-->
-<!--        WHEN MATCHED THEN-->
-<!--            UPDATE SET-->
-<!--                target.open_price = src.open_price,-->
-<!--                target.high_price = src.high_price,-->
-<!--                target.low_price = src.low_price,-->
-<!--                target.close_price = src.close_price,-->
-<!--                target.price_change = src.price_change,-->
-<!--                target.volume = src.volume-->
-<!--        WHEN NOT MATCHED THEN-->
-<!--            INSERT (stock_code, stock_date, open_price, high_price, low_price, close_price, price_change, volume)-->
-<!--            VALUES (src.stock_code, src.stock_date, src.open_price, src.high_price, src.low_price, src.close_price, src.price_change, src.volume)-->
-<!--    </insert>-->
+    <insert id="bulkUpsert" databaseId="oracle">
+        MERGE INTO stock_price target
+        USING ( -- 가상 테이블 생성
+            <foreach collection="prices" item="p" separator=" UNION ALL ">
+                SELECT
+                    #{p.stockCode} AS stock_code,
+                    #{p.stockDate} AS stock_date,
+                    #{p.openPrice} AS open_price,
+                    #{p.highPrice} AS high_price,
+                    #{p.lowPrice} AS low_price,
+                    #{p.closePrice} AS close_price,
+                    #{p.priceChange} AS price_change,
+                    #{p.volume} AS volume
+                FROM DUAL
+            </foreach>
+            ) src
+        ON (target.stoc_code = src.stock_code AND target.stock_date = src.stock_date)
+        WHEN MATCHED THEN
+            UPDATE SET
+                target.open_price = src.open_price,
+                target.high_price = src.high_price,
+                target.low_price = src.low_price,
+                target.close_price = src.close_price,
+                target.price_change = src.price_change,
+                target.volume = src.volume
+        WHEN NOT MATCHED THEN
+            INSERT (stock_code, stock_date, open_price, high_price, low_price, close_price, price_change, volume)
+            VALUES (src.stock_code, src.stock_date, src.open_price, src.high_price, src.low_price, src.close_price, src.price_change, src.volume)
+    </insert>
 </mapper>
