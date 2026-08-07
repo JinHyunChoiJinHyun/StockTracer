@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__) #?
 # 백엔드 API 설정
 BACKEND_BASE_URL = "http://localhost:8080"  # 실제 백엔드 주소로 교체
 STOCK_INFO_ENDPOINT = f"{BACKEND_BASE_URL}/api/v1/stocks/info"
-STOCK_PRICE_ENDPOINT = f"{BACKEND_BASE_URL}/api/v1/stocks/prices"
+STOCK_PRICE_ENDPOINT = f"{BACKEND_BASE_URL}/api/v1/stocks/prices/bulk"
 
 # 통신 설정
 retry_count = 3
@@ -41,6 +41,11 @@ def get_top_market_cap_stocks(limit=50):
     # 2) 상위 종목 선택
     top_stock = df_krx.head(limit)[["Code","Name","Market"]]
 
+    # 3) 데이터 전처리
+    # KOSDAQ GLOBAL -> KOSDAQ으로 변환
+    top_stock["Market"] = top_stock["Market"].replace("KOSDAQ GLOBAL", "KOSDAQ")
+    print(top_stock['Market'].unique())
+# 출력 결과에 'KOSDAQ GLOBAL'이 여전히 남아있다면 전처리(재할당) 코드가 적용되지 않은 것입니다.
     # dict로 변환
     return top_stock.to_dict(orient="records")
 
@@ -56,7 +61,6 @@ def save_stock_info(target_stocks):
         }
         for s in target_stocks
     ]
-
     if post_with_retry(STOCK_INFO_ENDPOINT, payload):
         logger.info("%d개 종목 정보 전송 완료", len(target_stocks))
     else:
@@ -72,7 +76,7 @@ def get_and_save_stock_prices(target_stocks, start_date="2026-01-01"):
     for idx, stock in enumerate(target_stocks,1):
         code = stock["Code"]
         name = stock["Name"]
-
+        payload = []
         try:
             logger.info("[%d/%d] %s(%s) 수집 중...", idx, total, name, code)
 
@@ -106,7 +110,8 @@ def get_and_save_stock_prices(target_stocks, start_date="2026-01-01"):
 
             # 백엔드로 전송 (종목당 전체 기간 데이터를 리스트에 담아 배치로 한번에 전송)
             payload = df_price.to_dict(orient="records")
-            if post_with_retry(STOCK_PRICE_ENDPOINT, payload):
+            body = {"prices": payload}
+            if post_with_retry(STOCK_PRICE_ENDPOINT, body):
                 success_count += 1
             else:
                 fail_count += 1
