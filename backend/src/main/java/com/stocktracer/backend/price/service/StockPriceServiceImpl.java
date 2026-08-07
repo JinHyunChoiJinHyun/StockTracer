@@ -46,7 +46,9 @@ public class StockPriceServiceImpl implements StockPriceService {
     public List<StockPriceResponseDto> getPricesByCodeAndPeriod(String stockCode, LocalDate startDate, LocalDate endDate){
         /** 1. 입력값 검증 */
         // 1) 코드 입력값 검증
-        if(stockCode == null || stockCode.trim().isEmpty()){
+        String normalizedStockCode = stockCode == null ? null : stockCode.trim(); // 정상화 후 저장 필요 (null이면 null 아니면 공백 제거)
+
+        if(normalizedStockCode == null || normalizedStockCode.isEmpty()){
             throw new IllegalArgumentException("주식코드가 비어있습니다.");
         }
 
@@ -59,17 +61,15 @@ public class StockPriceServiceImpl implements StockPriceService {
             throw new InvalidDateRangeException(startDate, endDate);
         }
         /** 2. mybatis로 조회 */
-        List<StockPriceResponseDto> priceList = stockPriceMapper.findPricesByCodeAndPeriod(stockCode,startDate,endDate);
+        List<StockPriceResponseDto> priceList = stockPriceMapper.findPricesByCodeAndPeriod(normalizedStockCode,startDate,endDate);
 
         /** 3. 조회 결과 없는 경우 예외 처리 */
         if(priceList.isEmpty()){
-            throw new StockPriceNotFoundException(stockCode);
+            throw new StockPriceNotFoundException(normalizedStockCode);
         }
 
         return priceList;
     }
-
-    // TODO: findByStockCodes 구현 시 stockCodes 1000개 초과 대비 배치 분할 필수 (Oracle IN절 제한, ORA-01795)
 
     /**
      * 주가 데이터를 대량으로 저장합니다
@@ -85,13 +85,15 @@ public class StockPriceServiceImpl implements StockPriceService {
                 .distinct()
                 .toList();
 
-        // 2. IN 쿼리로 StockInfo 일괄 조회
-        Map<String, StockInfo> stockInfoMap = stockInfoRepository.findAllByStockCodeIn(stockCodes).stream()
-                .collect(Collectors.toMap(
-                        StockInfo::getStockCode, // key = stockCode
-                        Function.identity(), // value = StockInfo
-                        (existing, replacement) -> existing // 중복 키 발생 시 기본값 유지 (후자 선택 시 최신값으로 업데이트)
-                ));
+        // 2. IN 쿼리로 StockInfo 일괄 조회 // 오라클의 경우 in 쿼리에서 1000건 이상 조회 시 에러 발생 하므로 배치 처리 후 조회
+        Map<String, StockInfo> stockInfoMap = new HashMap<>(stockCodes.size()); // 오버헤드 방지
+        List<List<String>> codeBatches = ListUtils.partition(stockCodes, 1000);
+        for(List<String> codeBatch : codeBatches){ // 바깥 루프: 배치 개수(N/1000)번 순회 // 안쪽: 배치 크기(최대 1000)만큼 순회
+            stockInfoRepository.findAllByStockCodeIn(codeBatch)
+                    .forEach(stockInfo -> stockInfoMap.put(stockInfo.getStockCode(),stockInfo)); // 위에서 distinct로 중복체크 했으므로 putIfAbsent 대신 put 사용
+        }
+        /** for문 내부에 foreach 효율이 괜찮은가? */
+        // 다른 이중 FOR문과는 다르게 1000건 처리 후 다음 건(예: 1001번째)으로 넘어가기 때문에 중첩되지 않음 -> O(N)으로 해결
 
         // 3. DTO -> StockPrice 도메인 객체 변환
         List<StockPrice> prices = bulkDto.prices().stream() // 가독성 좋은 for문
