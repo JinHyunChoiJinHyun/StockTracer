@@ -15,7 +15,7 @@ public class MyBatisConfig {
 
         Properties properties = new Properties();
         // key: 실제 db, value: mapper에 사용된 별칭
-        properties.setProperty("MySql", "mysql");
+        properties.setProperty("MySQL", "mysql");
         properties.setProperty("Oracle", "oracle");
 
         provider.setProperties(properties);

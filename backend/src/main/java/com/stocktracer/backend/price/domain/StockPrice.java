@@ -3,10 +3,7 @@ package com.stocktracer.backend.price.domain;
 import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
 import com.stocktracer.backend.price.exception.StockPriceInvalidRangeException;
 import com.stocktracer.backend.stock.domain.StockInfo;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,7 +11,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(access = AccessLevel.PRIVATE) // 외부에서 사용 못하게 잠금
 public class StockPrice {
     private String stockCode;
     private LocalDate stockDate;
@@ -27,6 +24,7 @@ public class StockPrice {
     private StockInfo stock;
 
     // 정적 생성 메서드 (파라미터가 두개 이상일 시 of로 생성)
+    // >> 필드 수가 많으므로 builder를 생성 지점으로 사용
     public static StockPrice of(StockPriceSaveRequestDto dto, StockInfo stock){
         StockPrice stockPrice = StockPrice.builder()
                 .stockCode(dto.stockCode())

@@ -9,6 +9,6 @@ public record StockInfoDto(
         String market
 ){
     public StockInfo toDomain(){
-        return new StockInfo(this.stockCode, this.stockName, MarketType.replaceMarket(this.market));
+        return new StockInfo(this.stockCode, this.stockName, MarketType.parseMarketType(this.market));
     }
 }

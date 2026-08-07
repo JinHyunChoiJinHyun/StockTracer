@@ -18,30 +18,16 @@ public enum MarketType {
 
     /** 검증 메서드 */
     @JsonCreator
-    public static MarketType replaceMarket(String input){
-        if (input == null || input.isBlank()){
+    public static MarketType parseMarketType(String market){
+        if (market == null || market.isBlank()){
             throw new IllegalArgumentException(("Market 값이 비었습니다."));
         }
-        String cleanInput = input.trim().toUpperCase();
+        String normalized = market.trim().toUpperCase();
 
-        // 1. KOSDAQ과 KOSDAQ GLOBAL 모두 KOSDAQ으로 매핑
-        if (cleanInput.contains("KOSDAQ")) {
-            return KOSDAQ;
-        }
-
-        // 2. KOSPI 매핑
-        if (cleanInput.contains("KOSPI")) {
-            return KOSPI;
-        }
-
-        // 3. KONEX 매핑
-        if (cleanInput.contains("KONEX")) {
-            return KONEX;
-        }
         try{
-            return MarketType.valueOf(cleanInput);
+            return MarketType.valueOf(normalized);
         } catch (IllegalArgumentException e){
-            throw new IllegalArgumentException(("지원하지 않는 Market 타입입니다." + input));
+            throw new IllegalArgumentException(("지원하지 않는 Market type: " + market));
         }
     }
 }

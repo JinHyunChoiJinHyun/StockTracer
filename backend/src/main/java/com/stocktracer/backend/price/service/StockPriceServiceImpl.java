@@ -1,5 +1,6 @@
 package com.stocktracer.backend.price.service;
 
+import ch.qos.logback.core.joran.util.ConfigurationWatchListUtil;
 import com.stocktracer.backend.price.domain.StockPrice;
 import com.stocktracer.backend.price.dto.StockPriceBulkSaveRequestDto;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
@@ -15,6 +16,7 @@ import com.stocktracer.backend.stock.repository.interfaces.StockInfoRepository;
 import com.stocktracer.backend.stock.service.interfaces.StockInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,6 +70,8 @@ public class StockPriceServiceImpl implements StockPriceService {
         return priceList;
     }
 
+    // TODO: findByStockCodes 구현 시 stockCodes 1000개 초과 대비 배치 분할 필수 (Oracle IN절 제한, ORA-01795)
+
     /**
      * 주가 데이터를 대량으로 저장합니다
      * @param bulkDto 대량 주가 데이터
@@ -75,6 +79,7 @@ public class StockPriceServiceImpl implements StockPriceService {
     @Transactional
     @Override
     public void bulkSave(StockPriceBulkSaveRequestDto bulkDto) {
+
         // 1. stockCode 분해
         List<String> stockCodes = bulkDto.prices().stream()
                 .map(StockPriceSaveRequestDto::stockCode)
@@ -98,8 +103,11 @@ public class StockPriceServiceImpl implements StockPriceService {
         // map => 각 객체마다 수행해야 하는 로직이 필요할 시
         // collect => map 사용 여부와 관계없이 map이나 list를 최종 포장할 시 (list는 toList로 대체 사용 가능하나 map은 collect 필수)
 
-        // 4. 최종 저장
-        stockPriceMapper.bulkUpsert(prices);
+        // 4. 1000개 단위로 분할하여 한 묶음씩 저장
+        List<List<StockPrice>> batches = ListUtils.partition(prices, 1000); // 1000개 단위로 분할
+        for(List<StockPrice> batch : batches){
+            stockPriceMapper.bulkUpsert(batch);
+        }
     }
 
     private StockInfo findStockInfo(Map<String, StockInfo> stockInfoMap, String stockCode){

@@ -3,6 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stocktracer.backend.price.mapper.StockPriceMapper">
     <!-- 1. 특정 종목의 기간별 주가 목록 조회 -->
+    <!-- 매핑을 위해 조회 순서 중요!-->
     <select id="findPricesByCodeAndPeriod" resultType="com.stocktracer.backend.price.dto.StockPriceResponseDto">
         SELECT
             s.stock_code,
@@ -11,12 +12,12 @@
             sp.stock_date,
             sp.open_price,
             sp.close_price,
-            sp.high_price,
             sp.low_price,
-            sp.volume,
-            sp.price_change
+            sp.high_price,
+            sp.price_change,
+            sp.volume
         FROM
-            stock_daily as sp
+            stock_price as sp
         JOIN stock_info as s
         on sp.stock_code = s.stock_code
         WHERE sp.stock_code = #{stockCode}
@@ -38,12 +39,12 @@
             sp.stock_date,
             sp.open_price,
             sp.close_price,
-            sp.high_price,
             sp.low_price,
-            sp.volume,
-            sp.price_change
+            sp.high_price,
+            sp.price_change,
+            sp.volume
         FROM
-            stock_daily as sp
+            stock_price as sp
         JOIN stock_info as s
         on sp.stock_code = s.stock_code
         WHERE sp.stock_code IN
@@ -71,15 +72,16 @@
     </select>
     <!-- 3. 주가 데이터 대량 저장 -->
     <!-- mysql -->
+    <!--
     <insert id="bulkUpsert" databaseId="mysql">
         INSERT INTO stock_price
         (
          stock_code,
          stock_date,
          open_price,
-         high_price,
-         low_price,
          close_price,
+         low_price,
+         high_price,
          price_change,
          volume
         )
@@ -89,9 +91,9 @@
              #{p.stockCode},
              #{p.stockDate},
              #{p.openPrice},
-             #{p.highPrice},
-             #{p.lowPrice},
              #{p.closePrice},
+             #{p.lowPrice},
+             #{p.highPrice},
              #{p.priceChange},
              #{p.volume}
             )
@@ -104,34 +106,36 @@
             price_change = new_val.price_change,
             volume = new_val.volume
     </insert>
+    -->
     <!-- oracle -->
-    <insert id="bulkUpsert" databaseId="oracle">
+    <!-- 가상 테이블 생성 -->
+    <insert id="bulkUpsert">
         MERGE INTO stock_price target
-        USING ( -- 가상 테이블 생성
+        USING (
             <foreach collection="prices" item="p" separator=" UNION ALL ">
                 SELECT
-                    #{p.stockCode} AS stock_code,
-                    #{p.stockDate} AS stock_date,
-                    #{p.openPrice} AS open_price,
-                    #{p.highPrice} AS high_price,
-                    #{p.lowPrice} AS low_price,
-                    #{p.closePrice} AS close_price,
-                    #{p.priceChange} AS price_change,
-                    #{p.volume} AS volume
+                    cast(#{p.stockCode} as varchar) AS stock_code,
+                    cast(#{p.stockDate} as date) AS stock_date,
+                    cast(#{p.openPrice} as NUMBER) AS open_price,
+                    cast(#{p.closePrice} as NUMBER) AS close_price,
+                    cast(#{p.lowPrice} as NUMBER) AS low_price,
+                    cast(#{p.highPrice} as NUMBER) AS high_price,
+                    cast(#{p.priceChange} as NUMBER) AS price_change,
+                    cast(#{p.volume} as NUMBER) AS volume
                 FROM DUAL
             </foreach>
             ) src
-        ON (target.stoc_code = src.stock_code AND target.stock_date = src.stock_date)
+        ON (target.stock_code = src.stock_code AND target.stock_date = src.stock_date)
         WHEN MATCHED THEN
             UPDATE SET
                 target.open_price = src.open_price,
-                target.high_price = src.high_price,
-                target.low_price = src.low_price,
                 target.close_price = src.close_price,
+                target.low_price = src.low_price,
+                target.high_price = src.high_price,
                 target.price_change = src.price_change,
                 target.volume = src.volume
         WHEN NOT MATCHED THEN
-            INSERT (stock_code, stock_date, open_price, high_price, low_price, close_price, price_change, volume)
-            VALUES (src.stock_code, src.stock_date, src.open_price, src.high_price, src.low_price, src.close_price, src.price_change, src.volume)
+            INSERT (stock_code, stock_date, open_price, close_price, low_price, high_price,price_change, volume)
+            VALUES (src.stock_code, src.stock_date, src.open_price, src.close_price, src.low_price, src.high_price, src.price_change, src.volume)
     </insert>
 </mapper>

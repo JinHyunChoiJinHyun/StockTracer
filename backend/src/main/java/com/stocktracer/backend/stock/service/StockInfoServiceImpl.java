@@ -32,7 +32,7 @@ public class StockInfoServiceImpl implements StockInfoService {
                             stock -> {
                                 // 값이 존재할 시 업데이트
                                 System.out.println(">>> 기존 데이터 발견! 업데이트 실행: " + dto.stockCode());
-                                stock.update(dto.stockName(),MarketType.replaceMarket(dto.market()));
+                                stock.update(dto.stockCode(), dto.stockName(),MarketType.parseMarketType(dto.market()));
                                 stockInfoRepository.save(stock);
                             },
                             () -> {

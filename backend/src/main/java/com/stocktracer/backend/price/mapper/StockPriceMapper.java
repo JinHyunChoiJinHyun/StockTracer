@@ -2,8 +2,10 @@ package com.stocktracer.backend.price.mapper;
 
 import com.stocktracer.backend.price.domain.StockPrice;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
+import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.mapping.DatabaseIdProvider;
 
 import java.time.LocalDate;
 import java.util.List;
