@@ -1,13 +1,15 @@
-import time
-import logging
 from datetime import datetime, timedelta
+from pykrx import stock
 
 import pandas as pd
-import FinanceDataReader as fdr
 import requests
+import time
+import logging
 
 # .\venv\Scripts\Activate.ps1
 # >> 가상환경 실행 코드 (venv 폴더 내 스크립트 실행)
+
+# 집에서 다시 작성
 
 # 로그 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -35,11 +37,11 @@ def post_with_retry(url:str, paylaod) -> bool:
     return False
 
 # 2-1. 상위 종목 추출 함수
-def get_top_market_cap_stocks(limit=50):
+def get_top__stocks(limit=50):
     logger.info("KRX 시가총액 상위 %d개 종목 목록 추출 중...", limit)
 
     # 1) KRX 전체 상장 종목 정보 불러오기
-    df_krx = fdr.StockListing("KRX")
+    df = stock.get_market_cap()
 
     # 2) 상위 종목 선택
     top_stock = df_krx.head(limit)[["Code","Name","Market"]]
@@ -132,7 +134,7 @@ def get_and_save_stock_prices(target_stocks, start_date="2026-01-01"):
 
 # 3. main 실행
 if __name__ == "__main__":
-    target_stocks = get_top_market_cap_stocks()
+    target_stocks = get_top__stocks()
     save_stock_info(target_stocks)
     start_date = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
     get_and_save_stock_prices(target_stocks,start_date=start_date)
