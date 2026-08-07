@@ -4,7 +4,7 @@ import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.dto.StockInfoDto;
 import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
-import com.stocktracer.backend.stock.repository.interfaces.StockInfoRepository;
+import com.stocktracer.backend.stock.repository.interfaces.StockInfoJpaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class) // Mockito 사용
-public class StockInfoServiceTest {
+public class StockInfoServiceImplTest {
     @Mock
-    private StockInfoRepository stockInfoRepository;
+    private StockInfoJpaRepository stockInfoJpaRepository;
 
     @InjectMocks
-    private StockInfoService stockInfoService; // 가짜 repository 주입
+    private StockInfoServiceImpl stockInfoServiceImpl; // 가짜 repository 주입
 
     @Test
     @DisplayName("주식 정보가 이미 존재하면 업데이트 실행")
@@ -38,24 +38,24 @@ public class StockInfoServiceTest {
         StockInfo existingDomain = new StockInfo("005930", "삼성전자", MarketType.KOSPI);
         StockInfoEntity existingEntity = new StockInfoEntity(existingDomain);
 
-        given(stockInfoRepository.findById("005930"))
+        given(stockInfoJpaRepository.findById("005930"))
                 .willReturn(Optional.of(existingEntity));
 
         StockInfoDto dto = new StockInfoDto("005930", "삼성전자우","KOSDAQ");
 
         // when
-        stockInfoService.saveOrUpdateStocks(List.of(dto));
+        stockInfoServiceImpl.saveOrUpdateStocks(List.of(dto));
 
         // then
         // save가 어떤 값으로 저장 됐는지 검증 (가짜 레포지토리이므로 실제 저장되지 않아 캡처 필요)
         ArgumentCaptor<StockInfoEntity> captor = ArgumentCaptor.forClass(StockInfoEntity.class);
-        verify(stockInfoRepository).save(captor.capture()); // save 되는 순간의 값을 캡처
+        verify(stockInfoJpaRepository).save(captor.capture()); // save 되는 순간의 값을 캡처
 
         assertThat(captor.getValue().getStockName()).isEqualTo("삼성전자우");
         assertThat(captor.getValue().getMarket());
 
         // 신규 생성 여부 확인
-        verify(stockInfoRepository, times(1)).save(any()); // save라는 행위가 1번만 일어났는지 검증
+        verify(stockInfoJpaRepository, times(1)).save(any()); // save라는 행위가 1번만 일어났는지 검증
 
     }
 

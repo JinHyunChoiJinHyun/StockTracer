@@ -1,9 +1,12 @@
 package com.stocktracer.backend.stock.repository.interfaces;
 
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import com.stocktracer.backend.stock.domain.StockInfo;
 
-@Repository
-public interface StockInfoRepository extends JpaRepository<StockInfoEntity, String> {
+import java.util.List;
+import java.util.Optional;
+
+public interface StockInfoRepository {
+    Optional<StockInfo> findByStockCode(String stockCode);
+    List<StockInfo> findAllByStockCodeIn(List<String> stockCodes);
+    void save(StockInfo stockInfo);
 }
