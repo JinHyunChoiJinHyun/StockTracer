@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(access = AccessLevel.PRIVATE) // 외부에서 사용 못하게 잠금
+@Builder
 public class StockPrice {
     private String stockCode;
     private LocalDate stockDate;

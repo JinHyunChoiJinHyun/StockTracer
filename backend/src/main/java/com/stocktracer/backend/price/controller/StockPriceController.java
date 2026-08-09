@@ -20,6 +20,7 @@ import java.util.List;
 @RestController // @Controller + @ResponseBody (json 반환)
 @RequiredArgsConstructor
 @RequestMapping("api/v1/stocks/prices") // v1 --> 버전 관리
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class StockPriceController {
     private final StockPriceService stockPriceService;
     private final StockInfoService stockInfoService;
