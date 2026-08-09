@@ -1,65 +1,95 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import camelcaseKeys from "camelcase-keys";
 
 // 분석 데이터 타입 정의
-export interface PriceChangeReason {
-    id: string;
+export interface StockData {
     stockName: string;
     stockCode: string;
-    currentPrice: number;
-    changeRate: number; // 변동률 (%)
-    analysisDate: string;
-    summary: string; // 한 줄 핵심 원인 요약
-    sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL'; // 호재 / 악재
-    drivers: {
-        category: string; // 예: 실적 발표, 공시, 뉴스, 수급
-        title: string;
-        description: string;
-        impactScore: number; // 영향도 (1~5)
-    }[];
-    relatedNews: {
-        title: string;
-        publisher: string;
-        time: string;
-        url: string;
-    }[];
+    stockDate: string;
+    openPrice: number;
+    closePrice: number;
+    lowPrice: number;
+    highPrice: number;
+    priceChange: number;
+    changeRate:number;
+    volume: number;
+    // summary: string; // 한 줄 핵심 원인 요약
+    // sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL'; // 호재 / 악재
+    // drivers: {
+    //     category: string; // 예: 실적 발표, 공시, 뉴스, 수급
+    //     title: string;
+    //     description: string;
+    //     impactScore: number; // 영향도 (1~5)
+    // }[];
+    // relatedNews: {
+    //     title: string;
+    //     publisher: string;
+    //     time: string;
+    //     url: string;
+    // }[];
 }
 
 interface Props {
-    data: PriceChangeReason;
+    stockCode: string;
 }
 
-export const StockAnalysis: React.FC<Props> = ({data}) => {
-    const isUp = data.changeRate > 0;
+export const StockAnalysis: React.FC<Props> = ({stockCode}) => {
+    const [stock, setStock] = useState<StockData[]>();
+    const [loading, setLoading] = useState<boolean>(true);
 
+    // db 데이터 불러오기
+    useEffect(() => {
+        const fetchStocks = async () => {
+            try{
+                // 1. 백엔드 호출
+                const res = await fetch(`http://localhost:8080/api/v1/stocks/prices/${stockCode}?startDate=2026-08-04&endDate=2026-08-04`)
+                const rowData: StockData[] = await res.json();
+                const convertedData = camelcaseKeys(rowData, {deep:true}) as StockData[];
+                
+                setStock(convertedData);
+            } catch(error){
+                console.error("데이터 로드 실패:", error) // 왜 로그로 안하고? 로그 하는 이유
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStocks();
+    }, [stockCode])
+    // const isUp = stock.priceChange > 0;
+
+    if (loading) return <div>주식 정보 불러오는 중...</div>;
+    if (!stock) return <div>주식 정보를 찾을 수 없습니다.</div>; // 왜 없으면 오류 나는지 ?(옵셔널 체이닝) 사용해도 되는지
+    
     return(
         <div style={styles.container}>
         {/* 1. 상단 종목 헤더 및 변동률 */}
         <div style={styles.header}>
             <div>
             <h2 style={styles.stockTitle}>
-                {data.stockName} <span style={styles.stockCode}>{data.stockCode}</span>
+                {stock[0].stockName} <span style={styles.stockCode}>{stock[0].stockCode}</span>
             </h2>
-            <span style={styles.date}>{data.analysisDate} 기준 분석</span>
+            <span style={styles.date}>{stock[0].stockDate} 기준 분석</span>
             </div>
             <div style={{ textAlign: 'right' }}>
-            <div style={styles.price}>{data.currentPrice.toLocaleString()}원</div>
-            <div style={{ ...styles.badge, backgroundColor: isUp ? '#F38BA8' : '#89B4FA' }}>
+            <div style={styles.price}>{stock[0].closePrice}원</div>
+            {/* <div style={{ ...styles.badge, backgroundColor: isUp ? '#F38BA8' : '#89B4FA' }}>
                 {isUp ? '▲' : '▼'} {Math.abs(data.changeRate)}% {isUp ? '상승' : '하락'}
-            </div>
+            </div> */}
             </div>
         </div>
 
         {/* 2. 핵심 변동 원인 요약 (AI / 분석 리포트 메인 영역) */}
         <div style={styles.summaryBox}>
-            <h3 style={styles.sectionTitle}>💡 왜 {isUp ? '올랐' : '떨어졌'}을까요? (핵심 요약)</h3>
-            <p style={styles.summaryText}>{data.summary}</p>
+            {/* <h3 style={styles.sectionTitle}>💡 왜 {isUp ? '올랐' : '떨어졌'}을까요? (핵심 요약)</h3> */}
+            {/* <p style={styles.summaryText}>{stock.summary}</p> */}
         </div>
 
         {/* 3. 세부 원인 분석 리스트 */}
-        <div style={styles.section}>
+        {/* <div style={styles.section}>
             <h3 style={styles.sectionTitle}>🔍 주요 변동 요인 (Impact Analysis)</h3>
             <div style={styles.driverGrid}>
-            {data.drivers.map((driver, index) => (
+            {stock.drivers.map((driver, index) => (
                 <div key={index} style={styles.driverCard}>
                 <div style={styles.categoryTag}>{driver.category}</div>
                 <h4 style={styles.driverTitle}>{driver.title}</h4>
@@ -70,13 +100,13 @@ export const StockAnalysis: React.FC<Props> = ({data}) => {
                 </div>
             ))}
             </div>
-        </div>
+        </div> */}
 
         {/* 4. 원인이 된 관련 핵심 뉴스 */}
-        <div style={styles.section}>
+        {/* <div style={styles.section}>
             <h3 style={styles.sectionTitle}>📰 원인 제공 핵심 뉴스 / 공시</h3>
             <div style={styles.newsList}>
-            {data.relatedNews.map((news, index) => (
+            {stock.relatedNews.map((news, index) => (
                 <a key={index} href={news.url} style={styles.newsItem} target="_blank" rel="noreferrer">
                 <div>
                     <div style={styles.newsTitle}>{news.title}</div>
@@ -86,7 +116,7 @@ export const StockAnalysis: React.FC<Props> = ({data}) => {
                 </a>
             ))}
             </div>
-        </div>
+        </div> */}
         </div>
     );
 };
