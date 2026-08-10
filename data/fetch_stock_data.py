@@ -34,8 +34,8 @@ def post_with_retry(url:str, paylaod) -> bool:
     logger.error("POST 최종 실패: url=%s", url)
     return False
 
-# 상위 종목 추출 함수
-def get_top_stocks(limit=50):
+# 2-1. 상위 종목 추출 함수
+def get_top_market_cap_stocks(limit=50):
     logger.info("KRX 시가총액 상위 %d개 종목 목록 추출 중...", limit)
 
     # 1) KRX 전체 상장 종목 정보 불러오기
@@ -70,8 +70,8 @@ def save_stock_info(target_stocks):
         logger.error("[stock_info] 전송 실패")
         raise RuntimeError("종목 정보 백엔드 전송 실패")
 
-# 상위 종목 일봉 데이터 수집
-def get_stock_prices(target_stocks, start_date="2026-01-01"):
+# 2-3. 상위 종목 일봉 데이터 수집 후 db 저장 함수
+def get_and_save_stock_prices(target_stocks, start_date="2026-01-01"):
     total = len(target_stocks)
     success_count, fail_count = 0, 0
     

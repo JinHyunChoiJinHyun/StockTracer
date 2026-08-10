@@ -47,7 +47,7 @@ def get_stock_prices(stocks, start_date=None):
     success_count, fail_count = 0, 0
     
     # 1) 순회하며 주가 수집 및 저장
-    price_payload = []
+    price_payload = {"prices":[]}
     for idx, stock in enumerate(stocks,1):
         code = stock["Code"]
         name = stock["Name"]
@@ -83,7 +83,7 @@ def get_stock_prices(stocks, start_date=None):
             df_price = df_price[cols]
 
             # payload에 적재
-            price_payload.append({"stock_code": code, "prices": df_price.to_dict(orient="records")})
+            price_payload["prices"].extend(df_price.to_dict(orient="records")) # append 사용 시 배열 내 배열이 추가되므로 extend로 사용
 
             success_count += 1
         except Exception as e:
