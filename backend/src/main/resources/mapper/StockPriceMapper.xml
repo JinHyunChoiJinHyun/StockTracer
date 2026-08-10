@@ -72,8 +72,7 @@
     </select>
     <!-- 3. 주가 데이터 대량 저장 -->
     <!-- mysql -->
-    <!--
-    <insert id="bulkUpsert" databaseId="mysql">
+    <insert id="bulkUpsert">
         INSERT INTO stock_price
         (
          stock_code,
@@ -106,9 +105,9 @@
             price_change = new_val.price_change,
             volume = new_val.volume
     </insert>
-    -->
     <!-- oracle -->
     <!-- 가상 테이블 생성 -->
+    <!--
     <insert id="bulkUpsert">
         MERGE INTO stock_price target
         USING (
@@ -138,4 +137,5 @@
             INSERT (stock_code, stock_date, open_price, close_price, low_price, high_price,price_change, volume)
             VALUES (src.stock_code, src.stock_date, src.open_price, src.close_price, src.low_price, src.high_price, src.price_change, src.volume)
     </insert>
+    -->
 </mapper>
