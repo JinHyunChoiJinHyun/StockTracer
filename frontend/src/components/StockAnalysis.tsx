@@ -48,7 +48,7 @@ export const StockAnalysis: React.FC<Props> = ({stockCode}) => {
                 
                 setStock(convertedData);
             } catch(error){
-                console.error("데이터 로드 실패:", error) // 왜 로그로 안하고? 로그 하는 이유
+                console.error("데이터 로드 실패:", error) 
             } finally {
                 setLoading(false);
             }
@@ -59,8 +59,9 @@ export const StockAnalysis: React.FC<Props> = ({stockCode}) => {
     // const isUp = stock.priceChange > 0;
 
     if (loading) return <div>주식 정보 불러오는 중...</div>;
-    if (!stock) return <div>주식 정보를 찾을 수 없습니다.</div>; // 왜 없으면 오류 나는지 ?(옵셔널 체이닝) 사용해도 되는지
+    if (!stock || stock.length === 0) return <div>주식 정보를 찾을 수 없습니다.</div>; // null 체크 (null이거나 빈 배열이거나)
     
+    // 데이터가 정성적으로 존재할 시 실행
     return(
         <div style={styles.container}>
         {/* 1. 상단 종목 헤더 및 변동률 */}
