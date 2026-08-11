@@ -42,7 +42,9 @@
             sp.low_price,
             sp.high_price,
             sp.price_change,
-            sp.volume
+            sp.volume,
+            sp.trading_value,
+            sp.market_cap
         FROM
             stock_price as sp
         JOIN stock_info as s
@@ -70,6 +72,7 @@
             </otherwise>
         </choose>
     </select>
+
     <!-- 3. 주가 데이터 대량 저장 -->
     <!-- mysql -->
     <insert id="bulkUpsert">
@@ -82,7 +85,9 @@
          low_price,
          high_price,
          price_change,
-         volume
+         volume,
+         trading_value,
+         market_cap
         )
         VALUES
         <foreach collection="prices" item="p" separator=",">
@@ -94,7 +99,9 @@
              #{p.lowPrice},
              #{p.highPrice},
              #{p.priceChange},
-             #{p.volume}
+             #{p.volume},
+             #{p.tradingValue},
+             #{p.marketCap}
             )
         </foreach> AS new_val
         ON DUPLICATE KEY UPDATE
@@ -103,7 +110,9 @@
             low_price = new_val.low_price,
             close_price = new_val.close_price,
             price_change = new_val.price_change,
-            volume = new_val.volume
+            volume = new_val.volume,
+            trading_value = new_val.trading_value,
+            market_cap = new_val.market_cap
     </insert>
     <!-- oracle -->
     <!-- 가상 테이블 생성 -->

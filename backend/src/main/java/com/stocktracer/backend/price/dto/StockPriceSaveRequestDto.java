@@ -23,7 +23,9 @@ public record StockPriceSaveRequestDto(
     @NotNull @PositiveOrZero BigDecimal lowPrice,
     @NotNull @PositiveOrZero BigDecimal highPrice,
     BigDecimal priceChange,
-    @NotNull @PositiveOrZero Long volume
+    @NotNull @PositiveOrZero Long volume,
+    @NotNull @PositiveOrZero BigDecimal tradingValue,
+    @NotNull @PositiveOrZero BigDecimal marketCap
 ){
     public StockPrice toDomain(StockInfo stock){
         return StockPrice.of(this, stock);

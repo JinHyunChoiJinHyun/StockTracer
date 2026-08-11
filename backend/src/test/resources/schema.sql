@@ -17,5 +17,7 @@ CREATE TABLE stock_price (
                              close_price  NUMBER(18),
                              price_change NUMBER(18),
                              volume       NUMBER,
+                             trading_value    NUMBER,
+                             market_cap       NUMBER,
                              PRIMARY KEY (stock_code, stock_date)
 );

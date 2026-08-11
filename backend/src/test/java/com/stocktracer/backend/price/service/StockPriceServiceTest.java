@@ -145,7 +145,9 @@ public class StockPriceServiceTest {
                 new BigDecimal("69500"),            // lowPrice
                 new BigDecimal("72500"),            // highPrice
                 new BigDecimal("2000"),             // priceChange
-                15000000L                           // volume
+                15000000L,                           // volume
+                new BigDecimal("2000"),
+                new BigDecimal("2000")
         );
         StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(requestDto));
 
@@ -168,7 +170,7 @@ public class StockPriceServiceTest {
                 "INVALID_CODE",
                 LocalDate.now(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                BigDecimal.ZERO, 0L
+                BigDecimal.ZERO, 0L,BigDecimal.ZERO, BigDecimal.ZERO
         );
         StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(invalidDto));
 //        List<StockPriceSaveRequestDto> bulkDto = List.of(invalidDto);

@@ -52,7 +52,9 @@ public class StockPriceMapperTest {
                 BigDecimal.valueOf(500),  // lowPrice
                 BigDecimal.valueOf(3000), // highPrice
                 BigDecimal.valueOf(100),  // priceChange
-                50000L // volume
+                50000L, // volume
+                BigDecimal.valueOf(100),  // tradingValue
+                BigDecimal.valueOf(100)  // marketCap
         );
 
         StockInfo info1 = new StockInfo(
@@ -78,7 +80,9 @@ public class StockPriceMapperTest {
                 BigDecimal.valueOf(600),  // lowPrice
                 BigDecimal.valueOf(3100), // highPrice
                 BigDecimal.valueOf(200),  // priceChange
-                50000L // volume
+                50000L, // volume
+                BigDecimal.valueOf(100),  // tradingValue
+                BigDecimal.valueOf(100)  // marketCap
         );
 
         StockPriceSaveRequestDto insertTargetDto2 = new StockPriceSaveRequestDto(
@@ -89,7 +93,9 @@ public class StockPriceMapperTest {
                 BigDecimal.valueOf(6500),  // lowPrice
                 BigDecimal.valueOf(8500), // highPrice
                 BigDecimal.valueOf(500),  // priceChange
-                120000L // volume
+                120000L, // volume
+                BigDecimal.valueOf(100),  // tradingValue
+                BigDecimal.valueOf(100)  // marketCap
         );
 
         List<StockPrice> dtoList = List.of(StockPrice.of(insertTargetDto1,info1), StockPrice.of(insertTargetDto2,info2));

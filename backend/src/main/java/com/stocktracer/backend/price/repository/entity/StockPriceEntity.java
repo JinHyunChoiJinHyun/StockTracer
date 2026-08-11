@@ -50,6 +50,12 @@ public class StockPriceEntity extends BaseEntity {
         @Column(name = "price_change")
         private BigDecimal priceChange;
 
+        @Column(name = "trading_value")
+        private BigDecimal tradingValue;
+
+        @Column(name = "market_cap")
+        private BigDecimal marketCap;
+
         @ManyToOne(fetch = FetchType.LAZY) // 여러 일봉 데이터들이 하나의 주식 정보 데이터를 필요하므로 사용
         // oneToMany를 Stock에 사용해 모든 일봉 데이터를 가져오는 경우는 필터링이 불가 >> 사용 용도에 맞지 않음
         // EAGER - 조회 즉시 연관 엔티티를 row마다 한번씩 조회 >> 필요없는 데이터도 조회

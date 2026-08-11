@@ -97,6 +97,13 @@ public class StockPriceServiceImpl implements StockPriceService {
         // 4. DTO -> StockPrice 도메인 객체 변환
         List<StockPrice> prices = bulkDto.prices().stream() // 가독성 좋은 for문
                 .map(dto -> StockPrice.of(dto,findStockInfo(stockInfoMap, dto.stockCode()))) // 각 dto를 StockInfo와 조합해 객체로 변환
+                .peek(stockPrice -> {
+                    System.out.println("종목코드: " + stockPrice.getStockCode() +
+                            " | 시가: " + stockPrice.getOpenPrice() +
+                            " | 종가: " + stockPrice.getClosePrice() +
+                            " | 저가: " + stockPrice.getLowPrice() +
+                            " | 고가: " + stockPrice.getHighPrice());
+                })
                 .toList();
 
         /** collect와 map의 차이 */
