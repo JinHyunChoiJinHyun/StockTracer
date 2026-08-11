@@ -1,7 +1,6 @@
 # fetcher => 수집 및 전처리
 
-import time, logging
-from datetime import datetime, timedelta
+import logging, dotenv
 
 import pandas as pd
 from pykrx import stock
@@ -17,6 +16,7 @@ logger = logging.getLogger(__name__)
 # 상위 종목 원본 데이터 수집
 def fetch_stocks() -> pd.DataFrame:
     logger.info("KRX 시장 데이터 수집 시작...")
+    dotenv.load_dotenv()
 
     # 1) KRX 상위 종목 정보 불러오기
     df_master = fdr.StockListing("KRX") # 시가총액이 큰 순으로 조회

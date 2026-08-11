@@ -26,9 +26,9 @@ def to_price_payload(df) -> list[dict]:
         "고가": "high_price",
         "저가": "low_price",
         "종가": "close_price",
+        "등락률": "price_change",
         "거래량": "volume",
         "거래대금": "trading_value",
-        "등락률": "price_change",
         "시가총액": "market_cap"
     }
 

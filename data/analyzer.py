@@ -23,8 +23,12 @@ def analyze_prices(df, date):
     df_prices = df[["티커","시가","고가","저가","종가","거래량","거래대금","등락률","시가총액"]].copy()
 
     # 2) 날짜 필드 추가
-    df_prices["날짜"] = date
+    df_prices["날짜"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
 
+    # 3) 이상치 제거
+    df_prices = df_prices[df_prices['고가'] > 0] # 고가가 0인 경우 이상치로 판단
+    df_prices = df_prices[df_prices['거래량'] > 0] # 거래 정지 가능성
+    
     return df_prices
 
 def analyze_fundamenta():
