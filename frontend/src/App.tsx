@@ -1,5 +1,7 @@
 import React, {useState} from "react"
-import StockDashboard from "./components/StockDashboard"
+import { Routes, Route } from 'react-router-dom';
+import {StockDashboard} from "./components/StockDashboard"
+import { StockDetailPage } from "./components/StockDetailPage";
 import './App.css'
 
 function App() {
@@ -9,10 +11,11 @@ function App() {
     <div style={{ backgroundColor: '#11111B', minHeight: '100vh', padding: '40px 20px', textAlign: 'center' }}>
       
       {/* 분석 결과 카드 */}
-      <main>
-        {/* <StockAnalysis stockCode={"005930"} /> */}
-        <StockDashboard />
-      </main>
+
+      <Routes>
+        <Route path="/" element={<StockDashboard />} />
+        <Route path="/stock/:id" element={<StockDetailPage />} />
+      </Routes>
     </div>
   );
 }
