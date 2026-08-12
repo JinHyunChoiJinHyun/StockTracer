@@ -88,4 +88,4 @@ def run_daily_batch():
 
 if __name__ == "__main__":
     success = run_daily_batch()
-    sys.exit(0 if success else 1) # 왜 필요하지?
+    sys.exit(0 if success else 1) # 왜 필요하지? 몰라?

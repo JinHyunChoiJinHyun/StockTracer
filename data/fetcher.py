@@ -52,7 +52,10 @@ def fetch_investor_trading_volume(date:str, market="ALL") -> pd.DataFrame:
                 logger.warning("%s %s 조회 결과가 없습니다", date, investor)
                 continue # 다른 investor 조회로 이동
 
+            # 컬럼 추가
             df["investor_type"] = investor
+            df["날짜"] = date
+            
             df_list.append(df)
             
         except Exception as e:
