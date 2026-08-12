@@ -41,7 +41,7 @@ def analyze_prices(df, date):
     if invalid_mask.any(): # True인 값이 하나라도 존재하면
         invalid_rows = df_prices[invalid_mask]
         logger.warning(f"OHLC 결측 데이터 {len(invalid_rows)}건 제거: "
-                    f"{invalid_rows[['종목코드', '날짜']].to_dict('records')}")
+                    f"{invalid_rows[['티커', '날짜']].to_dict('records')}")
 
     # 정상 row만 저장 (~: not 연산자)
     df_prices = df_prices[~invalid_mask] 
