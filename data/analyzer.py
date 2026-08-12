@@ -1,5 +1,6 @@
 # 저평가된 주식
 import os,logging
+import pandas as pd
 from dotenv import  load_dotenv
 from pykrx import stock
 
@@ -51,17 +52,28 @@ def analyze_prices(df, date):
     
     return df_prices
 
-def analyze_fundamenta():
-    # load_dotenv()
+# 외국인/기관 순매수 분석
+def analyze_investor_trading_volume(df:pd.DataFrame):
+    # 1. 피벗 생성
+    pivot_df = df.pivot_table(
+        index = ["티커", "품목명"],
+        columns="investor_type", # 값이 필드명으로 변환됨
+        values="순매수거래대금",
+        aggfunc="sum" # 여러 날짜가 들어갈 경우 데이터가 뭉개질 우려가 있어 평균이 아닌 합계 사용
+    ).reset_index()
 
-    # 1. 20260810 대신 확실히 데이터가 있는 '최근 과거 평일' 날짜를 입력하세요.
-    # 예시: 2024년 5월 20일 (월요일)
-    target_date = "20240520" 
+    # 2. 누락된 investor 컬럼 방어 및 NaN 값 0으로 처리 (컬럼이 누락될 경우 참조 오류 발생)
+    for col in ("외국인", "기관합계", "개인"):
+        if col not in pivot_df.columns:
+            pivot_df[col] = 0
+    pivot_df[["외국인", "기관합계", "개인"]] = pivot_df[["외국인", "기관합계", "개인"]].fillna(0)
 
-    # 2. 코스피 데이터 조회 (market 파라미터를 명시해 주는 것이 좋습니다)
-    df_fund = stock.get_market_fundamental(target_date, market="ALL")
-    df_cap = stock.get_market_cap(target_date, market="ALL")
+    # 3. 쌍끌이 매수 여부 (외국인 + 기관 동시 매수)
+    pivot_df["is_double_buy"] = (pivot_df["외국인"] > 0) & (pivot_df["기관합계"] > 0)
 
-    print(df_cap.head())
+    # 4. 메이저 합산 순매수 금액 (시장에 돈이 얼마나 들어왔는지)
+    pivot_df["major_net_amount"] = pivot_df["외국인"] + pivot_df["기관합계"]
 
-# 외국인/기관 순매수 top 5
+
+
+

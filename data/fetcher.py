@@ -28,7 +28,7 @@ def fetch_stocks() -> pd.DataFrame:
     return df_master
 
 # 상위 종목 일봉 데이터 수집
-def fetch_prices(date) -> pd.DataFrame:
+def fetch_prices(date: str) -> pd.DataFrame:
     logger.info("%s KRX 시장 주가 데이터 수집 시작...", date)
     try:
         df_price = stock.get_market_ohlcv_by_ticker(date, market="ALL") # 코드를 기준으로 결과 나열 (날짜는 하나로 고정)
@@ -37,6 +37,36 @@ def fetch_prices(date) -> pd.DataFrame:
         logger.warning("%s 가격 조회 실패 (휴장일 추정): %s", date, e)
         return pd.DataFrame() # 빈 df 반환
 
+# 외국인/기관 투자 데이터 수집
+def fetch_investor_trading_volume(date:str, market="ALL") -> pd.DataFrame:
+    investors = ["외국인", "기관합계", "개인"]
+    df_list = []
+
+    logger.info("%s KRX 시장 외국인/기관 투자 데이터 수집 시작...", date)
+    for investor in investors:
+        try:
+            df = stock.get_market_net_purchases_of_equities(date, date, market, investor)
+
+            # 데이터가 존재하지 않을 시
+            if df.empty:
+                logger.warning("%s %s 조회 결과가 없습니다", date, investor)
+                continue # 다른 investor 조회로 이동
+
+            df["investor_type"] = investor
+            df_list.append(df)
+            
+        except Exception as e:
+            logger.warning("%s 데이터 수집 중 오류 발생: %s", date, e)
+
+    # 모든 investor 수집 후에도 데이터가 없을 시
+    if not df_list:
+        logger.warning("%s 수집된 데이터가 없습니다.", date)
+        return pd.DataFrame()
+
+    # 데이터 병합
+    df_trading = pd.concat(df_list)
+
+    return df_trading.reset_index()
 
 
 
