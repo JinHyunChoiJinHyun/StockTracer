@@ -21,6 +21,8 @@ public class StockPrice {
     private BigDecimal highPrice;
     private BigDecimal priceChange;
     private Long volume;
+    private BigDecimal tradingValue; // 거래대금
+    private BigDecimal marketCap; // 시가총액
     private StockInfo stock;
 
     // 정적 생성 메서드 (파라미터가 두개 이상일 시 of로 생성)
@@ -35,6 +37,8 @@ public class StockPrice {
                 .highPrice(dto.highPrice())
                 .priceChange(dto.priceChange())
                 .volume(dto.volume())
+                .tradingValue(dto.tradingValue())
+                .marketCap(dto.marketCap())
                 .stock(stock)
                 .build();
 

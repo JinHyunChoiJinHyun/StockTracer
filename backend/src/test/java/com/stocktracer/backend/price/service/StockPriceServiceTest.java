@@ -1,14 +1,12 @@
 package com.stocktracer.backend.price.service;
 
 import com.stocktracer.backend.price.domain.StockPrice;
-import com.stocktracer.backend.price.dto.StockPriceBulkSaveRequestDto;
+import com.stocktracer.backend.price.dto.StockPriceSaveBulkRequestDto;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
 import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
 import com.stocktracer.backend.price.exception.InvalidDateRangeException;
-import com.stocktracer.backend.price.exception.StockPriceInvalidRangeException;
 import com.stocktracer.backend.price.exception.StockPriceNotFoundException;
 import com.stocktracer.backend.price.mapper.StockPriceMapper;
-import com.stocktracer.backend.price.service.interfaces.StockPriceService;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.exception.StockInfoNotFoundException;
@@ -22,9 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -149,9 +145,11 @@ public class StockPriceServiceTest {
                 new BigDecimal("69500"),            // lowPrice
                 new BigDecimal("72500"),            // highPrice
                 new BigDecimal("2000"),             // priceChange
-                15000000L                           // volume
+                15000000L,                           // volume
+                new BigDecimal("2000"),
+                new BigDecimal("2000")
         );
-        StockPriceBulkSaveRequestDto bulkDto = new StockPriceBulkSaveRequestDto(List.of(requestDto));
+        StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(requestDto));
 
         StockInfo mockInfo = new StockInfo("005930", "삼성전자", MarketType.KOSPI);
 
@@ -172,9 +170,9 @@ public class StockPriceServiceTest {
                 "INVALID_CODE",
                 LocalDate.now(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                BigDecimal.ZERO, 0L
+                BigDecimal.ZERO, 0L,BigDecimal.ZERO, BigDecimal.ZERO
         );
-        StockPriceBulkSaveRequestDto bulkDto = new StockPriceBulkSaveRequestDto(List.of(invalidDto));
+        StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(invalidDto));
 //        List<StockPriceSaveRequestDto> bulkDto = List.of(invalidDto);
 
         // IN 쿼리 결과가 빈 리스트일 떄

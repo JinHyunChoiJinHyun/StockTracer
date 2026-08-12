@@ -36,3 +36,5 @@ backend/build/
 # Data Pipeline
 data-pipeline/__pycache__/
 data-pipeline/.venv/
+__pycache__/
+*.pyc

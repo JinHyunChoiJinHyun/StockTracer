@@ -1,12 +1,8 @@
 package com.stocktracer.backend.price.controller;
 
-import com.stocktracer.backend.price.domain.StockPrice;
-import com.stocktracer.backend.price.dto.StockPriceBulkSaveRequestDto;
+import com.stocktracer.backend.price.dto.StockPriceSaveBulkRequestDto;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
-import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
-import com.stocktracer.backend.price.service.StockPriceServiceImpl;
 import com.stocktracer.backend.price.service.interfaces.StockPriceService;
-import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.service.interfaces.StockInfoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +32,7 @@ public class StockPriceController {
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<Void> bulkSave(@Valid @RequestBody StockPriceBulkSaveRequestDto bulkDto){
+    public ResponseEntity<Void> bulkSave(@Valid @RequestBody StockPriceSaveBulkRequestDto bulkDto){
         stockPriceService.bulkSave(bulkDto); // dto는 서비스에서 분해
         return ResponseEntity.ok().build();
     }

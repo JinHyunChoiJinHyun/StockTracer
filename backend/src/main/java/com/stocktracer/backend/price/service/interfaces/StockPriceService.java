@@ -1,7 +1,6 @@
 package com.stocktracer.backend.price.service.interfaces;
 
-import com.stocktracer.backend.price.domain.StockPrice;
-import com.stocktracer.backend.price.dto.StockPriceBulkSaveRequestDto;
+import com.stocktracer.backend.price.dto.StockPriceSaveBulkRequestDto;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
 
 import java.time.LocalDate;
@@ -13,5 +12,5 @@ public interface StockPriceService {
     List<StockPriceResponseDto> getPricesByCodeAndPeriod(String stockCode, LocalDate startDate, LocalDate endDate);
 
     // 주가 데이터 저장
-    void bulkSave(StockPriceBulkSaveRequestDto prices);
+    void bulkSave(StockPriceSaveBulkRequestDto prices);
 }
