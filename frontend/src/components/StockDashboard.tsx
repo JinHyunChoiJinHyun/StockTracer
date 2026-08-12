@@ -4,7 +4,7 @@ import {
   Search, Flame, Users, ShieldCheck, ChevronRight 
 } from 'lucide-react';
 
-export default function StockDashboard() {
+export const StockDashboard: React.FC = () => {
   // 초보자 맞춤형 용어 툴팁 상태 관리
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
