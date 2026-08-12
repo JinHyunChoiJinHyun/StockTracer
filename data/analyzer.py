@@ -26,8 +26,28 @@ def analyze_prices(df, date):
     df_prices["날짜"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
 
     # 3) 이상치 제거
-    df_prices = df_prices[df_prices['고가'] > 0] # 고가가 0인 경우 이상치로 판단
-    df_prices = df_prices[df_prices['거래량'] > 0] # 거래 정지 가능성
+    before = len(df_prices)
+    
+    # 이상치 판별 (True: 이상치, False: 정상)
+    invalid_mask = (
+        (df_prices['시가'] <= 0) |  # 시가 0인 경우 제거
+        (df_prices['고가'] <= 0) |  # 고가 0인 경우 제거
+        (df_prices['저가'] <= 0) |  # 저가 0인 경우 제거
+        (df_prices['종가'] <= 0)|  # 종가 0인 경우 제거
+        (df_prices['시가총액'] <= 0)  # 시가총액 0인 경우 제거
+     ) # 한번에 필터링하여 효율 증가
+
+    # 제거될 row log 출력
+    if invalid_mask.any(): # True인 값이 하나라도 존재하면
+        invalid_rows = df_prices[invalid_mask]
+        logger.warning(f"OHLC 결측 데이터 {len(invalid_rows)}건 제거: "
+                    f"{invalid_rows[['종목코드', '날짜']].to_dict('records')}")
+
+    # 정상 row만 저장 (~: not 연산자)
+    df_prices = df_prices[~invalid_mask] 
+
+    # 결과 log 출력
+    logger.info(f"이상치 제거: {before}건 -> {len(df_prices)}건")
     
     return df_prices
 

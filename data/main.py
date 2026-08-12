@@ -35,8 +35,8 @@ def run_stock_pipeline() -> bool:
 def run_price_pipeline() -> bool:
     logger.info("=== 주가 파이프라인 시작 ===")
 
-    # date = datetime.now().strftime("%Y%m%d")
-    date = "20260810"
+    date = datetime.now().strftime("%Y%m%d")
+    # date = "20260810"
     df = fetch_prices(date)
 
     if df is None or df.empty:
@@ -44,10 +44,15 @@ def run_price_pipeline() -> bool:
         return False
 
     analyzed_df = analyze_prices(df, date)
-    
-    payload = to_price_payload(analyzed_df)
 
-    success = post_to_backend(STOCK_PRICE_ENDPOINT, {"prices": payload})
+    # 빈 배열의 경우 전송 없이 종료 -> 다음 파이프라인 실행
+    if analyzed_df.empty:
+        logger.info("유효한 주가 데이터가 0개입니다, 주가 파이프라인 종료")
+        return False
+    
+    payload = {"prices":to_price_payload(analyzed_df)}
+
+    success = post_to_backend(STOCK_PRICE_ENDPOINT, payload)
     logger.info("=== 주가 파이프라인 종료 (성공: %s) ===", success)
 
     return success

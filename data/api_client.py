@@ -10,6 +10,7 @@ BACKEND_BASE_URL = "http://localhost:8080/api/v1/stocks"  # 실제 백엔드 주
 # 백엔드로 데이터 전송
 def post_to_backend(end_point:str, paylaod:dict, retry_count:int = 3) -> bool:
     url = BACKEND_BASE_URL + end_point
+    
     for attempt in range(1, retry_count+1):
         try:
             res = requests.post(url, json=paylaod, timeout=5)
@@ -17,12 +18,19 @@ def post_to_backend(end_point:str, paylaod:dict, retry_count:int = 3) -> bool:
             return True
         
         except requests.HTTPError as e:
+            # 클라이언트 에러인 경우 즉시 중단
             status = e.response.status_code if e.response is not None else None
             if status is not None and 400 <= status < 500: # 클라이언트 에러
                 logging.error("POST 실패 (재시도 불가)")
                 return False
+
+            # 서버 에러인 경우 재시도
             logger.warning("POST 실패 (%d번째 시도) url=%s error=%s", attempt, url, e)
+            if attempt < retry_count:
+                time.sleep(2 ** (attempt - 1))
+
         except requests.RequestException as e:
+            # 서버 에러
             logger.warning("POST 실패 (%d번째 시도) url=%s error=%s", attempt, url, e)
             if attempt < retry_count:
                 time.sleep(2 ** (attempt - 1))
