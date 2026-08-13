@@ -76,7 +76,7 @@ def fetch_prices(date: str) -> pd.DataFrame:
         return pd.DataFrame() # 빈 df 반환
 
 # 외국인/기관 투자 데이터 수집
-def fetch_investor_trading_volume(date:str, market="ALL") -> pd.DataFrame:
+def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
     investors = ["외국인", "기관합계", "개인"]
     df_list: list[pd.DataFrame] = []
 

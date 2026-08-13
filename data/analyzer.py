@@ -29,8 +29,12 @@ def build_investor_flow(df:pd.DataFrame, df_price:pd.DataFrame) -> pd.DataFrame:
     # 값 존재 여부 확인
     if df.empty:
         raise ValueError("수급 데이터가 비어 있습니다 (휴장일 여부 확인)")
-
-   
+    
+    # 하루치 날짜만 입력되었는지 확인
+    dates = df["base_date"].unique()
+    if len(dates) > 1:
+        raise ValueError(f"단일 일자만 처리합니다. 입력된 날짜: {sorted(dates)}")
+    base_date = dates[0]
     
     # 1. 피벗 생성
     pivot_df = df.pivot_table(
@@ -78,6 +82,7 @@ def build_investor_flow(df:pd.DataFrame, df_price:pd.DataFrame) -> pd.DataFrame:
 
     # 컬럼명 바꾸기
     pivot_df = pivot_df.rename(columns={"티커": "stock_code", "거래대금": "trading_value"})
+    pivot_df["base_date"] = base_date
 
     return pivot_df[["stock_code", "base_date", "foreign_net",
                      "institution_net", "individual_net", "trading_value"]]
@@ -85,17 +90,14 @@ def build_investor_flow(df:pd.DataFrame, df_price:pd.DataFrame) -> pd.DataFrame:
 # 외국인/기관 순매수 분석
 def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
 
-     # 하루치 날짜만 입력되었는지 확인
-    dates = df["base_date"].unique()
-    if len(dates) > 1:
-        raise ValueError(f"단일 일자만 처리합니다. 입력된 날짜: {sorted(dates)}")
-    base_date = dates[0]
-
     # 유동성 필터 (거래대금이 너무 작으면 수급 해석 자체가 무의미)
     before = len(flow_df)
     MIN_TRADING_VALUE = 5e8 # 거래대금 5억 미만 종목은 유동성 부족
     df = flow_df[flow_df["거래대금"] >= MIN_TRADING_VALUE].copy() # 결측치 자동 제외
     logger.info("유동성 필터로 %d개 제외 (잔여 %d개)", before - len(df), len(df))
+
+    if df.empty:
+        return df
     
     # 파생 지표 분석
     # 메이저 합산 순매수 금액 (시장에 돈이 얼마나 들어왔는지)
@@ -123,12 +125,11 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
     df["institution_net_eok"] = _to_eok(df["institution_net"])
     df["individual_net_eok"] = _to_eok(df["individual_net"])
     df["major_net_eok"] = _to_eok(df["major_net"])
-    df["reason"] = df.apply(_build_reason, axis=1) if len(df) else pd.Series(dtype="object") # df에 값이 있으면 apply로 한줄씩 함수에 입력 / 없으면 빈 series 반환 -> 빈 df로 인한 ValueError 방지
-    df["base_date"] = base_date # df에 있지 않나?
+    df["reason"] = df.apply(_build_reason, axis=1) # df에 값이 있으면 apply로 한줄씩 함수에 입력 / 행이 하나라도 있으면 오류 반환 x
 
-    final_df = flow_df.drop(columns=["foreign_net", "institution_net", "individual_net", "major_net"])
+    final_df = df.drop(columns=["foreign_net", "institution_net", "individual_net", "major_net"])
 
-    logger.info("%s 수급 분석 완료", base_date)
+    logger.info("%s 수급 분석 완료", df["base_date"])
 
     return final_df
 
