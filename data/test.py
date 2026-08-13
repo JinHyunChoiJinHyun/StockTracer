@@ -5,5 +5,5 @@ import FinanceDataReader as fdr
 load_dotenv()
 
 df_price = stock.get_market_net_purchases_of_equities("20260810", "20260810", "ALL", "기관합계") 
-df= stock.get_market_ohlcv("20260810") 
-print(df.head())
+df= stock.get_market_ohlcv_by_ticker("20260810") 
+print(df_price.head())
