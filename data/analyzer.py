@@ -117,21 +117,15 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
         np.nan # false일 시 nan으로 대체
     )
 
-    # 3. 점수화
+    # 점수화
     df["score"] = _calculate_score(df)
 
-    # 4. 프론트 표시용 필드
-    df["foreign_net_eok"] = _to_eok(df["foreign_net"])
-    df["institution_net_eok"] = _to_eok(df["institution_net"])
-    df["individual_net_eok"] = _to_eok(df["individual_net"])
-    df["major_net_eok"] = _to_eok(df["major_net"])
+    # 근거 입력
     df["reason"] = df.apply(_build_reason, axis=1) # df에 값이 있으면 apply로 한줄씩 함수에 입력 / 행이 하나라도 있으면 오류 반환 x
-
-    final_df = df.drop(columns=["foreign_net", "institution_net", "individual_net", "major_net"])
 
     logger.info("%s 수급 분석 완료", df["base_date"])
 
-    return final_df
+    return df
 
 
 # 순매수 점수 계산
@@ -158,14 +152,8 @@ def _calculate_score(df:pd.DataFrame) -> pd.Series:
 
     return (amount_score + ratio_score + combo_score).round().clip(0,100).astype(int) # clip -> 범위 내에서 숫자 반환
 
-# 프론트 표기 
-EOK = 1e8 
-
-# 단위 매핑 (원 -> 억원)
-def _to_eok(series:pd.Series) -> pd.Series:
-    return (series / EOK ).round(1)
-
 # 근거
+EOK = 1e8 
 def _build_reason(row: pd.Series) -> str:
     """프론트에 그대로 노출되는 한 줄 근거. 초보자 기준으로 용어를 풀어 쓴다."""
     foreign = row["foreign_net"] / EOK

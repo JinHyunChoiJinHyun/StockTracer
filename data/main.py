@@ -1,4 +1,5 @@
 import logging, time, sys
+import numpy as np
 from datetime import datetime
 
 from fetcher import fetch_prices, fetch_stocks, fetch_investor_flow
@@ -20,73 +21,7 @@ STOCK_PRICE_ENDPOINT = "/prices/bulk"
 STOCK_INVESTOR_FLOW_DAILY_ENDPOINT = "/investor-flow/daily"
 STOCK_INVESTOR_FLOW_RANK_ENDPOINT = "/investor-flow/rank"
 
-def run_stock_pipeline() -> bool:
-    logger.info("=== 종목 파이프라인 시작 ===")
-
-    df = fetch_stocks()
-    if df is None or df.empty:
-        logger.error("종목 목록 조회 실패, 파이프라인 중단")
-        return False
-
-    payload = to_stock_payload(df)
-
-    success = post_to_backend(STOCK_INFO_ENDPOINT, payload)
-    logger.info("=== 종목 파이프라인 종료 (성공: %s) ===", success)
-
-    return success
-
-def run_price_pipeline(date:str) -> bool:
-    logger.info("=== 주가 파이프라인 시작 ===")
-
-    df = fetch_prices(date)
-
-    if df is None or df.empty:
-        logger.error("주가 목록 조회 실패, 파이프라인 중단")
-        return False
-    
-    payload = {"prices":to_price_payload(df)}
-
-    success = post_to_backend(STOCK_PRICE_ENDPOINT, payload)
-    logger.info("=== 주가 파이프라인 종료 (성공: %s) ===", success)
-
-    return success
-
-def run_investor_flow(date:str) -> bool:
-    logger.info("=== 투자자별 순매수 거래 파이프라인 시작 ===")
-    try:
-        df = fetch_investor_flow(date)
-        price_df = fetch_prices(date)
-        # 수정 필요
-        if df is None or df.empty:
-                logger.error("투자자별 순매수 거래 목록 조회 실패, 파이프라인 중단")
-                return False
-        
-        if price_df is None or price_df.empty:
-                logger.error("주가 목록 조회 실패, 파이프라인 중단")
-                return False
-
-        flow_df = build_investor_flow(df,price_df)
-
-        validate_df(flow_df,"투자자별 순매수 거래 조회")
-
-        rank_df = analyze_investor_flow(flow_df)
-
-        if rank_df is None or rank_df.empty:
-                logger.error("투자자별 순매수 거래 분석 실패, 파이프라인 중단")
-                return False
-            
-
-        success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,flow_df)
-        success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,rank_df)
-        logger.info("=== 투자자별 순매수 거래 파이프라인 종료 (성공: %s) ===", success_daily and success_rank)
-
-        return success_daily and success_rank
-    except Exception as e:
-        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
-        return False
-
-    
-
+# 유틸
 def _run_pipeline(name:str, fn: Callable[[], bool]) -> bool:
     try:
         if fn():
@@ -96,11 +31,75 @@ def _run_pipeline(name:str, fn: Callable[[], bool]) -> bool:
 
     return False
 
+# 값 검증 실패 시
 def validate_df(df, name:str) -> bool:
     if df is None or df.empty:
             logger.error("%s 실패, 파이프라인 중단", name)
             raise ValueError(f"{name} 데이터가 비어 있습니다.")
+
+# 파이프라인
+def run_stock_pipeline() -> bool:
+    logger.info("=== 종목 파이프라인 시작 ===")
+    try:
+
+        df = fetch_stocks()
+        validate_df(df,"종목 목록 조회")
+
+        payload = to_stock_payload(df)
+
+        success = post_to_backend(STOCK_INFO_ENDPOINT, payload)
+        logger.info("=== 종목 파이프라인 종료 (성공: %s) ===", success)
+
+        return success
+    except Exception as e:
+        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
+        return False
+
+
+def run_price_pipeline(date:str) -> bool:
+    logger.info("=== 주가 파이프라인 시작 ===")
+    try:
+        df = fetch_prices(date)
+        validate_df(df,"주가 목록 조회")        
+        
+        payload = {"items":to_price_payload(df)}
+
+        success = post_to_backend(STOCK_PRICE_ENDPOINT, payload)
+        logger.info("=== 주가 파이프라인 종료 (성공: %s) ===", success)
     
+        return success
+    except Exception as e:
+        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
+        return False
+
+def run_investor_flow(date:str) -> bool:
+    logger.info("=== 투자자별 순매수 거래 파이프라인 시작 ===")
+    try:
+        df = fetch_investor_flow(date)
+        validate_df(df,"투자자별 순매수 거래 목록 조회")
+
+        price_df = fetch_prices(date)
+        validate_df(price_df,"주가 목록 목록 조회")
+
+        flow_df = build_investor_flow(df,price_df)
+        validate_df(flow_df,"투자자별 순매수 거래 조회")
+        flow_payload = {"items": flow_df.replace({np.nan: None})}
+
+        rank_df = analyze_investor_flow(flow_df)
+        validate_df(rank_df,"투자자별 순매수 거래 분석")    
+
+        success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,flow_payload) # nan은 json이 인식하지 못하므로 none으로 치환
+        success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,rank_df)
+
+        is_success = success_daily and success_rank
+        logger.info("=== 투자자별 순매수 거래 파이프라인 종료 (성공: %s) ===", is_success)
+
+        return is_success
+    except Exception as e:
+        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
+        return False
+
+# 통합 파이프라인
 def run_daily_batch() -> bool:
     start = time.time()
     logger.info("=== 일일 배치 작업 시작 ===")
