@@ -114,37 +114,4 @@
             trading_value = new_val.trading_value,
             market_cap = new_val.market_cap
     </insert>
-    <!-- oracle -->
-    <!-- 가상 테이블 생성 -->
-    <!--
-    <insert id="bulkUpsert">
-        MERGE INTO stock_price target
-        USING (
-            <foreach collection="prices" item="p" separator=" UNION ALL ">
-                SELECT
-                    cast(#{p.stockCode} as varchar) AS stock_code,
-                    cast(#{p.stockDate} as date) AS stock_date,
-                    cast(#{p.openPrice} as NUMBER) AS open_price,
-                    cast(#{p.closePrice} as NUMBER) AS close_price,
-                    cast(#{p.lowPrice} as NUMBER) AS low_price,
-                    cast(#{p.highPrice} as NUMBER) AS high_price,
-                    cast(#{p.priceChange} as NUMBER) AS price_change,
-                    cast(#{p.volume} as NUMBER) AS volume
-                FROM DUAL
-            </foreach>
-            ) src
-        ON (target.stock_code = src.stock_code AND target.stock_date = src.stock_date)
-        WHEN MATCHED THEN
-            UPDATE SET
-                target.open_price = src.open_price,
-                target.close_price = src.close_price,
-                target.low_price = src.low_price,
-                target.high_price = src.high_price,
-                target.price_change = src.price_change,
-                target.volume = src.volume
-        WHEN NOT MATCHED THEN
-            INSERT (stock_code, stock_date, open_price, close_price, low_price, high_price,price_change, volume)
-            VALUES (src.stock_code, src.stock_date, src.open_price, src.close_price, src.low_price, src.high_price, src.price_change, src.volume)
-    </insert>
-    -->
 </mapper>

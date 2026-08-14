@@ -8,6 +8,7 @@ import com.stocktracer.backend.price.exception.DuplicateStockPriceException;
 import com.stocktracer.backend.price.exception.InvalidDateRangeException;
 import com.stocktracer.backend.price.exception.StockPriceNotFoundException;
 import com.stocktracer.backend.price.mapper.StockPriceMapper;
+import com.stocktracer.backend.price.repository.interfaces.StockPriceRepository;
 import com.stocktracer.backend.price.service.interfaces.StockPriceService;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.exception.StockInfoNotFoundException;
@@ -20,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -27,7 +30,7 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class StockPriceServiceImpl implements StockPriceService {
 
-    private final StockPriceMapper stockPriceMapper;
+    private final StockPriceRepository stockPriceRepository;
     private final StockInfoRepository stockInfoRepository;
 
     /**
@@ -55,7 +58,7 @@ public class StockPriceServiceImpl implements StockPriceService {
             throw new InvalidDateRangeException(startDate, endDate);
         }
         /** 2. mybatis로 조회 */
-        List<StockPriceResponseDto> priceList = stockPriceMapper.findPricesByCodeAndPeriod(normalizedStockCode,startDate,endDate);
+        List<StockPriceResponseDto> priceList = stockPriceRepository.findPricesByCodeAndPeriod(normalizedStockCode,startDate,endDate);
 
         /** 3. 조회 결과 없는 경우 예외 처리 */
         if(priceList.isEmpty()){
@@ -73,32 +76,30 @@ public class StockPriceServiceImpl implements StockPriceService {
     @Override
     public void bulkSave(StockPriceSaveBulkRequestDto bulkDto) {
 
-        // 1. stockCode 분해
-        List<String> stockCodes = bulkDto.prices().stream()
+        // 1. stockCode 분해 컨트롤러에서 잘라서 받자
+        List<String> stockCodes = bulkDto.items().stream()
                 .map(StockPriceSaveRequestDto::stockCode)
                 .distinct()
                 .toList();
 
         // 2. db 호출 전 중복 발견 시 거부 처리
-        validateNoDuplicationKeys(bulkDto.prices());
+        validateNoDuplicationKeys(bulkDto.items());
 
         // 3. IN 쿼리로 StockInfo 일괄 조회 (jpa가 fk에 값을 넣을 시 객체를 통해 간접적으로 입력하므로 객체 조회 필요)
         // in 쿼리로 한번에 조회하여 네트워크 낭비 방지
-        // db 부하를 막기 위해 배치 처리
-        Map<String, StockInfo> stockInfoMap = new HashMap<>(stockCodes.size()); // 오버헤드 방지
-        List<List<String>> codeBatches = ListUtils.partition(stockCodes, 1000);
-        for(List<String> codeBatch : codeBatches){ // 바깥 루프: 배치 개수(N/1000)번 순회 // 안쪽: 배치 크기(최대 1000)만큼 순회
-            stockInfoRepository.findAllByStockCodeIn(codeBatch)
-                    .forEach(stockInfo -> stockInfoMap.put(stockInfo.getStockCode(),stockInfo)); // 위에서 distinct로 중복체크 했으므로 putIfAbsent 대신 put 사용
-        }
-        /** for문 내부에 foreach 효율이 괜찮은가? */
-        // 다른 이중 FOR문과는 다르게 1000건 처리 후 다음 건(예: 1001번째)으로 넘어가기 때문에 중첩되지 않음 -> O(N)으로 해결
+        List<StockInfo> stockInfos = stockInfoRepository.findAllByStockCodeIn(stockCodes);
 
         // 4. DTO -> StockPrice 도메인 객체 변환
-        List<StockPrice> prices = bulkDto.prices().stream() // 가독성 좋은 for문
-                .map(dto -> StockPrice.of(dto,findStockInfo(stockInfoMap, dto.stockCode()))) // 각 dto를 StockInfo와 조합해 객체로 변환
-                .peek(stockPrice -> {
-                    System.out.println("종목코드: " + stockPrice.getStockCode() +
+        // 코드 바탕으로 info 객체를 담은 맵 생성
+        Map<String, StockInfo> stockInfoMap = stockInfos.stream()
+                .collect((Collectors.toMap(StockInfo::getStockCode, Function.identity())));
+
+        // 각 dto의 code와 일치하는 StockInfo와 조합해 객체로 변환
+        List<StockPrice> prices = bulkDto.items().stream() // 가독성 좋은 for문
+                .map(dto -> StockPrice.of(dto,findStockInfo(stockInfoMap, dto.stockCode())))
+                .peek(stockPrice -> { // 값 제대로 입력 됐는지 확인
+                    System.out.println(
+                            "종목코드: " + stockPrice.getStockCode() +
                             " | 시가: " + stockPrice.getOpenPrice() +
                             " | 종가: " + stockPrice.getClosePrice() +
                             " | 저가: " + stockPrice.getLowPrice() +
@@ -110,11 +111,8 @@ public class StockPriceServiceImpl implements StockPriceService {
         // map => 각 객체마다 수행해야 하는 로직이 필요할 시
         // collect => map 사용 여부와 관계없이 map이나 list를 최종 포장할 시 (list는 toList로 대체 사용 가능하나 map은 collect 필수)
 
-        // 5. 1000개 단위로 분할하여 한 묶음씩 저장
-        List<List<StockPrice>> batches = ListUtils.partition(prices, 1000); // 1000개 단위로 분할
-        for(List<StockPrice> batch : batches){
-            stockPriceMapper.bulkUpsert(batch);
-        }
+        // 저장
+        stockPriceRepository.bulkUpsert(prices);
     }
 
     // StockInfo 객체 조회
@@ -123,7 +121,7 @@ public class StockPriceServiceImpl implements StockPriceService {
                 .orElseThrow(() -> new StockInfoNotFoundException(stockCode));
     }
 
-    // 중복 확인 로직
+    // 중복 검증 로직
     private void validateNoDuplicationKeys(List<StockPriceSaveRequestDto> prices){
         Set<String> seen = new HashSet<>();
         for (StockPriceSaveRequestDto price : prices){

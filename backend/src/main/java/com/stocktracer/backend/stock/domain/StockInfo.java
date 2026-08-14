@@ -30,8 +30,8 @@ public class StockInfo {
     }
 
     /** 비즈니스 메서드 */
-    // 유일한 생성 지점 -> 무조건 검증 후 로직 실행
-    public static StockInfo create(String stockCode, String stockName, MarketType market){
+    // 유일한 생성 지점 -> 외부에서 new를 막고 무조건 검증 후 객체 생성
+    public static StockInfo create(String stockCode, String stockName, MarketType market){ // 도메인 객체의 성격에 따라 of로 대체 가능
         validate(stockCode, stockName);
         return new StockInfo(stockCode, stockName, market);
     }

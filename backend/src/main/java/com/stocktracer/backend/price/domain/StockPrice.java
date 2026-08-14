@@ -28,7 +28,8 @@ public class StockPrice {
     // 정적 생성 메서드 (파라미터가 두개 이상일 시 of로 생성)
     // >> 필드 수가 많으므로 builder를 생성 지점으로 사용
     public static StockPrice of(StockPriceSaveRequestDto dto, StockInfo stock){
-        StockPrice stockPrice = StockPrice.builder()
+        validatePriceConsistency(dto);
+        return StockPrice.builder()
                 .stockCode(dto.stockCode())
                 .stockDate(dto.stockDate())
                 .openPrice(dto.openPrice())
@@ -41,22 +42,18 @@ public class StockPrice {
                 .marketCap(dto.marketCap())
                 .stock(stock)
                 .build();
-
-        // 생성 직후 검증 로직 실행
-        stockPrice.validatePriceConsistency();
-        return stockPrice;
     }
 
     /** 도메인 검증 로직 */
-    public void validatePriceConsistency(){
-        if(closePrice.compareTo(highPrice) > 0 || closePrice.compareTo(lowPrice) < 0){ // compareTo = 높으면 1 낮으면 -1 반환
-            throw new StockPriceInvalidRangeException(closePrice,highPrice,lowPrice);
+    private static void validatePriceConsistency(StockPriceSaveRequestDto dto){
+        if(dto.closePrice().compareTo(dto.highPrice()) > 0 || dto.closePrice().compareTo(dto.lowPrice()) < 0){ // compareTo = 높으면 1 낮으면 -1 반환
+            throw new StockPriceInvalidRangeException(dto.closePrice(),dto.highPrice(),dto.lowPrice());
         }
-        if(openPrice.compareTo(highPrice) > 0 || openPrice.compareTo(lowPrice) < 0){
-            throw new StockPriceInvalidRangeException(openPrice, highPrice,lowPrice);
+        if(dto.openPrice().compareTo(dto.highPrice()) > 0 || dto.openPrice().compareTo(dto.lowPrice()) < 0){
+            throw new StockPriceInvalidRangeException(dto.openPrice(), dto.highPrice(),dto.lowPrice());
         }
-        if(highPrice.compareTo(lowPrice)<0){
-            throw new StockPriceInvalidRangeException(highPrice,lowPrice);
+        if(dto.highPrice().compareTo(dto.lowPrice())<0){
+            throw new StockPriceInvalidRangeException(dto.highPrice(),dto.lowPrice());
         }
     }
 }

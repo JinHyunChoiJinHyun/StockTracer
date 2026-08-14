@@ -13,7 +13,7 @@ import java.util.List;
 @Mapper
 public interface StockPriceMapper {
 
-    // 1. 특정 종목의 기간별 주가 목록 조회
+    // 1. 특정 종목의 기간별 주가 목록 조회 추후 객체만 반환하도록 수정
     List<StockPriceResponseDto> findPricesByCodeAndPeriod(
             @Param("stockCode") String stockCode,
             @Param("startDate") LocalDate startDate,
