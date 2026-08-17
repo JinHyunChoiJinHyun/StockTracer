@@ -93,7 +93,7 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
     # 유동성 필터 (거래대금이 너무 작으면 수급 해석 자체가 무의미)
     before = len(flow_df)
     MIN_TRADING_VALUE = 5e8 # 거래대금 5억 미만 종목은 유동성 부족
-    df = flow_df[flow_df["거래대금"] >= MIN_TRADING_VALUE].copy() # 결측치 자동 제외
+    df = flow_df[flow_df["trading_value"] >= MIN_TRADING_VALUE].copy() # 결측치 자동 제외
     logger.info("유동성 필터로 %d개 제외 (잔여 %d개)", before - len(df), len(df))
 
     if df.empty:
@@ -123,9 +123,19 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
     # 근거 입력
     df["reason"] = df.apply(_build_reason, axis=1) # df에 값이 있으면 apply로 한줄씩 함수에 입력 / 행이 하나라도 있으면 오류 반환 x
 
-    logger.info("%s 수급 분석 완료", df["base_date"])
+    logger.info("%s 수급 분석 완료", df["base_date"].iloc[0])
 
-    return df
+    PAYLOAD_COLS = [
+        "stock_code", 
+        "base_date", 
+        "net_ratio", 
+        "score",
+        "is_double_buy", 
+        "is_clean_buy", 
+        "reason"
+        ]
+
+    return df[PAYLOAD_COLS]
 
 
 # 순매수 점수 계산
