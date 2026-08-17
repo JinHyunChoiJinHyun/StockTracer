@@ -4,8 +4,6 @@ import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.dto.StockInfoDto;
 import com.stocktracer.backend.stock.exception.StockInfoNotFoundException;
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
-import com.stocktracer.backend.stock.repository.interfaces.StockInfoJpaRepository;
 import com.stocktracer.backend.stock.repository.interfaces.StockInfoRepository;
 import com.stocktracer.backend.stock.service.interfaces.StockInfoService;
 import lombok.RequiredArgsConstructor;

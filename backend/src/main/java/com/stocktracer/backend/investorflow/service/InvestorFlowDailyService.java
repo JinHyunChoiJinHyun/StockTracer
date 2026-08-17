@@ -28,6 +28,7 @@ public class InvestorFlowDailyService {
     @Transactional
     public int save(List<InvestorFlowDailyRequestDto> dtos){
         // 1. 입력값 검증
+        if (dtos.isEmpty()) return 0; // 휴장일 빈 리스트 입력 가능성 방지
         validateSingleBaseDate(dtos);
         validateNoDuplicateKey(dtos);
 
@@ -45,6 +46,14 @@ public class InvestorFlowDailyService {
         // 3. dto -> InvestorFlowDaily로 변환
         Map<String, StockInfo> stockInfoMap = stockInfos.stream()
                 .collect(Collectors.toMap(StockInfo::getStockCode, Function.identity()));
+
+        // 누락 종목 처리 (해결법 논의 필요)
+        List<String> missing = stockCodes.stream()
+                .filter(code -> !stockInfoMap.containsKey(code))
+                .toList();
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException("stock_info 미등록 종목: " + missing);
+        }
 
         List<InvestorFlowDaily> flows = dtos.stream()
                 .map(dto -> InvestorFlowDaily.of(dto,findStockInfo(stockInfoMap, dto.stockCode())))

@@ -1,6 +1,6 @@
 package com.stocktracer.backend.stock.domain;
 
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
+import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

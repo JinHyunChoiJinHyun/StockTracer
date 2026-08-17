@@ -1,7 +1,7 @@
 package com.stocktracer.backend.stock.repository;
 
 import com.stocktracer.backend.stock.domain.StockInfo;
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
+import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
 import com.stocktracer.backend.stock.repository.interfaces.StockInfoJpaRepository;
 import com.stocktracer.backend.stock.repository.interfaces.StockInfoRepository;
 import lombok.RequiredArgsConstructor;

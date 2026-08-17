@@ -16,6 +16,10 @@ public class InvestorFlowDaily {
     private final long institutionNet; // null 불가
     private final long individualNet; // null 불가
     private final Long tradingValue; // null 허용
+    public Long majorNet() {
+        return foreignNet + institutionNet;
+    }
+
     private StockInfo stock;
 
     public static InvestorFlowDaily of(InvestorFlowDailyRequestDto dto, StockInfo stock){

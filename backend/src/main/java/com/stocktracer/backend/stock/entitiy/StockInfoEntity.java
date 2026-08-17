@@ -1,4 +1,4 @@
-package com.stocktracer.backend.stock.repository.entitiy;
+package com.stocktracer.backend.stock.entitiy;
 
 import com.stocktracer.backend.common.entity.BaseEntity;
 import com.stocktracer.backend.stock.domain.MarketType;

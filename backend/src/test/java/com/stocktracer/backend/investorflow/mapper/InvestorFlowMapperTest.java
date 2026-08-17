@@ -1,8 +1,7 @@
-package com.stocktracer.backend.investorflow;
+package com.stocktracer.backend.investorflow.mapper;
 
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import com.stocktracer.backend.investorflow.dto.InvestorFlowDailyRequestDto;
-import com.stocktracer.backend.investorflow.mapper.InvestorFlowDailyMapper;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +14,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 

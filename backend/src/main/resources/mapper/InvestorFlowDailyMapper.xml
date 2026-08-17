@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stocktracer.backend.investorflow.mapper.InvestorFlowDailyMapper">
     <!-- 1. 투자자별 순매도액 대량 저장 -->
-    <insert id="bulkUpsert" parameterType="java.util.List">
+    <insert id="bulkUpsert">
         INSERT INTO investor_flow_daily (
             stock_code,
             base_date,
@@ -20,7 +20,7 @@
                 #{f.foreignNet},
                 #{f.institutionNet},
                 #{f.individualNet},
-                #{f.tradingValue, jdbcType=BIGINT}, <!-- jdbcType=BIGINT 타입을 알려주고 null 입력 될 시 null 처리 -->
+                #{f.tradingValue, jdbcType=BIGINT} <!-- jdbcType=BIGINT 타입을 알려주고 null 입력 될 시 null 처리 -->
             )
         </foreach> AS new
         ON DUPLICATE KEY UPDATE
