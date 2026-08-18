@@ -39,7 +39,7 @@ public class InvestorFlowDailyEntity extends BaseEntity {
     private Long tradingValue;
 
     public InvestorFlowDaily toDomain(){
-        return InvestorFlowDaily.of(
+        return InvestorFlowDaily.of( // 검증을 위해 builder가 아닌 of 사용
                 stockCode,
                 baseDate,
                 foreignNet,

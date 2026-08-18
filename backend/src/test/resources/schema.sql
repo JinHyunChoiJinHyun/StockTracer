@@ -7,13 +7,15 @@ DROP TABLE IF EXISTS stock_info;
 CREATE TABLE stock_info (
     stock_code  VARCHAR(20) PRIMARY KEY, -- 종목 코드 (예: 005930)
     stock_name  VARCHAR(50) NOT NULL,    -- 종목 이름 (예: 삼성전자)
-    market      VARCHAR(20)              -- 시장 구분 (예: KOSPI, KOSDAQ)
-);
+    market      VARCHAR(20) NOT NULL,    -- 시장 구분 (예: KOSPI, KOSDAQ)
+    created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. 주가 정보 테이블
 CREATE TABLE stock_price (
      stock_code    VARCHAR(20)  NOT NULL,
-     stock_date    DATE         NOT NULL,
+     price_date    DATE         NOT NULL,
      open_price    BIGINT,                -- NUMBER(18) -> BIGINT로 변경
      high_price    BIGINT,
      low_price     BIGINT,
@@ -22,7 +24,9 @@ CREATE TABLE stock_price (
      volume        BIGINT,                -- NUMBER -> BIGINT로 변경
      trading_value BIGINT,
      market_cap    BIGINT,
-     PRIMARY KEY (stock_code, stock_date)
+     created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+     updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     PRIMARY KEY (stock_code, price_date)
 );
 
 -- 3. 일별 투자자 수급 테이블
