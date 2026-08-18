@@ -1,18 +1,23 @@
 package com.stocktracer.backend.investorflow.entity;
 
+import com.stocktracer.backend.common.entity.BaseEntity;
+import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
+import com.stocktracer.backend.stock.domain.StockInfo;
+import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-// setter를 두지 않아 더티 체킹으로 update가 발생하는 경로 원천 차단
+// 원본 KRX 사실 데이터 - 수정 메서드를 두지 않아 불변으로 취급.
+// 적재는 MyBatis bulkUpsert가 담당하며 JPA는 조회 전용으로만 사용한다.
 @Entity
 @Table(name = "investor_flow_daily")
 @IdClass(InvestorFlowDailyId.class)
 @Getter
 @NoArgsConstructor
-public class InvestorFlowDailyEntity {
+public class InvestorFlowDailyEntity extends BaseEntity {
     @Id
     @Column(name = "stock_code", length = 6, nullable = false)
     private String stockCode;
@@ -33,6 +38,16 @@ public class InvestorFlowDailyEntity {
     @Column(name = "trading_value")
     private Long tradingValue;
 
-    @Column(name = "major_net", insertable = false, updatable = false)
-    private Long majorNet;
+    public InvestorFlowDaily toDomain(){
+        return InvestorFlowDaily.of(
+                stockCode,
+                baseDate,
+                foreignNet,
+                institutionNet,
+                individualNet,
+                tradingValue
+        );
+    }
+
+    // 도메인 -> 엔티티 변환 경로가 필요할 때 from 추가 (현재는 myBatis가 적재하므로 불필요)
 }

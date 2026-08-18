@@ -1,11 +1,10 @@
 package com.stocktracer.backend.investorflow.controller;
 
-import com.stocktracer.backend.investorflow.dto.InvestorFlowDailyBulkRequestDto;
+import com.stocktracer.backend.investorflow.dto.InvestorFlowBulkRequestDto;
 import com.stocktracer.backend.investorflow.service.InvestorFlowDailyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,7 +22,7 @@ public class InvestorFlowDailyController {
 
     @PostMapping("/daily")
     public ResponseEntity<Map<String, Object>> save(
-            @Valid @RequestBody InvestorFlowDailyBulkRequestDto bulkDto
+            @Valid @RequestBody InvestorFlowBulkRequestDto bulkDto
     ){
         int affected = investorFlowDailyService.save(bulkDto.items());
 

@@ -187,7 +187,7 @@ public class StockPriceServiceTest {
     private StockPrice createStockPrice(String stockCode, String open, String high, String low, String close){
         return StockPrice.builder()
                 .stockCode(stockCode)
-                .stockDate(LocalDate.of(2026, 8, 6))
+                .priceDate(LocalDate.of(2026, 8, 6))
                 .openPrice(new BigDecimal(open))
                 .highPrice(new BigDecimal(high))
                 .lowPrice(new BigDecimal(low))

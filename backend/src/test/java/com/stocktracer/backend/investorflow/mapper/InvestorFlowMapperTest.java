@@ -38,30 +38,23 @@ public class InvestorFlowMapperTest {
 
     @Test
     void 빈_테이블에_신규_INSERT된다(){
-        StockInfo samsungStock = new StockInfo("005930", "삼성전자", MarketType.KOSPI); // 가정된 생성자
 
-        InvestorFlowDailyRequestDto samsungDto = new InvestorFlowDailyRequestDto(
-                "005930",
-                LocalDate.of(2026, 8, 16),
-                150000000L,
-                -50000000L,
-                -100000000L,
-                500000000L
-        );
-
-        StockInfo skStock = new StockInfo("000660", "SK하이닉스",MarketType.KOSPI);
-
-        InvestorFlowDailyRequestDto skDto = new InvestorFlowDailyRequestDto(
-                "000660",
-                LocalDate.of(2026, 8, 16),
-                150000000L,
-                -50000000L,
-                -100000000L,
-                500000000L
-        );
         List<InvestorFlowDaily> flows = List.of(
-                InvestorFlowDaily.of(samsungDto,samsungStock),
-                InvestorFlowDaily.of(skDto,skStock)
+                InvestorFlowDaily.of(
+                        "005930",
+                        LocalDate.of(2026, 8, 16),
+                        150000000L,
+                        -50000000L,
+                        -100000000L,
+                        500000000L),
+
+                InvestorFlowDaily.of(
+                        "000660",
+                        LocalDate.of(2026, 8, 16),
+                        150000000L,
+                        -50000000L,
+                        -100000000L,
+                        500000000L)
         );
 
         mapper.bulkUpsert(flows);
@@ -85,15 +78,23 @@ public class InvestorFlowMapperTest {
 
         StockInfo samsungStock = new StockInfo("005930", "삼성전자", MarketType.KOSPI); // 가정된 생성자
 
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(samsungDto, samsungStock)));
+        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+                "005930",
+                LocalDate.of(2026, 8, 16),
+                150000000L,
+                -50000000L,
+                -100000000L,
+                500000000L
+        )));
 
-        InvestorFlowDailyRequestDto updatedDto = InvestorFlowDailyRequestDto.builder()
-                        .stockCode("005930").baseDate(LocalDate.of(2026,8,16))
-                        .foreignNet(250000000L).institutionNet(-50000000L)
-                        .individualNet(-100000000L).tradingValue(500000000L)
-                        .build();
-
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(updatedDto,samsungStock)));
+        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+                "005930",
+                LocalDate.of(2026, 8, 16),
+                250000000L,
+                -50000000L,
+                -100000000L,
+                500000000L
+        )));
 
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM investor_flow_daily", Integer.class
@@ -110,19 +111,15 @@ public class InvestorFlowMapperTest {
 
     @Test
     void tradingValue가_null이어도_저장(){
-        InvestorFlowDailyRequestDto dto = InvestorFlowDailyRequestDto.builder()
-                .stockCode("005930").baseDate(LocalDate.of(2026,8,16))
-                .foreignNet(250000000L).institutionNet(-50000000L)
-                .individualNet(-100000000L).tradingValue(null)
-                .build();
 
-        StockInfo info = StockInfo.builder()
-                .stockCode("005930")
-                .stockName("삼성전자")
-                .market(MarketType.KOSPI)
-                .build();
-
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(dto,info)));
+        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+                "005930",
+                LocalDate.of(2026, 8, 16),
+                250000000L,
+                -50000000L,
+                -100000000L,
+                null
+        )));
 
         Long value = jdbc.queryForObject(
                 "SELECT trading_value FROM investor_flow_daily WHERE stock_code = '005930'",

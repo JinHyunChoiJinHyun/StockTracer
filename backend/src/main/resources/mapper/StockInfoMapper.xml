@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.stock.mapper.StockInfoMapper">
+    <!-- 1. 투자자별 순매도액 대량 저장 -->
+    <insert id="bulkUpsert">
+        INSERT INTO stock_info (
+        stock_code,
+        stock_name,
+        market
+        )
+        VALUES
+        <foreach collection="infos" item="i" separator=",">
+            (
+            #{i.stockCode},
+            #{i.stockName},
+            #{i.market}
+            )
+        </foreach> AS new
+        ON DUPLICATE KEY UPDATE
+            stock_name = new.stock_name,
+            market = new.market
+    </insert>
+</mapper>

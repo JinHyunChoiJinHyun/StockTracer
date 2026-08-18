@@ -5,6 +5,8 @@ import com.stocktracer.backend.stock.domain.StockInfo;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 
 @Getter
@@ -16,23 +18,41 @@ public class InvestorFlowDaily {
     private final long institutionNet; // null 불가
     private final long individualNet; // null 불가
     private final Long tradingValue; // null 허용
-    public Long majorNet() {
+
+    /* 계산 로직 */
+    // major 수급 (외국인 + 기관)
+    public long majorNet() {
         return foreignNet + institutionNet;
     }
 
-    private StockInfo stock;
+    // 순매수 비율 (major 수급 / 거래대금)
+    private static final int RATIO_SCALE = 6; // final이 붙은 상수는 대문자 + _로 구분
+    public BigDecimal netRatio(){
+        if(tradingValue == null || tradingValue == 0L){
+            return null;
+        }
 
-    public static InvestorFlowDaily of(InvestorFlowDailyRequestDto dto, StockInfo stock){
-        validateAmountScale(dto.stockCode(), dto.foreignNet(), dto.institutionNet(), dto.individualNet(), dto.tradingValue());
+        return BigDecimal.valueOf(majorNet())
+                .divide(BigDecimal.valueOf(tradingValue), RATIO_SCALE, RoundingMode.HALF_UP);
+    }
+
+    public static InvestorFlowDaily of(
+            String stockCode,
+            LocalDate baseDate,
+            long foreignNet,
+            long institutionNet,
+            long individualNet,
+            Long tradingValue
+    ){
+        validateAmountScale(stockCode, foreignNet, institutionNet, individualNet, tradingValue);
 
         return InvestorFlowDaily.builder()
-                .stockCode(dto.stockCode())
-                .baseDate(dto.baseDate())
-                .foreignNet(dto.foreignNet())
-                .institutionNet(dto.institutionNet())
-                .individualNet(dto.individualNet())
-                .tradingValue(dto.tradingValue())
-                .stock(stock)
+                .stockCode(stockCode)
+                .baseDate(baseDate)
+                .foreignNet(foreignNet)
+                .institutionNet(institutionNet)
+                .individualNet(individualNet)
+                .tradingValue(tradingValue)
                 .build();
     }
 

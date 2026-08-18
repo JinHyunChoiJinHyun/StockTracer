@@ -2,6 +2,7 @@ package com.stocktracer.backend.stock.repository;
 
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
+import com.stocktracer.backend.stock.mapper.StockInfoMapper;
 import com.stocktracer.backend.stock.repository.interfaces.StockInfoJpaRepository;
 import com.stocktracer.backend.stock.repository.interfaces.StockInfoRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class StockInfoRepositoryImpl implements StockInfoRepository {
     private final StockInfoJpaRepository jpaInfoRepository; // jpa를 따로 호출하여 실행
+    private final StockInfoMapper stockInfoMapper;
 
     @Override
     public Optional<StockInfo> findByStockCode(String stockCode) {
@@ -39,7 +41,13 @@ public class StockInfoRepositoryImpl implements StockInfoRepository {
 
     @Override
     public void save(StockInfo stockInfo) {
-        StockInfoEntity entity = new StockInfoEntity(stockInfo);
+        StockInfoEntity entity = StockInfoEntity.from(stockInfo);
         jpaInfoRepository.save(entity);
+    }
+
+    @Override
+    public void bulkSave(List<StockInfo> stockInfos) {
+        if(stockInfos.isEmpty()) return;
+        stockInfoMapper.bulkUpsert(stockInfos);
     }
 }

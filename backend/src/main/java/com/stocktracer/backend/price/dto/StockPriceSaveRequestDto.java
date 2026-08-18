@@ -18,7 +18,7 @@ public record StockPriceSaveRequestDto(
         // dto에서 값 검증 후 domin에 입력
         // domain에서 한번 더 검증 후 db 저장
     @NotBlank String stockCode,
-    @NotNull LocalDate stockDate,
+    @NotNull LocalDate priceDate,
     @NotNull @Positive BigDecimal openPrice,
     @NotNull @Positive BigDecimal closePrice,
     @NotNull @Positive BigDecimal lowPrice,
@@ -28,9 +28,6 @@ public record StockPriceSaveRequestDto(
     @NotNull @PositiveOrZero BigDecimal tradingValue, // 거래정지 시 0일 가능성 있음
     @NotNull @Positive BigDecimal marketCap
 ){
-    public StockPrice toDomain(StockInfo stock){
-        return StockPrice.of(this, stock);
-    }
 }
 
 

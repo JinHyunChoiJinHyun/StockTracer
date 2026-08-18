@@ -76,27 +76,12 @@ public class StockPriceServiceImpl implements StockPriceService {
     @Override
     public void bulkSave(StockPriceSaveBulkRequestDto bulkDto) {
 
-        // 1. stockCode 분해 컨트롤러에서 잘라서 받자
-        List<String> stockCodes = bulkDto.items().stream()
-                .map(StockPriceSaveRequestDto::stockCode)
-                .distinct()
-                .toList();
-
-        // 2. db 호출 전 중복 발견 시 거부 처리
+        // db 호출 전 중복 발견 시 거부 처리
         validateNoDuplicationKeys(bulkDto.items());
-
-        // 3. IN 쿼리로 StockInfo 일괄 조회 (jpa가 fk에 값을 넣을 시 객체를 통해 간접적으로 입력하므로 객체 조회 필요)
-        // in 쿼리로 한번에 조회하여 네트워크 낭비 방지
-        List<StockInfo> stockInfos = stockInfoRepository.findAllByStockCodeIn(stockCodes);
-
-        // 4. DTO -> StockPrice 도메인 객체 변환
-        // 코드 바탕으로 info 객체를 담은 맵 생성
-        Map<String, StockInfo> stockInfoMap = stockInfos.stream()
-                .collect((Collectors.toMap(StockInfo::getStockCode, Function.identity())));
 
         // 각 dto의 code와 일치하는 StockInfo와 조합해 객체로 변환
         List<StockPrice> prices = bulkDto.items().stream() // 가독성 좋은 for문
-                .map(dto -> StockPrice.of(dto,findStockInfo(stockInfoMap, dto.stockCode())))
+                .map(dto -> StockPrice.of(dto.stockCode(),dto.priceDate(),dto.openPrice(),dto.closePrice(),dto.lowPrice(),dto.highPrice(),dto.priceChange(),dto.volume(),dto.tradingValue(),dto.marketCap()))
                 .peek(stockPrice -> { // 값 제대로 입력 됐는지 확인
                     System.out.println(
                             "종목코드: " + stockPrice.getStockCode() +
@@ -115,20 +100,14 @@ public class StockPriceServiceImpl implements StockPriceService {
         stockPriceRepository.bulkUpsert(prices);
     }
 
-    // StockInfo 객체 조회
-    private StockInfo findStockInfo(Map<String, StockInfo> stockInfoMap, String stockCode){
-        return Optional.ofNullable(stockInfoMap.get((stockCode))) // null이면 빈 값 생성
-                .orElseThrow(() -> new StockInfoNotFoundException(stockCode));
-    }
-
     // 중복 검증 로직
     private void validateNoDuplicationKeys(List<StockPriceSaveRequestDto> prices){
         Set<String> seen = new HashSet<>();
         for (StockPriceSaveRequestDto price : prices){
-            String key = price.stockCode() + "_" + price.stockDate(); // 복합키
+            String key = price.stockCode() + "_" + price.priceDate(); // 복합키
             if(!seen.add(key)){
                 // 추가가 불가하면 이미 존재하는 키
-                throw new DuplicateStockPriceException(price.stockCode(), price.stockDate());
+                throw new DuplicateStockPriceException(price.stockCode(), price.priceDate());
             }
         }
     }

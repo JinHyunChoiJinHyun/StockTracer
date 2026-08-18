@@ -56,8 +56,9 @@ public class InvestorFlowDailyService {
         }
 
         List<InvestorFlowDaily> flows = dtos.stream()
-                .map(dto -> InvestorFlowDaily.of(dto,findStockInfo(stockInfoMap, dto.stockCode())))
+                .map(dto -> InvestorFlowDaily.of(dto.stockCode(),dto.baseDate(),dto.foreignNet(),dto.institutionNet(),dto.individualNet(),dto.tradingValue()))
                 .toList();
+
 
         return investorFlowDailyRepository.bulkSave(flows);
     }
