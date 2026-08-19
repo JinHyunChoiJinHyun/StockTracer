@@ -85,11 +85,12 @@ def run_investor_flow(date:str) -> bool:
         validate_df(flow_df,"투자자별 순매수 거래 조회")
         flow_payload = {"items": flow_df.replace({np.nan: None})}
 
-        rank_df = analyze_investor_flow(flow_df)
-        validate_df(rank_df,"투자자별 순매수 거래 분석")    
+        analysis_df = analyze_investor_flow(flow_df)
+        validate_df(analysis_df,"투자자별 순매수 거래 분석")    
+        analysis_payload = {"items": analysis_df}
 
         success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,flow_payload) # nan은 json이 인식하지 못하므로 none으로 치환
-        success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,rank_df)
+        success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,analysis_payload)
 
         is_success = success_daily and success_rank
         logger.info("=== 투자자별 순매수 거래 파이프라인 종료 (성공: %s) ===", is_success)
