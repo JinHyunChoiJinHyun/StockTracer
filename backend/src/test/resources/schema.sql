@@ -41,3 +41,18 @@ CREATE TABLE investor_flow_daily (
      updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
      PRIMARY KEY (stock_code, base_date)
 );
+
+-- 4. 일별 투자자 수급 분석 테이블
+CREATE TABLE investor_flow_analysis (
+    base_date      DATE          NOT NULL,
+    stock_code     CHAR(6)       NOT NULL,
+    net_ratio      DECIMAL(9, 6) NULL     COMMENT '(외국인+기관) / 거래대금, 점수 산출 근거',
+    score          DECIMAL(6, 2) NOT NULL,
+    is_double_buy  TINYINT(1)    NOT NULL COMMENT 'MIN_BUY_AMOUNT 기준 쌍끌이',
+    is_clean_buy   TINYINT(1)    NOT NULL COMMENT '쌍끌이 + 개인 순매도',
+    reason         VARCHAR(255)  NULL,
+    created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (base_date, stock_code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

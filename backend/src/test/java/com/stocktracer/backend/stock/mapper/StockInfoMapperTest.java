@@ -19,7 +19,9 @@ import java.util.Objects;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-// Spring Bean 사용 테스트
+/* Bean 방식 (@Import(MySqlTestContainerConfig.class)) */
+// 다중 클래스 테스트에 적합
+// -> Spring 컨텍스트 캐시에 생명주기 위임하여 컨테이너 자동 공유
 @MybatisTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(MySqlTestContainerConfig.class)

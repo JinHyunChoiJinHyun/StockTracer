@@ -1,6 +1,8 @@
 package com.stocktracer.backend.investorflow.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
+import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 
@@ -38,4 +40,17 @@ public record InvestorFlowAnalysisRequestDto(
 
         @Size(max = 255, message = "사유는 255자를 초과할 수 없습니다")
         String reason
-) {}
+) {
+        public InvestorFlowAnalysis toDomain(InvestorFlowAnalysisRequestDto r, InvestorFlowDaily daily){
+                return InvestorFlowAnalysis.of(
+                        r.stockCode(),
+                        r.baseDate(),
+                        r.netRatio(),
+                        r.score(),
+                        r.isDoubleBuy(),
+                        r.isCleanBuy(),
+                        r.reason(),
+                        daily
+                );
+        }
+}

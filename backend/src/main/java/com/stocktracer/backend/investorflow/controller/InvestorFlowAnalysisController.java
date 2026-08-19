@@ -1,7 +1,8 @@
 package com.stocktracer.backend.investorflow.controller;
 
+import com.stocktracer.backend.investorflow.dto.InvestorFlowAnalysisBulkRequestDto;
 import com.stocktracer.backend.investorflow.dto.InvestorFlowDailyBulkRequestDto;
-import com.stocktracer.backend.investorflow.service.InvestorFlowDailyService;
+import com.stocktracer.backend.investorflow.service.InvestorFlowAnalysisService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,17 +17,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/investor-flows")
 @RequiredArgsConstructor
-public class InvestorFlowDailyController {
+public class InvestorFlowAnalysisController {
+    private final InvestorFlowAnalysisService analysisService;
 
-    private final InvestorFlowDailyService investorFlowDailyService;
-
-    @PostMapping("/daily")
-    public ResponseEntity<Map<String, Object>> save(
-            @Valid @RequestBody InvestorFlowDailyBulkRequestDto bulkDto
-    ){
-        int affected = investorFlowDailyService.save(bulkDto.items());
+    @PostMapping("analysis")
+    public ResponseEntity<Map<String,Object>> save(
+            @Valid @RequestBody InvestorFlowAnalysisBulkRequestDto request){
+        int affected = analysisService.save(request.items());
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("requested", bulkDto.items().size(), "affected",affected));
+                .body(Map.of("requested", request.items().size(), "affected", affected));
     }
 }

@@ -8,10 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -21,13 +19,15 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
-// junit 방식 테스트
-@SpringBootTest
+/* JUnit 방식 (@Testcontainers + @Container static) */
+// 단일 클래스 테스트에 적합
+// 다중 클래스 테스트도 가능하나 컨테이너가 클래스마다 재가동
+// -> 싱글톤 패턴으로 공유해서 사용하려면 @Container 제거 후 static 블록에서 직접 start() 필요 (번거로움)
+@MybatisTest
 @Testcontainers // 도커 컨테이너들의 타이밍(시작/종료 주기)을 관리해 주는 역할
-public class InvestorFlowMapperTest {
+public class InvestorFlowDailyMapperTest {
     @Container // 내 PC 자원을 떼어내서 도커 컨테이너(격리된 방/작은 PC)를 생성
-    @ServiceConnection
+    @ServiceConnection // spring boot가 알아서 url, name, pw를 파악해 연결
     static MySQLContainer mysql = new MySQLContainer("mysql:8.0.36");
 
     @Autowired

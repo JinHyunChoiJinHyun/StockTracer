@@ -29,20 +29,29 @@ public class InvestorFlowAnalysis {
     // JSON 변환기(Jackson)는 getter 이름(is~)을 보고 변수명에 붙은 is를 제거하고 추론함
     // 따라서 애초에 필드명에서 is를 빼고 작성해야 JSON 키값과 의도한 이름이 일치함
 
-    public static InvestorFlowAnalysis of(InvestorFlowAnalysisRequestDto dto, InvestorFlowDaily daily){
-        validateSameKey(dto.stockCode(), dto.baseDate(), daily);
-        validateFlagLogic(dto.stockCode(), dto.isDoubleBuy(), dto.isCleanBuy());
-        validateFlagAgainstDaily(dto.stockCode(), dto.isDoubleBuy(), dto.isCleanBuy(), daily);
-        validateNetRatio(dto.stockCode(), dto.netRatio(), daily);
+    public static InvestorFlowAnalysis of(
+            String stockCode,
+            LocalDate baseDate,
+            BigDecimal netRatio,
+            BigDecimal score,
+            boolean doubleBuy,
+            boolean cleanBuy,
+            String reason,
+            InvestorFlowDaily daily
+    ){
+        validateSameKey(stockCode, baseDate, daily);
+        validateFlagLogic(stockCode, doubleBuy, cleanBuy);
+        validateFlagAgainstDaily(stockCode, doubleBuy, cleanBuy, daily);
+        validateNetRatio(stockCode, netRatio, daily);
 
         return InvestorFlowAnalysis.builder()
-                .stockCode(dto.stockCode())
-                .baseDate(dto.baseDate())
-                .netRatio(dto.netRatio())
-                .score(dto.score())
-                .doubleBuy(dto.isDoubleBuy())
-                .cleanBuy(dto.isCleanBuy())
-                .reason(dto.reason())
+                .stockCode(stockCode)
+                .baseDate(baseDate)
+                .netRatio(netRatio)
+                .score(score)
+                .doubleBuy(doubleBuy)
+                .cleanBuy(cleanBuy)
+                .reason(reason)
                 .build();
     };
 
