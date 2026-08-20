@@ -107,6 +107,7 @@ def run_daily_batch() -> bool:
     logger.info("=== 일일 배치 작업 시작 ===")
     overall_success = False
     try:
+        # 거래일 목록에 오늘 날짜가 포함되면 파이프라인 실행 아니면 그냥 중단 로직 작성 하자
         date = datetime.now().strftime("%Y%m%d")
         # date = "20260810"
         
