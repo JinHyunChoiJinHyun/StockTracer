@@ -25,6 +25,11 @@ public class InvestorFlowAnalysisService {
     @Transactional
     public int save(List<InvestorFlowAnalysisRequestDto> requests){
         // 검증
+        if(requests.isEmpty()){
+            log.info("수급 분석 요청 없음 - 처리 생략");
+            return 0;
+        }
+
         validateSingleBaseDate(requests);
         validateNoDuplicateKey(requests);
 
@@ -34,7 +39,7 @@ public class InvestorFlowAnalysisService {
 
         // 변환
         List<InvestorFlowAnalysis> flows = requests.stream()
-                .map(r -> r.toDomain(r, dailyMap.get(r.stockCode())))
+                .map(r -> r.toDomain(dailyMap.get(r.stockCode())))
                 .toList(); // 수정 불가
 
         // 저장

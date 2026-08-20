@@ -33,23 +33,24 @@ public record InvestorFlowAnalysisRequestDto(
         BigDecimal score,
 
         @NotNull(message = "쌍끌이 여부는 필수입니다")
-        Boolean isDoubleBuy,
+        boolean doubleBuy,
 
         @NotNull(message = "손바뀜 여부는 필수입니다")
-        Boolean isCleanBuy,
+        boolean cleanBuy,
 
         @Size(max = 255, message = "사유는 255자를 초과할 수 없습니다")
         String reason
 ) {
-        public InvestorFlowAnalysis toDomain(InvestorFlowAnalysisRequestDto r, InvestorFlowDaily daily){
+        public InvestorFlowAnalysis toDomain(
+                InvestorFlowDaily daily){
                 return InvestorFlowAnalysis.of(
-                        r.stockCode(),
-                        r.baseDate(),
-                        r.netRatio(),
-                        r.score(),
-                        r.isDoubleBuy(),
-                        r.isCleanBuy(),
-                        r.reason(),
+                        this.stockCode,
+                        this.baseDate,
+                        this.netRatio,
+                        this.score,
+                        this.doubleBuy,
+                        this.cleanBuy,
+                        this.reason,
                         daily
                 );
         }

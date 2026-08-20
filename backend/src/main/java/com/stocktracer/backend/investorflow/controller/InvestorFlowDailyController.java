@@ -20,7 +20,7 @@ public class InvestorFlowDailyController {
 
     private final InvestorFlowDailyService investorFlowDailyService;
 
-    @PostMapping("/daily")
+    @PostMapping("daily")
     public ResponseEntity<Map<String, Object>> save(
             @Valid @RequestBody InvestorFlowDailyBulkRequestDto bulkDto
     ){

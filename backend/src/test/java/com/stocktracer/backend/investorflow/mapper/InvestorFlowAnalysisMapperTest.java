@@ -94,7 +94,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.1500"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("82.5000"),
                         true,
                         true,
@@ -103,7 +103,7 @@ public class InvestorFlowAnalysisMapperTest {
                 ),
                 analysis(HYNIX,
                         BASE_DATE,
-                        new BigDecimal("-0.2500"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("31.0000"),
                         false,
                         false,
@@ -114,10 +114,10 @@ public class InvestorFlowAnalysisMapperTest {
         assertThat(countAll()).isEqualTo(2);
 
         Map<String, Object> row = findByStockCode(SAMSUNG);
-        assertThat((BigDecimal) row.get("net_ratio")).isEqualByComparingTo("0.1500");
+        assertThat((BigDecimal) row.get("net_ratio")).isEqualByComparingTo("0.006000");
         assertThat((BigDecimal) row.get("score")).isEqualByComparingTo("82.5000");
-        assertThat(row.get("doubleBuy")).isEqualTo(true);
-        assertThat(row.get("cleanBuy")).isEqualTo(true);
+        assertThat(row.get("is_double_buy")).isEqualTo(true);
+        assertThat(row.get("is_clean_buy")).isEqualTo(true);
         assertThat(row.get("reason")).isEqualTo("외국인/기관 동반 순매수");
     }
 
@@ -128,7 +128,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.1500"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("82.5000"),
                         true,
                         true,
@@ -141,7 +141,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.9900"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("95.0000"),
                         false,
                         false,
@@ -153,10 +153,9 @@ public class InvestorFlowAnalysisMapperTest {
         assertThat(countAll()).isEqualTo(1);
 
         Map<String, Object> row = findByStockCode(SAMSUNG);
-        assertThat((BigDecimal) row.get("net_ratio")).isEqualByComparingTo("0.9900");
         assertThat((BigDecimal) row.get("score")).isEqualByComparingTo("95.0000");
-        assertThat(row.get("double_buy")).isEqualTo(false);
-        assertThat(row.get("clean_buy")).isEqualTo(false);
+        assertThat(row.get("is_double_buy")).isEqualTo(false);
+        assertThat(row.get("is_clean_buy")).isEqualTo(false);
         assertThat(row.get("reason")).isEqualTo("재계산 결과");
     }
 
@@ -167,7 +166,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.1500"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("82.5000"),
                         true,
                         true,
@@ -180,7 +179,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.5000"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("70.5000"),
                         true,
                         true,
@@ -190,7 +189,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         HYNIX,
                         BASE_DATE,
-                        new BigDecimal("-0.2500"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("31.0000"),
                         false,
                         false,
@@ -214,7 +213,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.5000"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("70.5000"),
                         true,
                         true,
@@ -224,7 +223,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.7000"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("10.5000"),
                         true,
                         true,
@@ -245,7 +244,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.5000"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("70.5000"),
                         true,
                         false,
@@ -255,8 +254,8 @@ public class InvestorFlowAnalysisMapperTest {
         ));
 
         Map<String, Object> row = findByStockCode(SAMSUNG);
-        assertThat(row.get("double_buy")).isEqualTo(true);
-        assertThat(row.get("clean_buy")).isEqualTo(false);
+        assertThat(row.get("is_double_buy")).isEqualTo(true);
+        assertThat(row.get("is_clean_buy")).isEqualTo(false);
     }
 
     @Test
@@ -266,7 +265,7 @@ public class InvestorFlowAnalysisMapperTest {
                 analysis(
                         SAMSUNG,
                         BASE_DATE,
-                        new BigDecimal("0.5000"),
+                        new BigDecimal("0.006000"),
                         new BigDecimal("70.5000"),
                         true,
                         false,

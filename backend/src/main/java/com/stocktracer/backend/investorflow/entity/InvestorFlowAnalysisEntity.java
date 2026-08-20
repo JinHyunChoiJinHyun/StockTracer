@@ -1,5 +1,6 @@
 package com.stocktracer.backend.investorflow.entity;
 
+import com.stocktracer.backend.common.entity.BaseEntity;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import jakarta.persistence.*;
@@ -16,7 +17,7 @@ import java.time.LocalDate;
 @IdClass(InvestorFlowAnalysisId.class)
 @Getter
 @NoArgsConstructor
-public class InvestorFlowAnalysisEntity {
+public class InvestorFlowAnalysisEntity extends BaseEntity {
     @Id
     @Column(name = "stock_code", length = 6, nullable = false)
     private String stockCode;

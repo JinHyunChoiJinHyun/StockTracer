@@ -37,6 +37,7 @@ def fetch_prices(date: str) -> pd.DataFrame:
         raw_df = stock.get_market_ohlcv_by_ticker(date, market="ALL") # 코드를 기준으로 결과 나열 (날짜는 하나로 고정)
 
         # 필요한 컬럼 추출
+        raw_df = raw_df.reset_index()
         df_price = raw_df[["티커","시가","고가","저가","종가","거래량","거래대금","등락률","시가총액"]].copy()
 
         # 날짜 필드 추가
@@ -84,6 +85,7 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
     for investor in investors:
         try:
             raw_df = stock.get_market_net_purchases_of_equities(date, date, market, investor)
+            raw_df = raw_df.reset_index() # index 컬럼으로 이동
 
             # 데이터가 존재하지 않을 시
             if raw_df.empty:
