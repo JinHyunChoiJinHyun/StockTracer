@@ -17,8 +17,8 @@ public class InvestorFlowAnalysis {
     private final LocalDate baseDate;
     private final BigDecimal netRatio;
     private final BigDecimal score;
-    private final boolean doubleBuy; // isDoubleBuy getter 생성
-    private final boolean cleanBuy; // isCleanBuy getter 생성
+    private final Boolean doubleBuy; // isDoubleBuy getter 생성
+    private final Boolean cleanBuy; // isCleanBuy getter 생성
     private final String reason;
 
     /** final로 지정하는 이유 */
