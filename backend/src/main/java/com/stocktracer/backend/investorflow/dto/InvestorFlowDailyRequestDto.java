@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Builder
 public record InvestorFlowDailyRequestDto(
         @NotBlank(message = "종목 코드는 필수입니다")
-        @Pattern(regexp = "^[0-9]{6}$", message = "종목코드는 6자리 숫자여야 합니다")
+        @Pattern(regexp = "^[0-9A-Z]{6}$", message = "종목코드는 6자리 영숫자여야 합니다")
         String stockCode,
 
         @NotNull(message = "기준일자는 필수입니다")

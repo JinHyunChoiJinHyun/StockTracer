@@ -1,6 +1,7 @@
 package com.stocktracer.backend.investorflow.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import jakarta.validation.constraints.*;
@@ -12,7 +13,7 @@ import java.time.LocalDate;
 @Builder
 public record InvestorFlowAnalysisRequestDto(
         @NotBlank(message = "종목코드는 필수입니다.")
-        @Pattern(regexp = "^[0-9]{6}", message = "종목코드는 6자리 숫자여야 합니다")
+        @Pattern(regexp = "^[0-9A-Z]{6}$", message = "종목코드는 6자리 영숫자여야 합니다")
         String stockCode,
 
         @NotNull(message = "기준일자는 필수입니다.")
@@ -32,9 +33,11 @@ public record InvestorFlowAnalysisRequestDto(
         @Digits(integer = 4, fraction = 2, message = "점수 정밀도가 DECIMAL(6,2)를 초과합니다") // 반올림 방지
         BigDecimal score,
 
+        @JsonProperty("is_double_buy")
         @NotNull(message = "쌍끌이 여부는 필수입니다")
         boolean doubleBuy,
 
+        @JsonProperty("is_clean_buy")
         @NotNull(message = "손바뀜 여부는 필수입니다")
         boolean cleanBuy,
 
