@@ -88,7 +88,7 @@ def run_investor_flow(date:str) -> bool:
         analysis_df = analyze_investor_flow(daily_df)
         validate_df(analysis_df,"투자자별 순매수 거래 분석")    
         analysis_payload = {"items": to_flow_payload(analysis_df)}
-
+        
         success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,daily_payload) # nan은 json이 인식하지 못하므로 none으로 치환
         success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,analysis_payload)
 

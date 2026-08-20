@@ -94,7 +94,8 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
 
             # 컬럼 추가
             raw_df["investor_type"] = investor
-            raw_df["base_date"] = date
+            # raw_df["base_date"] = date
+            raw_df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
             
             df_list.append(raw_df)
             
@@ -117,7 +118,7 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
         raise ValueError(f"필수 컬럼 누락: {sorted(missing)}")
 
     # 날짜 데이터 여부 확인
-    today_df = combined_df[combined_df["base_date"] == date].copy()
+    today_df = combined_df[combined_df["base_date"] == f"{date[:4]}-{date[4:6]}-{date[6:]}"].copy()
     if today_df.empty:
         raise ValueError(f"{date} 수급 데이터가 없습니다 (휴장일 여부 확인)")
 
@@ -135,7 +136,7 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
         today_df = today_df.drop_duplicates(subset=dup_key, keep="first")
 
     # 타입 정규화
-    today_df["티커"] = today_df["티커"].astype(str).str.zfill(6) # 코드 6자리 문자열로 고정 (0 손실 방지)
+    today_df["티커"] = today_df["티커"].astype(str).str.strip().str.upper().str.zfill(6) # 코드 6자리 문자열로 고정 (0 손실 방지)
     today_df["순매수거래대금"] = pd.to_numeric( # 결측치 0으로 대체
         today_df["순매수거래대금"], errors="coerce"
     ).fillna(0.0)

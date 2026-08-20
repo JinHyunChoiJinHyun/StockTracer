@@ -21,7 +21,7 @@ def post_to_backend(end_point:str, paylaod:dict, retry_count:int = 3) -> bool:
             # 클라이언트 에러인 경우 즉시 중단
             status = e.response.status_code if e.response is not None else None
             if status is not None and 400 <= status < 500: # 클라이언트 에러
-                logging.error("POST 실패 (재시도 불가) error=%s", e)
+                logging.error("POST 실패 (재시도 불가) error=%s", res.text)
                 return False
 
             # 서버 에러인 경우 재시도

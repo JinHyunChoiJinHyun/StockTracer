@@ -117,6 +117,9 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
         np.nan # false일 시 nan으로 대체
     )
 
+    # 반올림 처리 (소수점 길어짐 방지)
+    df["net_ratio"] = df["net_ratio"].round(6)
+
     # 점수화
     df["score"] = _calculate_score(df)
 
