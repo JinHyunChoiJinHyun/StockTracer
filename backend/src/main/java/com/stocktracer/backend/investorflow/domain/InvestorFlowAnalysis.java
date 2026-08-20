@@ -34,8 +34,8 @@ public class InvestorFlowAnalysis {
             LocalDate baseDate,
             BigDecimal netRatio,
             BigDecimal score,
-            boolean doubleBuy,
-            boolean cleanBuy,
+            Boolean doubleBuy,
+            Boolean cleanBuy,
             String reason,
             InvestorFlowDaily daily
     ){

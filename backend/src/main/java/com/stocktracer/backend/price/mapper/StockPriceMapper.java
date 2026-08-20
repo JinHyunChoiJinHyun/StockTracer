@@ -23,7 +23,7 @@ public interface StockPriceMapper {
     // 2. 여러 종목 동시 조회
     List<StockPriceResponseDto> findPricesByCodes(
             @Param("stockCodes") String stockCodes,
-            @Param("date") LocalDate priceDate,
+            @Param("priceDate") LocalDate priceDate,
             @Param("sortBy") String sortBy
     );
 

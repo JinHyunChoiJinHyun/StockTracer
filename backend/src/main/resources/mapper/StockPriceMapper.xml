@@ -25,9 +25,9 @@
             AND sp.price_date &gt;= #{startDate}
         </if>
         <if test="endDate != null">
-            AND sp.stock_date &lt;= #{endDate}
+            AND sp.price_date &lt;= #{endDate}
         </if>
-        ORDER BY sp.stock_date ASC
+        ORDER BY sp.price_date ASC
     </select>
 
     <!-- 2. 여러 종목 동시 조회 -->
@@ -53,7 +53,7 @@
         <foreach item="code" collection="stockCodes" open="(" separator="," close=")">
             #{code}
         </foreach>
-        AND sp.stock_date = #{priceDate}
+        AND sp.price_date = #{priceDate}
         <choose>
             <when test="sortBy == 'volume'">
                 ORDER BY sp.volume DESC

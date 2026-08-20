@@ -33,13 +33,15 @@ public record InvestorFlowAnalysisRequestDto(
         @Digits(integer = 4, fraction = 2, message = "점수 정밀도가 DECIMAL(6,2)를 초과합니다") // 반올림 방지
         BigDecimal score,
 
+        /* boolean -> Boolean으로 변경한 이유 */
+        // boolean으로 작성할 시 null이 들어와도 false로 저장되므로 Valid 불가
         @JsonProperty("is_double_buy")
         @NotNull(message = "쌍끌이 여부는 필수입니다")
-        boolean doubleBuy,
+        Boolean doubleBuy,
 
         @JsonProperty("is_clean_buy")
         @NotNull(message = "손바뀜 여부는 필수입니다")
-        boolean cleanBuy,
+        Boolean cleanBuy,
 
         @Size(max = 255, message = "사유는 255자를 초과할 수 없습니다")
         String reason
