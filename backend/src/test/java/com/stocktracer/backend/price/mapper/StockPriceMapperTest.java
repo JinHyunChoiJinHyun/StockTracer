@@ -5,14 +5,11 @@ import com.stocktracer.backend.price.dto.StockPriceResponseDto;
 import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
-import com.stocktracer.backend.stock.service.interfaces.StockInfoService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,7 +41,7 @@ public class StockPriceMapperTest {
     @DisplayName("bulkUpsert - 신규 데이터 혹은 날짜가 다른 INSERT 동작 검증")
     void bulkUpsert_Insert_Success(){
         // given
-        StockPriceSaveRequestDto existingPriceDto = new StockPriceSaveRequestDto(
+        StockPrice existingPrice = StockPrice.of(
                 "005930",
                 LocalDate.of(2026, 8, 1),
                 BigDecimal.valueOf(1000), // openPrice
@@ -57,48 +54,33 @@ public class StockPriceMapperTest {
                 BigDecimal.valueOf(100)  // marketCap
         );
 
-        StockInfo info1 = new StockInfo(
-                "005930",
-                "삼성전자",
-                MarketType.KOSPI
-        );
-
-        StockInfo info2 = new StockInfo(
-                "000660",
-                "sk하이닉스",
-                MarketType.KOSPI
-        );
-
-        StockPrice existingPrice = StockPrice.of(existingPriceDto,info1);
-
         // when (업데이트 객체 1, 새 객체 1)
-        StockPriceSaveRequestDto insertTargetDto1 = new StockPriceSaveRequestDto(
-                "005930",
-                LocalDate.of(2026, 8, 2),
-                BigDecimal.valueOf(1100), // openPrice
-                BigDecimal.valueOf(2100), // closePrice
-                BigDecimal.valueOf(600),  // lowPrice
-                BigDecimal.valueOf(3100), // highPrice
-                BigDecimal.valueOf(200),  // priceChange
-                50000L, // volume
-                BigDecimal.valueOf(100),  // tradingValue
-                BigDecimal.valueOf(100)  // marketCap
+        List<StockPrice> dtoList = List.of(
+                StockPrice.of(
+                    "005930",
+                    LocalDate.of(2026, 8, 2),
+                    BigDecimal.valueOf(1100), // openPrice
+                    BigDecimal.valueOf(2100), // closePrice
+                    BigDecimal.valueOf(600),  // lowPrice
+                    BigDecimal.valueOf(3100), // highPrice
+                    BigDecimal.valueOf(200),  // priceChange
+                    50000L, // volume
+                    BigDecimal.valueOf(100),  // tradingValue
+                    BigDecimal.valueOf(100)  // marketCap
+                ),
+                StockPrice.of(
+                    "000660",
+                    LocalDate.of(2026, 8, 2),
+                    BigDecimal.valueOf(7000), // openPrice
+                    BigDecimal.valueOf(8000), // closePrice
+                    BigDecimal.valueOf(6500),  // lowPrice
+                    BigDecimal.valueOf(8500), // highPrice
+                    BigDecimal.valueOf(500),  // priceChange
+                    120000L, // volume
+                    BigDecimal.valueOf(100),  // tradingValue
+                    BigDecimal.valueOf(100)  // marketCap
+                )
         );
-
-        StockPriceSaveRequestDto insertTargetDto2 = new StockPriceSaveRequestDto(
-                "000660",
-                LocalDate.of(2026, 8, 2),
-                BigDecimal.valueOf(7000), // openPrice
-                BigDecimal.valueOf(8000), // closePrice
-                BigDecimal.valueOf(6500),  // lowPrice
-                BigDecimal.valueOf(8500), // highPrice
-                BigDecimal.valueOf(500),  // priceChange
-                120000L, // volume
-                BigDecimal.valueOf(100),  // tradingValue
-                BigDecimal.valueOf(100)  // marketCap
-        );
-
-        List<StockPrice> dtoList = List.of(StockPrice.of(insertTargetDto1,info1), StockPrice.of(insertTargetDto2,info2));
 
         // 실행
         stockPriceMapper.bulkUpsert(dtoList);

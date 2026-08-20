@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.investorflow.mapper.InvestorFlowAnalysisMapper">
+    <!-- 1. 투자자별 순매도액 분석 결과 대량 저장 -->
+    <insert id="upsertAll">
+        INSERT INTO investor_flow_analysis (
+        stock_code,
+        base_date,
+        net_ratio,
+        score,
+        is_double_buy,
+        is_clean_buy,
+        reason
+        )
+        VALUES
+        <foreach collection="flows" item="f" separator=",">
+            (
+            #{f.stockCode},
+            #{f.baseDate},
+            #{f.netRatio, jdbcType=DECIMAL}, <!-- null인 경우 처리 방법 안내 미작성 시 JdbcType OTHER 예외 발생 -->
+            #{f.score},
+            #{f.doubleBuy},
+            #{f.cleanBuy},
+            #{f.reason, jdbcType=VARCHAR} <!-- null인 경우 처리 방법 안내 -->
+            )
+        </foreach> AS new <!-- Java 객체의 값을 MyBatis가 SQL 값으로 바인딩하고, foreach로 생성된 데이터 행(가상 테이블)에 'new'라는 별칭 부여 (sql 필드명과 같음) -->
+        ON DUPLICATE KEY UPDATE
+            net_ratio = new.net_ratio,
+            score = new.score,
+            is_double_buy = new.is_double_buy,
+            is_clean_buy = new.is_clean_buy,
+            reason = new.reason
+    </insert>
+</mapper>

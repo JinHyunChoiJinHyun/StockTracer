@@ -1,10 +1,13 @@
 package com.stocktracer.backend.stock.domain;
 
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
+import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.Objects;
+
 /**
  * Domain은 JPA(Entity)를 알지 못하도록 유지한다.
  * 변환 책임은 Entity(또는 Repository 구현체) 쪽에 둔다.
@@ -30,8 +33,8 @@ public class StockInfo {
     }
 
     /** 비즈니스 메서드 */
-    // 유일한 생성 지점 -> 무조건 검증 후 로직 실행
-    public static StockInfo create(String stockCode, String stockName, MarketType market){
+    // 유일한 생성 지점 -> 외부에서 new를 막고 무조건 검증 후 객체 생성
+    public static StockInfo create(String stockCode, String stockName, MarketType market){ // 도메인 객체의 성격에 따라 of로 대체 가능
         validate(stockCode, stockName);
         return new StockInfo(stockCode, stockName, market);
     }
@@ -41,7 +44,13 @@ public class StockInfo {
         return create(entity.getStockCode(), entity.getStockName(), entity.getMarket());
     }
 
-    public StockInfo update(String stockCode, String stockName, MarketType market){
-        return create(stockCode, stockName, market);
+    public StockInfo update(StockInfo other){
+        return create(this.stockCode, other.getStockName(), other.getMarket()); // stockCode는 업데이트 되면 안됨
+    }
+
+    // 변경된 dto 내용 조회
+    public boolean hasChanged(StockInfo other){
+        return !Objects.equals(this.stockName, other.stockName)
+                || this.market != other.market;
     }
 }

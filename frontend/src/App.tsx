@@ -2,6 +2,7 @@ import React, {useState} from "react"
 import { Routes, Route } from 'react-router-dom';
 import {StockDashboard} from "./components/StockDashboard"
 import { StockDetailPage } from "./components/StockDetailPage";
+import StockMainPage from "./components/StockMainPage";
 import './App.css'
 
 function App() {
@@ -13,7 +14,7 @@ function App() {
       {/* 분석 결과 카드 */}
 
       <Routes>
-        <Route path="/" element={<StockDashboard />} />
+        <Route path="/" element={<StockMainPage />} />
         <Route path="/stock/:id" element={<StockDetailPage />} />
       </Routes>
     </div>

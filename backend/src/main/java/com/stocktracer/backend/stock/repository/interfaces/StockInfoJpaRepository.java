@@ -1,7 +1,6 @@
 package com.stocktracer.backend.stock.repository.interfaces;
 
-import com.stocktracer.backend.stock.domain.StockInfo;
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
+import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

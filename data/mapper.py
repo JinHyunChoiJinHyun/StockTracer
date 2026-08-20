@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 
 def to_payload(df, field_map:dict) -> list[dict]:
     """필드명 백엔드에 맞게 변환"""
@@ -21,7 +23,7 @@ def to_stock_payload(df) -> list[dict]:
 def to_price_payload(df) -> list[dict]:
     field_map = {
         "티커": "stock_code",
-        "날짜": "stock_date",
+        "날짜": "price_date",
         "시가": "open_price",
         "고가": "high_price",
         "저가": "low_price",
@@ -33,3 +35,6 @@ def to_price_payload(df) -> list[dict]:
     }
 
     return to_payload(df, field_map)
+
+def to_flow_payload(df:pd.DataFrame) -> list[dict]:
+    return df.replace({np.nan: None}).to_dict(orient="records")

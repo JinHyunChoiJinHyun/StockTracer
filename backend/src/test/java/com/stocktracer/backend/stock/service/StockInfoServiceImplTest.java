@@ -3,17 +3,19 @@ package com.stocktracer.backend.stock.service;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.dto.StockInfoDto;
-import com.stocktracer.backend.stock.repository.entitiy.StockInfoEntity;
+import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
+import com.stocktracer.backend.stock.exception.StockInfoNotFoundException;
 import com.stocktracer.backend.stock.repository.interfaces.StockInfoJpaRepository;
+import com.stocktracer.backend.stock.repository.interfaces.StockInfoRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -25,38 +27,70 @@ import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class) // Mockito 사용
 public class StockInfoServiceImplTest {
+
     @Mock
-    private StockInfoJpaRepository stockInfoJpaRepository;
+    private StockInfoRepository stockInfoRepository;
 
     @InjectMocks
     private StockInfoServiceImpl stockInfoServiceImpl; // 가짜 repository 주입
 
     @Test
-    @DisplayName("주식 정보가 이미 존재하면 업데이트 실행")
-    void updateExistingStock(){
+    @DisplayName("DTO를 도메인으로 변환해 repository에 위임한다")
+    void saveOrUpdateStocks_delegatesToRepository(){
         // given
-        StockInfo existingDomain = new StockInfo("005930", "삼성전자", MarketType.KOSPI);
-        StockInfoEntity existingEntity = new StockInfoEntity(existingDomain);
-
-        given(stockInfoJpaRepository.findById("005930"))
-                .willReturn(Optional.of(existingEntity));
-
-        StockInfoDto dto = new StockInfoDto("005930", "삼성전자우","KOSDAQ");
+        List<StockInfoDto> dtos = List.of(
+                new StockInfoDto("005930", "삼성전자", "KOSPI"),
+                new StockInfoDto("035720", "카카오", "KOSPI")
+        );
 
         // when
-        stockInfoServiceImpl.saveOrUpdateStocks(List.of(dto));
+        stockInfoServiceImpl.saveOrUpdateStocks(dtos);
 
         // then
-        // save가 어떤 값으로 저장 됐는지 검증 (가짜 레포지토리이므로 실제 저장되지 않아 캡처 필요)
-        ArgumentCaptor<StockInfoEntity> captor = ArgumentCaptor.forClass(StockInfoEntity.class);
-        verify(stockInfoJpaRepository).save(captor.capture()); // save 되는 순간의 값을 캡처
+        ArgumentCaptor<List<StockInfo>> captor = ArgumentCaptor.forClass(List.class);
+        verify(stockInfoRepository).bulkSave(captor.capture());
 
-        assertThat(captor.getValue().getStockName()).isEqualTo("삼성전자우");
-        assertThat(captor.getValue().getMarket());
+        List<StockInfo> saved = captor.getValue();
+        assertThat(saved).hasSize(2);
+        assertThat(saved).extracting((StockInfo::getStockCode))
+                .containsExactly("005930","035720");
+        assertThat(saved.get(0).getMarket()).isEqualTo(MarketType.KOSPI);
+    }
 
-        // 신규 생성 여부 확인
-        verify(stockInfoJpaRepository, times(1)).save(any()); // save라는 행위가 1번만 일어났는지 검증
+    @Test
+    @DisplayName("빈 리스트면 repository를 호출하지 않는다")
+    void saveOrUpdateStocks_emptyList(){
+        stockInfoServiceImpl.saveOrUpdateStocks(List.of());
+        verify(stockInfoRepository, never()).bulkSave(any());
+    }
 
+    @Test
+    @DisplayName("null이면 repository를 호출하지 않는다")
+    void saveOrUpdateStocks_null() {
+        stockInfoServiceImpl.saveOrUpdateStocks(null);
+        verify(stockInfoRepository, never()).bulkSave(any());
+    }
+
+    @Test
+    @DisplayName("종목 코드로 조회한다")
+    void findByStockCode_found(){
+        StockInfo stock = StockInfo.create("005930", "삼성전자", MarketType.KOSPI);
+        given(stockInfoRepository.findByStockCode("005930"))
+                .willReturn(Optional.of(stock));
+
+        StockInfo result = stockInfoServiceImpl.findByStockCode("005930");
+
+        assertThat(result.getStockName()).isEqualTo("삼성전자");
+    }
+
+    @Test
+    @DisplayName("없는 종목 코드면 예외를 던진다")
+    void findByStockCode_notFound(){
+        given(stockInfoRepository.findByStockCode(("999999")))
+                .willReturn(Optional.empty());
+        assertThatThrownBy(() -> stockInfoServiceImpl.findByStockCode("999999"))
+                .isInstanceOf(StockInfoNotFoundException.class)
+                .hasMessageContaining("999999");
     }
 
 }

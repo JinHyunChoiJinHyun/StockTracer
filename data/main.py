@@ -1,10 +1,13 @@
 import logging, time, sys
+import numpy as np
 from datetime import datetime
 
-from fetcher import fetch_prices, fetch_stocks
-from analyzer import analyze_stocks, analyze_prices
-from mapper import to_stock_payload, to_price_payload
+from fetcher import fetch_prices, fetch_stocks, fetch_investor_flow
+from analyzer import build_investor_flow, analyze_investor_flow
+from mapper import to_stock_payload, to_price_payload, to_flow_payload
 from api_client import post_to_backend
+from typing import Callable
+from functools import partial
 
 # .\venv\Scripts\Activate.ps1
 # >> 가상환경 실행 코드 (venv 폴더 내 스크립트 실행)
@@ -15,77 +18,124 @@ logger = logging.getLogger(__name__)
 
 STOCK_INFO_ENDPOINT = "/info"
 STOCK_PRICE_ENDPOINT = "/prices/bulk"
+STOCK_INVESTOR_FLOW_DAILY_ENDPOINT = "/investor-flows/daily"
+STOCK_INVESTOR_FLOW_RANK_ENDPOINT = "/investor-flows/analysis"
 
+# 유틸
+def _run_pipeline(name:str, fn: Callable[[], bool]) -> bool:
+    try:
+        if fn():
+            return True
+    except Exception:
+        logger.exception("%s 파이프라인 실행 중 예외 발생", name)
+
+    return False
+
+# 값 검증 실패 시
+def validate_df(df, name:str) -> bool:
+    if df is None or df.empty:
+            logger.error("%s 실패, 파이프라인 중단", name)
+            raise ValueError(f"{name} 데이터가 비어 있습니다.")
+
+# 파이프라인
 def run_stock_pipeline() -> bool:
     logger.info("=== 종목 파이프라인 시작 ===")
+    try:
 
-    df = fetch_stocks()
-    if df is None or df.empty:
-        logger.error("종목 목록 조회 실패, 파이프라인 중단")
+        df = fetch_stocks()
+        validate_df(df,"종목 목록 조회")
+
+        payload = to_stock_payload(df)
+
+        success = post_to_backend(STOCK_INFO_ENDPOINT, payload)
+        logger.info("=== 종목 파이프라인 종료 (성공: %s) ===", success)
+
+        return success
+    except Exception as e:
+        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
         return False
 
-    analyzed_df = analyze_stocks(df)
-    payload = to_stock_payload(analyzed_df)
 
-    success = post_to_backend(STOCK_INFO_ENDPOINT, payload)
-    logger.info("=== 종목 파이프라인 종료 (성공: %s) ===", success)
-
-    return success
-
-def run_price_pipeline() -> bool:
+def run_price_pipeline(date:str) -> bool:
     logger.info("=== 주가 파이프라인 시작 ===")
+    try:
+        df = fetch_prices(date)
+        validate_df(df,"주가 목록 조회")        
+        
+        payload = {"items":to_price_payload(df)}
 
-    date = datetime.now().strftime("%Y%m%d")
-    # date = "20260810"
-    df = fetch_prices(date)
-
-    if df is None or df.empty:
-        logger.error("주가 목록 조회 실패, 파이프라인 중단")
-        return False
-
-    analyzed_df = analyze_prices(df, date)
-
-    # 빈 배열의 경우 전송 없이 종료 -> 다음 파이프라인 실행
-    if analyzed_df.empty:
-        logger.info("유효한 주가 데이터가 0개입니다, 주가 파이프라인 종료")
-        return False
+        success = post_to_backend(STOCK_PRICE_ENDPOINT, payload)
+        logger.info("=== 주가 파이프라인 종료 (성공: %s) ===", success)
     
-    payload = {"prices":to_price_payload(analyzed_df)}
+        return success
+    except Exception as e:
+        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
+        return False
 
-    success = post_to_backend(STOCK_PRICE_ENDPOINT, payload)
-    logger.info("=== 주가 파이프라인 종료 (성공: %s) ===", success)
+def run_investor_flow(date:str) -> bool:
+    logger.info("=== 투자자별 순매수 거래 파이프라인 시작 ===")
+    try:
+        df = fetch_investor_flow(date)
+        validate_df(df,"투자자별 순매수 거래 목록 조회")
 
-    return success
+        price_df = fetch_prices(date)
+        validate_df(price_df,"주가 목록 목록 조회")
 
-def run_daily_batch():
+        daily_df = build_investor_flow(df,price_df)
+        validate_df(daily_df,"투자자별 순매수 거래 조회")
+        daily_payload = {"items": to_flow_payload(daily_df)}
+
+        success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,daily_payload) # nan은 json이 인식하지 못하므로 none으로 치환
+
+        analysis_df = analyze_investor_flow(daily_df)
+        validate_df(analysis_df,"투자자별 순매수 거래 분석")    
+        analysis_payload = {"items": to_flow_payload(analysis_df)}
+        
+        success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,analysis_payload)
+
+        is_success = success_daily and success_rank
+        logger.info("=== 투자자별 순매수 거래 파이프라인 종료 (성공: %s) ===", is_success)
+
+        return is_success
+    except Exception as e:
+        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
+        return False
+
+# 통합 파이프라인
+def run_daily_batch() -> bool:
     start = time.time()
     logger.info("=== 일일 배치 작업 시작 ===")
-    overall_success = True # 배치 성공 실패 여부 판단
-
+    overall_success = False
     try:
-        stock_success = run_stock_pipeline()
-    except Exception as e:
-        logger.exception(f"종목 파이프라인 실행 중 예외 발생: {e}")
-        stock_success = False
+        date = datetime.now().strftime("%Y%m%d")
+        # date = "20260810"
+        
+        # 종목은 FK 대상이므로 실패 시 이후 파이프라인 중단
+        if not _run_pipeline("종목", run_stock_pipeline):
+            logger.error("배치 중단: 종목 파이프라인 실패")
+            return False
 
-    if stock_success:
-        try:
-            price_success = run_price_pipeline()
-        except Exception as e:
-            logger.exception(f"주가 파이프라인 실행 중 예외 발생: {e}")
-            price_success = False
-            overall_success = False
-        if not price_success:
-            logger.error("주가 파이프라인 실패")
-            overall_success = False
-    else:
-        logger.error("배치 작업 중단: 종목 파이프라인 실패")
-        overall_success = False
+        # 상호 독립이므로 하나 실패해도 나머지 진행
+        results = {
+            name: _run_pipeline(name, fn)
+            for name, fn in [
+                ("주가", partial(run_price_pipeline, date)),
+                ("투자자별 순매수", partial(run_investor_flow, date))
+            ]
+        }
 
-    spend_time = time.time() - start
-    logger.info(f"=== 일일 배치 작업 종료 (소요 시간: {spend_time:.1f}초) ===")
-    return overall_success
+        failed = [name for name, ok in results.items() if not ok]
+        if failed:
+            logger.error("실패한 파이프라인: %s", ", ".join(failed)) # ,로 엮어서 배열 출력
+
+        overall_success = not failed
+        return overall_success
+    
+    finally:
+        elapsed = time.time() - start
+        logger.info(f"=== 일일 배치 작업 종료 (소요 시간: {elapsed:.1f}초) ===")
+        # return all(results.values()) 실패해도 반환할 시 에러 반환 위험
 
 if __name__ == "__main__":
     success = run_daily_batch()
-    sys.exit(0 if success else 1) # 왜 필요하지?
+    sys.exit(0 if success else 1) # 왜 필요하지? 몰라?

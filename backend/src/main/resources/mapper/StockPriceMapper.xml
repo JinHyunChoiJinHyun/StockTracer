@@ -9,7 +9,7 @@
             s.stock_code,
             s.stock_name,
             s.market,
-            sp.stock_date,
+            sp.price_date,
             sp.open_price,
             sp.close_price,
             sp.low_price,
@@ -22,12 +22,12 @@
         on sp.stock_code = s.stock_code
         WHERE sp.stock_code = #{stockCode}
         <if test="startDate != null">
-            AND sp.stock_date &gt;= #{startDate}
+            AND sp.price_date &gt;= #{startDate}
         </if>
         <if test="endDate != null">
-            AND sp.stock_date &lt;= #{endDate}
+            AND sp.price_date &lt;= #{endDate}
         </if>
-        ORDER BY sp.stock_date ASC
+        ORDER BY sp.price_date ASC
     </select>
 
     <!-- 2. 여러 종목 동시 조회 -->
@@ -36,7 +36,7 @@
             s.stock_code,
             s.stock_name,
             s.market,
-            sp.stock_date,
+            sp.price_date,
             sp.open_price,
             sp.close_price,
             sp.low_price,
@@ -53,7 +53,7 @@
         <foreach item="code" collection="stockCodes" open="(" separator="," close=")">
             #{code}
         </foreach>
-        AND sp.stock_date = #{priceDate}
+        AND sp.price_date = #{priceDate}
         <choose>
             <when test="sortBy == 'volume'">
                 ORDER BY sp.volume DESC
@@ -79,7 +79,7 @@
         INSERT INTO stock_price
         (
          stock_code,
-         stock_date,
+         price_date,
          open_price,
          close_price,
          low_price,
@@ -93,7 +93,7 @@
         <foreach collection="prices" item="p" separator=",">
             (
              #{p.stockCode},
-             #{p.stockDate},
+             #{p.priceDate},
              #{p.openPrice},
              #{p.closePrice},
              #{p.lowPrice},
@@ -114,37 +114,4 @@
             trading_value = new_val.trading_value,
             market_cap = new_val.market_cap
     </insert>
-    <!-- oracle -->
-    <!-- 가상 테이블 생성 -->
-    <!--
-    <insert id="bulkUpsert">
-        MERGE INTO stock_price target
-        USING (
-            <foreach collection="prices" item="p" separator=" UNION ALL ">
-                SELECT
-                    cast(#{p.stockCode} as varchar) AS stock_code,
-                    cast(#{p.stockDate} as date) AS stock_date,
-                    cast(#{p.openPrice} as NUMBER) AS open_price,
-                    cast(#{p.closePrice} as NUMBER) AS close_price,
-                    cast(#{p.lowPrice} as NUMBER) AS low_price,
-                    cast(#{p.highPrice} as NUMBER) AS high_price,
-                    cast(#{p.priceChange} as NUMBER) AS price_change,
-                    cast(#{p.volume} as NUMBER) AS volume
-                FROM DUAL
-            </foreach>
-            ) src
-        ON (target.stock_code = src.stock_code AND target.stock_date = src.stock_date)
-        WHEN MATCHED THEN
-            UPDATE SET
-                target.open_price = src.open_price,
-                target.close_price = src.close_price,
-                target.low_price = src.low_price,
-                target.high_price = src.high_price,
-                target.price_change = src.price_change,
-                target.volume = src.volume
-        WHEN NOT MATCHED THEN
-            INSERT (stock_code, stock_date, open_price, close_price, low_price, high_price,price_change, volume)
-            VALUES (src.stock_code, src.stock_date, src.open_price, src.close_price, src.low_price, src.high_price, src.price_change, src.volume)
-    </insert>
-    -->
 </mapper>
