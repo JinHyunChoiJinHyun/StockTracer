@@ -85,11 +85,12 @@ def run_investor_flow(date:str) -> bool:
         validate_df(daily_df,"투자자별 순매수 거래 조회")
         daily_payload = {"items": to_flow_payload(daily_df)}
 
+        success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,daily_payload) # nan은 json이 인식하지 못하므로 none으로 치환
+
         analysis_df = analyze_investor_flow(daily_df)
         validate_df(analysis_df,"투자자별 순매수 거래 분석")    
         analysis_payload = {"items": to_flow_payload(analysis_df)}
         
-        success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,daily_payload) # nan은 json이 인식하지 못하므로 none으로 치환
         success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,analysis_payload)
 
         is_success = success_daily and success_rank
@@ -106,8 +107,8 @@ def run_daily_batch() -> bool:
     logger.info("=== 일일 배치 작업 시작 ===")
     overall_success = False
     try:
-        # date = datetime.now().strftime("%Y%m%d")
-        date = "20260810"
+        date = datetime.now().strftime("%Y%m%d")
+        # date = "20260810"
         
         # 종목은 FK 대상이므로 실패 시 이후 파이프라인 중단
         if not _run_pipeline("종목", run_stock_pipeline):
@@ -133,7 +134,7 @@ def run_daily_batch() -> bool:
     finally:
         elapsed = time.time() - start
         logger.info(f"=== 일일 배치 작업 종료 (소요 시간: {elapsed:.1f}초) ===")
-        return all(results.values())
+        # return all(results.values()) 실패해도 반환할 시 에러 반환 위험
 
 if __name__ == "__main__":
     success = run_daily_batch()
