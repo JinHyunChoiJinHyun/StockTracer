@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from dotenv import  load_dotenv
 from pykrx import stock
+from dataclasses import dataclass
 
 # 로그 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -182,18 +183,67 @@ def _build_reason(row: pd.Series) -> str:
         return f"기관이 {inst:,.0f}억 담았어요. 외국인 매수는 아직 붙지 않았습니다."
     return f"외국인·기관 합쳐 {row['major_net'] / EOK:,.0f}억이 들어왔어요."
 
+# 저평가 종목 설정값
+@dataclass(frozen=True)
+class ValueConfig:
+    min_market_cap: int = 50_000_000_000 # 최소 시가총액: 500억
+    min_trading_value: int = 500_000_000 # 최소 거래대금: 5억
+    min_sector_size: int = 15 # 업종 표본 하한 (표본이 적으면 업종이 아닌 전체 시장 기준 백분위)
+    per_weight: float = 0.5 # per 가중치
+    pbr_weight: float = 0.5 # pbr 가중치
+    exclude_preferred: bool = True # 우선주 제외 여부
+
+    def __post_init__(self) -> None:
+        # 가중치 합 검증 (가중치의 합은 무조건 100%)
+        total = self.per_weight + self.pbr_weight
+        if not np.isclose(total, 1.0):
+            raise ValueError(f"per_weight + pbr_weight 는 1.0 이어야 합니다: {total}")
+
 # 저평가 종목 분석
 def analyze_fundamental(df: pd.DataFrame) -> pd.DataFrame:
 
 # 분석 대상 필터
-def filter_fundamental(df:pd.DataFrame) -> pd.DataFrame:
+def filter_fundamental(df:pd.DataFrame, cfg: ValueConfig) -> pd.DataFrame:
     before = len(df)
+
     # 의미없는 값 리스트 저장
     steps: list[tuple[str, pd.Series]] = [
-        # gt(0) == >
-        ("per<=0 또는 결측", df["per"].gt(0).fillna(False)),
+        # 적자 기업 제외
+        ("per<=0 또는 결측", df["per"].gt(0).fillna(False)), # 0보다 크면 true 아니면 false
         ("pbr<=0 또는 결측", df["pbr"].gt(0).fillna(False)),
-        ("시총 미달", df["per"].gt(0).fillna(False)),
-        ("per<=0 또는 결측", df["per"].gt(0).fillna(False))
+        ("시총 미달", df["market_cap"].ge(cfg.min_market_cap).fillna(False)),
+        ("거래대금 미달", df["trading_value"].ge(cfg.min_trading_value).fillna(False))
     ]
+
+    # 우선주 배제
+    if cfg.exclude_preferred:
+        steps.append(("우선주", df["stock_code"].str.endswith("0"))) # 보통주는 끝자리가 0이므로 보통주만 true로 저장 (우선주는 false로 저장)
+
+    # 각 조건으로 필터
+    mask = pd.Series(True, index=df.index) # 조건 통과 여부를 저장할 변수
+    for label, condition in steps: 
+        dropped = int((mask & ~condition).sum()) # 현재 조건을 통과하지 못한 종목 수 합계 계산
+        if dropped:
+            logger.info("제외 [%s]: %d건", label, dropped)
+        mask &= condition # mask와 condition 상태를 비교하여 true인 경우만 mask에 저장
+
+    """
+        mask 없이 필터링 (위 과정과 동일)
+
+        df = df[df["market_cap"].ge(cfg.min_market_cap).fillna(False)]
+    
+        df = df[df["trading_value"].ge(cfg.min_trading_value).fillna(False)]
+    
+        df = df[df["per"].gt(0).fillna(False)]
+        
+    """
+
+    filter_df = df[mask].copy()
+
+    logger.info("확정: %d -> %d", before, len(filter_df))
+
+    if filter_df.empty:
+        raise ValueError("필터 결과가 비었습니다. ValueConfig 임계값을 확인하세요.")
+
+
     

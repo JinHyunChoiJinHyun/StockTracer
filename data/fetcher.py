@@ -148,8 +148,8 @@ def fetch_fundamental_and_marketcap(date:str) -> pd.DataFrame:
     fundamental_df = stock.get_market_fundamental(date, market="ALL")
     marketcap_df = stock.get_market_cap(date, market="ALL")
 
-    # null 체크
-    if fundamental_df.empty() or marketcap_df:
+    # 조회 결과 체크
+    if fundamental_df.empty or marketcap_df.empty:
         raise ValueError(f"fundamental 조회 결과 없음: {date}")
 
     # 필드명 변환
@@ -163,9 +163,11 @@ def fetch_fundamental_and_marketcap(date:str) -> pd.DataFrame:
     # 두 df 결합
     df = fundamental_df.join(marketcap_df[["market_cap","trading_value","shares_outstanding"]], how="inner")
 
+    df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+
     # 티커 필드명 변환
     df.index.name = "stock_code"
-    logger.info("fundamental 수집 완료: date=%s rows=%d", date, len(df))
+    logger.info("fundamental/marketcap 수집 완료: date=%s rows=%d", date, len(df))
 
     return df.reset_index()
 
