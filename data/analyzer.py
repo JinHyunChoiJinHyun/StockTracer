@@ -182,5 +182,18 @@ def _build_reason(row: pd.Series) -> str:
         return f"기관이 {inst:,.0f}억 담았어요. 외국인 매수는 아직 붙지 않았습니다."
     return f"외국인·기관 합쳐 {row['major_net'] / EOK:,.0f}억이 들어왔어요."
 
+# 저평가 종목 분석
+def analyze_fundamental(df: pd.DataFrame) -> pd.DataFrame:
 
+# 분석 대상 필터
+def filter_fundamental(df:pd.DataFrame) -> pd.DataFrame:
+    before = len(df)
+    # 의미없는 값 리스트 저장
+    steps: list[tuple[str, pd.Series]] = [
+        # gt(0) == >
+        ("per<=0 또는 결측", df["per"].gt(0).fillna(False)),
+        ("pbr<=0 또는 결측", df["pbr"].gt(0).fillna(False)),
+        ("시총 미달", df["per"].gt(0).fillna(False)),
+        ("per<=0 또는 결측", df["per"].gt(0).fillna(False))
+    ]
     

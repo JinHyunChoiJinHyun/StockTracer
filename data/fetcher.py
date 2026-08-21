@@ -141,7 +141,38 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
         today_df["순매수거래대금"], errors="coerce"
     ).fillna(0.0)
 
-    return today_df.reset_index()
+    return today_df.reset_index() # index 값을 필드로 이동
+
+# 저평가 종목 수집
+def fetch_fundamental_and_marketcap(date:str) -> pd.DataFrame:
+    fundamental_df = stock.get_market_fundamental(date, market="ALL")
+    marketcap_df = stock.get_market_cap(date, market="ALL")
+
+    # null 체크
+    if fundamental_df.empty() or marketcap_df:
+        raise ValueError(f"fundamental 조회 결과 없음: {date}")
+
+    # 필드명 변환
+    fundamental_df.columns = fundamental_df.columns.str.lower()
+    marketcap_df = marketcap_df.rename(columns={
+        "시가총액": "market_cap",
+        "거래대금": "trading_value",
+        "상장주식수": "shares_outstanding"
+    })
+
+    # 두 df 결합
+    df = fundamental_df.join(marketcap_df[["market_cap","trading_value","shares_outstanding"]], how="inner")
+
+    # 티커 필드명 변환
+    df.index.name = "stock_code"
+    logger.info("fundamental 수집 완료: date=%s rows=%d", date, len(df))
+
+    return df.reset_index()
+
+
+
+
+
 
 
 
