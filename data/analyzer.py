@@ -183,6 +183,7 @@ def _build_reason(row: pd.Series) -> str:
         return f"기관이 {inst:,.0f}억 담았어요. 외국인 매수는 아직 붙지 않았습니다."
     return f"외국인·기관 합쳐 {row['major_net'] / EOK:,.0f}억이 들어왔어요."
 
+""" 저평가 종목 분석 """
 # 저평가 종목 설정값
 @dataclass(frozen=True)
 class ValueConfig:
@@ -198,9 +199,6 @@ class ValueConfig:
         total = self.per_weight + self.pbr_weight
         if not np.isclose(total, 1.0):
             raise ValueError(f"per_weight + pbr_weight 는 1.0 이어야 합니다: {total}")
-
-# 저평가 종목 분석
-def analyze_fundamental(df: pd.DataFrame) -> pd.DataFrame:
 
 # 분석 대상 필터
 def filter_fundamental(df:pd.DataFrame, cfg: ValueConfig) -> pd.DataFrame:
@@ -228,7 +226,7 @@ def filter_fundamental(df:pd.DataFrame, cfg: ValueConfig) -> pd.DataFrame:
         mask &= condition # mask와 condition 상태를 비교하여 true인 경우만 mask에 저장
 
     """
-        mask 없이 필터링 (위 과정과 동일)
+        mask 없이 필터링 시 (위 과정과 동일)
 
         df = df[df["market_cap"].ge(cfg.min_market_cap).fillna(False)]
     
@@ -243,7 +241,54 @@ def filter_fundamental(df:pd.DataFrame, cfg: ValueConfig) -> pd.DataFrame:
     logger.info("확정: %d -> %d", before, len(filter_df))
 
     if filter_df.empty:
-        raise ValueError("필터 결과가 비었습니다. ValueConfig 임계값을 확인하세요.")
+            raise ValueError("필터 결과가 비었습니다. ValueConfig 임계값을 확인하세요.")
 
+    return filter_df
 
+# 백분위 변환
+def _percentile(df: pd.DataFrame, column: str, cfg: ValueConfig) -> tuple[pd.Series, pd.Series]:
+    """ 절대평가 시 특정 분야로만 채워지므로 상대평가 필요"""
+    market_pct = df[column].rank(pct=True, method="average") # 전체 백분위 계산
+
+    # null이 아닌 행 존재 여부 확인
+    has_sector = df["sector"].notna()
+
+    # sector 필드값이 하나도 존재하지 않을 시(모든 행이 다 null일 시)
+    if not has_sector.any(): 
+        return market_pct, pd.Series("market", index=df.index)
+
+    # sector 필드값이 하나라도 존재할 시
+    sector_pct = df.groupby("sector")[column].rank(pct=True, method="average") # sector별 백분위 계산
+    sector_size = df.groupby("sector")[column].transform("size") # sector 갯수 계산
+
+    # sector 기준 백분위 적용 여부 결정
+    use_sector = has_sector & sector_size.ge(cfg.min_sector_size) # 유효한 sector 계산
+    pct = sector_pct.where(use_sector, market_pct) # sector가 유효할 시 sector_pct 사용, 아니라면 market_pct 사용
+    scope = pd.Series(np.where(use_sector, "sector", "market"), index = df.index) # true면 전자, false면 후자를 필드값으로 삽입
+
+    return pct, scope
+
+# 분석 대상 점수화
+def score_fundamental(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
+    pct_df = df.copy()
+    per_pct, per_scope = _percentile(pct_df, "per", cfg)
+    pbr_pct, _ = _percentile(pct_df, "pbr", cfg) # pbr_scope는 per_scope와 동일하므로 반환 x
+
+    pct_df["per_pct"] = per_pct.round(4)
+    pct_df["pbr_pct"] = pbr_pct.round(4)
+    pct_df["scored_scope"] = per_scope # 백분위 계산 기준
+    pct_df["value_score"] = (
+        ((1 - per_pct) * cfg.per_weight + (1 - pbr_pct) * cfg.pbr_weight) * 100
+    ).round(2) # 가중치 계산 (높을수록 상대적으로 저평가)
+
+    return pct_df
+
+# 저평가 이유 판정
+def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
+    trap_df = df.copy()
+    prev = trap_df["prev_eps"].replace(0, np.nan) # 0을 null로 변환
     
+
+# 저평가 종목 분석
+def analyze_fundamental(df: pd.DataFrame) -> pd.DataFrame:
+    pass

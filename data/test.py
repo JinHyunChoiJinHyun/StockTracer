@@ -1,25 +1,35 @@
 from pykrx import stock
 from dotenv import  load_dotenv
 import FinanceDataReader as fdr
+import pandas as pd
+from fetcher import fetch_market_sector, fetch_marketcap, fetch_fundamental
 
 load_dotenv()
 
-df_price = stock.get_market_net_purchases_of_equities("20260810", "20260810", "ALL", "기관합계") 
+date = "20260810"
 
-marketcap_df = stock.get_market_cap("20260810", market="ALL")
-fundamental_df = stock.get_market_fundamental("20260810", market="ALL")
+fundamental_df = fetch_fundamental(date)
+marketcap_df = fetch_marketcap(date)
+sector_df = fetch_market_sector(date)
+
+# 조회 결과 체크
+if fundamental_df.empty or marketcap_df.empty:
+    raise ValueError(f"fundamental 조회 결과 없음: {date}")
+
+# 필드명 변환
 fundamental_df.columns = fundamental_df.columns.str.lower()
-
-fundamental_df.columns = fundamental_df.columns.str.lower()
-
 marketcap_df = marketcap_df.rename(columns={
     "시가총액": "market_cap",
     "거래대금": "trading_value",
     "상장주식수": "shares_outstanding"
 })
 
-# 두 df 결합
+
+# 세 df 결합
 df = fundamental_df.join(marketcap_df[["market_cap","trading_value","shares_outstanding"]], how="inner")
 
-print(df.head())
+df = df.join(sector_df, how="left")
+
+print(df)
+
 

@@ -143,33 +143,82 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
 
     return today_df.reset_index() # index 값을 필드로 이동
 
-# 저평가 종목 수집
-def fetch_fundamental_and_marketcap(date:str) -> pd.DataFrame:
-    fundamental_df = stock.get_market_fundamental(date, market="ALL")
-    marketcap_df = stock.get_market_cap(date, market="ALL")
+""" 저평가 종목 수집 """
+# 종목 시장 기본 요소 수집
+def fetch_fundamental(date: str) -> pd.DataFrame:
+    df = stock.get_market_fundamental(date, market="ALL")
 
-    # 조회 결과 체크
-    if fundamental_df.empty or marketcap_df.empty:
+    # 빈 df 체크
+    if df.empty:
         raise ValueError(f"fundamental 조회 결과 없음: {date}")
 
     # 필드명 변환
-    fundamental_df.columns = fundamental_df.columns.str.lower()
-    marketcap_df = marketcap_df.rename(columns={
-        "시가총액": "market_cap",
-        "거래대금": "trading_value",
-        "상장주식수": "shares_outstanding"
+    df.columns = df.columns.str.lower()
+
+    return df
+
+# 종목 시가총액 수집
+def fetch_marketcap(date: str) -> pd.DataFrame:
+    df = stock.get_market_cap(date, market="ALL")
+
+    # 빈 df 체크
+    if df.empty:
+        raise ValueError(f"marketcap 조회 결과 없음: {date}")
+    
+    # 필드명 변환
+    df = df.rename(columns={
+            "시가총액": "market_cap",
+            "거래대금": "trading_value",
+            "상장주식수": "shares_outstanding"
+        })
+
+    return df
+
+# 종목 업종 수집
+def fetch_market_sector(date: str) -> pd.DataFrame:
+    kospi_df = stock.get_market_sector_classifications(date, market="KOSPI")
+    kosdaq_df = stock.get_market_sector_classifications(date, market="KOSDAQ")
+
+    # 수집한 업종 결합
+    df = pd.concat([
+        kosdaq_df,
+        kospi_df
+    ], axis=0)
+
+    # 중복 index 제거
+    df = df[~df.index.duplicated(keep="first")]
+
+    # 빈 df 체크
+    if df.empty:
+        raise ValueError(f"market sector 조회 결과 없음: {date}")
+
+    # 필드명 변환
+    df = df.rename(columns={
+        "업종명": "sector"
     })
 
-    # 두 df 결합
+    return df[["sector"]] # 확장을 위해 이중 배열 사용
+
+# 수집 정보 결합
+def build_value_fundamental(date:str) -> pd.DataFrame:
+    fundamental_df = fetch_fundamental(date)
+    marketcap_df = fetch_marketcap(date)
+    sector_df = fetch_market_sector(date)
+
+    # 세 df 결합
     df = fundamental_df.join(marketcap_df[["market_cap","trading_value","shares_outstanding"]], how="inner")
+
+    df = df.join(sector_df, how="left")
 
     df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
 
     # 티커 필드명 변환
     df.index.name = "stock_code"
-    logger.info("fundamental/marketcap 수집 완료: date=%s rows=%d", date, len(df))
+    logger.info("저평가 종목 수집 완료: date=%s rows=%d", date, len(df))
 
     return df.reset_index()
+
+
 
 
 
