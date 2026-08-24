@@ -285,8 +285,19 @@ def score_fundamental(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
 
 # 저평가 이유 판정
 def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
-    trap_df = df.copy()
-    prev = trap_df["prev_eps"].replace(0, np.nan) # 0을 null로 변환
+    eps_df = df.copy()
+    prev = eps_df["prev_eps"].replace(0, np.nan) # 0을 null로 변환 / series
+    eps_df["eps_growth"] = ((eps_df["eps"] - prev) / prev.abs()).round(4) # index를 기준으로 계산
+    eps_df["value_trap"] = eps_df["eps_growth"].lt(0).fillna(False) 
+
+    logger.info(
+        "밸류트랩 판정: 대상=%d 경고=%d 판정불가(prev_eps 결측)=%d",
+        len(eps_df),
+        int(eps_df["value_trap"].sum()),
+        int(eps_df["eps_growth"].isna().sum()),
+    )
+
+    return eps_df
     
 
 # 저평가 종목 분석
