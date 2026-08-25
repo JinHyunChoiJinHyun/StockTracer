@@ -16,6 +16,12 @@ from api_client import get
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__) 
 
+# 영업일 여부 확인
+def is_business_days(date:str) -> bool:
+    ts = pd.Timestamp(date)
+    days = stock.get_previous_business_days(year=ts.year, month=ts.month)
+    return ts in days
+
 # 상위 종목 원본 데이터 수집
 def fetch_stocks() -> pd.DataFrame:
     logger.info("KRX 시장 데이터 수집 시작...")
@@ -146,7 +152,7 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
 
     return today_df.reset_index() # index 값을 필드로 이동
 
-""" 저평가 종목 수집 """
+""" 저평가 종목 """
 # 종목 시장 기본 요소 수집
 def fetch_fundamental(date: str) -> pd.DataFrame:
     df = stock.get_market_fundamental(date, market="ALL")
@@ -203,7 +209,7 @@ def fetch_market_sector(date: str) -> pd.DataFrame:
     return df[["sector"]] # 확장을 위해 이중 배열 사용
 
 # 과거 eps 조회
-def fetch_prev_eps(date:str, end_point:str, lag:int=1) -> pd.DataFrame:
+def fetch_prev_eps(date:str, lag:int=1) -> pd.DataFrame:
     # 상수 선언
     _COLUMNS = ["stock_code", "eps", "prev_eps", "effective_date", "prev_effective_date"]
     _RENAME = {
@@ -214,14 +220,14 @@ def fetch_prev_eps(date:str, end_point:str, lag:int=1) -> pd.DataFrame:
     }
 
     # 영업일 조회
-    if not is_business_days(date):
-        return pd.DataFrame
+    # if not is_business_days(date):
+    #     return pd.DataFrame
 
     # param 생성
     params = {"lag": lag}
 
     # 백엔드 요청
-    payload = get(end_point, params=params)
+    payload = get("/value/prev-eps", params=params)
     items = payload.get("items", [])
 
     logger.info("prev_eps 수신: 대상=%d 판정불가=%d lag=%d",
@@ -232,24 +238,27 @@ def fetch_prev_eps(date:str, end_point:str, lag:int=1) -> pd.DataFrame:
         logger.warning("prev_eps 이력 없음")
         return pd.DataFrame(columns=_COLUMNS)
 
-    return pd.DataFrame(items).rename(columns=_RENAME)[_COLUMNS]
+    # df 생성
+    df = pd.DataFrame(items).rename(columns=_RENAME)[_COLUMNS]
+    df.set_index("stock_code")
 
-# 영업일 여부 확인
-def is_business_days(date:str) -> bool:
-    ts = pd.Timestamp(date)
-    days = stock.get_previous_business_days(year=ts.year, month=ts.month)
-    return ts in days
+    return df
+
+
 
 # 수집 정보 결합
 def build_value_fundamental(date:str) -> pd.DataFrame:
     fundamental_df = fetch_fundamental(date)
     marketcap_df = fetch_marketcap(date)
     sector_df = fetch_market_sector(date)
+    prev_eps_df = fetch_prev_eps(date)
 
-    # 세 df 결합
+    # df 결합
     df = fundamental_df.join(marketcap_df[["market_cap","trading_value","shares_outstanding"]], how="inner")
 
     df = df.join(sector_df, how="left")
+
+    df = df.join(prev_eps_df, how="left")
 
     df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
 

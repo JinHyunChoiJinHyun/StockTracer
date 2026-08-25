@@ -2,9 +2,9 @@ import logging, time, sys
 import numpy as np
 from datetime import datetime
 
-from fetcher import fetch_prices, fetch_stocks, fetch_investor_flow
+from fetcher import fetch_prices, fetch_stocks, fetch_investor_flow, build_value_fundamental, is_business_days
 from analyzer import build_investor_flow, analyze_investor_flow
-from mapper import to_stock_payload, to_price_payload, to_flow_payload
+from mapper import to_stock_payload, to_price_payload, to_payload
 from api_client import post_to_backend
 from typing import Callable
 from functools import partial
@@ -20,8 +20,11 @@ STOCK_INFO_ENDPOINT = "/info"
 STOCK_PRICE_ENDPOINT = "/prices/bulk"
 STOCK_INVESTOR_FLOW_DAILY_ENDPOINT = "/investor-flows/daily"
 STOCK_INVESTOR_FLOW_RANK_ENDPOINT = "/investor-flows/analysis"
+STOCK_VALUE_ENDPOINT = "/value"
 
-# 유틸
+""" 유틸 """
+
+# 파이프라인 통합
 def _run_pipeline(name:str, fn: Callable[[], bool]) -> bool:
     try:
         if fn():
@@ -83,20 +86,37 @@ def run_investor_flow(date:str) -> bool:
 
         daily_df = build_investor_flow(df,price_df)
         validate_df(daily_df,"투자자별 순매수 거래 조회")
-        daily_payload = {"items": to_flow_payload(daily_df)}
+        daily_payload = {"items": to_payload(daily_df)}
 
         success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,daily_payload) # nan은 json이 인식하지 못하므로 none으로 치환
 
         analysis_df = analyze_investor_flow(daily_df)
         validate_df(analysis_df,"투자자별 순매수 거래 분석")    
-        analysis_payload = {"items": to_flow_payload(analysis_df)}
+        analysis_payload = {"items": to_payload(analysis_df)}
         
-        success_rank = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,analysis_payload)
+        success_analysis = post_to_backend(STOCK_INVESTOR_FLOW_RANK_ENDPOINT,analysis_payload)
 
-        is_success = success_daily and success_rank
+        is_success = success_daily and success_analysis
         logger.info("=== 투자자별 순매수 거래 파이프라인 종료 (성공: %s) ===", is_success)
 
         return is_success
+    except Exception as e:
+        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
+        return False
+
+def run_value_pipeline(date: str) -> bool:
+    logger.info("=== 저평가 종목 파이프라인 시작 ===")
+    try:
+        value_df = build_value_fundamental(date)
+        validate_df(value_df, "종목 시장 기본 요소 조회")
+
+        value_payload = {"items": to_payload(value_df)}
+
+        success_value = post_to_backend(STOCK_VALUE_ENDPOINT,value_payload)
+
+        logger.info("=== 저평가 종목 파이프라인 종료 (성공: %s) ===", success_value)
+
+        return success_value
     except Exception as e:
         logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
         return False
@@ -107,9 +127,12 @@ def run_daily_batch() -> bool:
     logger.info("=== 일일 배치 작업 시작 ===")
     overall_success = False
     try:
-        # 거래일 목록에 오늘 날짜가 포함되면 파이프라인 실행 아니면 그냥 중단 로직 작성 하자
+        # 거래일 목록에 오늘 날짜가 포함되면 파이프라인 실행 아니면 중단
         date = datetime.now().strftime("%Y%m%d")
         # date = "20260810"
+        if not is_business_days(date):
+            logger.info("[%s] 비영업일이므로 종료합니다", date)
+            return False
         
         # 종목은 FK 대상이므로 실패 시 이후 파이프라인 중단
         if not _run_pipeline("종목", run_stock_pipeline):
@@ -121,7 +144,8 @@ def run_daily_batch() -> bool:
             name: _run_pipeline(name, fn)
             for name, fn in [
                 ("주가", partial(run_price_pipeline, date)),
-                ("투자자별 순매수", partial(run_investor_flow, date))
+                ("투자자별 순매수", partial(run_investor_flow, date)),
+                ("저평가 종목", partial(run_value_pipeline, date))
             ]
         }
 

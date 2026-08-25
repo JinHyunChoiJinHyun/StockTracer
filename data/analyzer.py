@@ -269,7 +269,7 @@ def _percentile(df: pd.DataFrame, column: str, cfg: ValueConfig) -> tuple[pd.Ser
     return pct, scope
 
 # 분석 대상 점수화
-def score_fundamental(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
+def score_value(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
     pct_df = df.copy()
     per_pct, per_scope = _percentile(pct_df, "per", cfg)
     pbr_pct, _ = _percentile(pct_df, "pbr", cfg) # pbr_scope는 per_scope와 동일하므로 반환 x
@@ -283,7 +283,7 @@ def score_fundamental(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
 
     return pct_df
 
-# 저평가 이유 판정
+# 저평가 이유 판정 (실적이 좋은데 저평가인지 아니면 진짜 실적이 안좋은건지)
 def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
     eps_df = df.copy()
     prev = eps_df["prev_eps"].replace(0, np.nan) # 0을 null로 변환 / series
@@ -298,8 +298,28 @@ def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
     )
 
     return eps_df
-    
 
 # 저평가 종목 분석
-def analyze_fundamental(df: pd.DataFrame) -> pd.DataFrame:
-    pass
+def analyze_fundamental(raw: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
+    # 컬럼명 지정
+    OUTPUT_COLUMNS = [
+        "base_date", "code", "sector",
+        "per", "pbr", "eps", "bps", "div_yield", "market_cap", "trading_value",
+        "per_pct", "pbr_pct", "value_score", "scored_scope",
+        "eps_growth", "value_trap",
+    ]
+
+    # 파이프라인 실행
+    result = (
+        raw.pipe(filter_fundamental, cfg)
+        .pipe(score_value, cfg)
+        .pipe(flag_value_trap)
+    )
+
+    logger.info(
+        "밸류 분석 완료: rows=%d score_max=%.2f score_min=%.2f",
+        len(result),
+        float(result["value_score"].max()),
+        float(result["value_score"].min()),
+    )
+    return result

@@ -36,5 +36,5 @@ def to_price_payload(df) -> list[dict]:
 
     return to_payload(df, field_map)
 
-def to_flow_payload(df:pd.DataFrame) -> list[dict]:
+def to_payload(df:pd.DataFrame) -> list[dict]:
     return df.replace({np.nan: None}).to_dict(orient="records")
