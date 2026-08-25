@@ -5,31 +5,27 @@
     <resultMap id="epsPrevMap" type="com.stocktracer.backend.value.domain.EpsHistory">
         <constructor>
             <idArg column="stock_code" javaType="java.lang.String"/>
-            <arg column="eps" javaType="java.math.BigDecimal"/>
             <arg column="prev_eps" javaType="java.math.BigDecimal"/>
-            <arg column="effective_date" javaType="java.time.LocalDate"/>
             <arg column="prev_effective_date" javaType="java.time.LocalDate"/>
         </constructor>
     </resultMap>
 
-    <sql id="selectCols">
-        current.stock_code,
-        current.eps,
-        prev.eps as prev_eps,
-        current.effective_date,
-        prev.effective_date as prev_effective_date
-    </sql>
-
-    <sql id="lagJoin">
-        LEFT JOIN eps_history prev
-        ON prev.stock_code = current.stock_code
-        AND prev.seq = current.seq - #{lag}
-    </sql>
-
-    <select id="findLatestPrev" resultMap="epsPrevMap">
-        SELECT <include refid="selectCols"/>
-            FROM(
-                SELECT stock_code, eps, seq, effectivev_date
-        )
+    <select id="findPrevEps" resultMap="epsPrevMap">
+        SELECT
+            h.stock_code,
+            h.prev_eps,
+            h.prev_effective_date
+        FROM(
+            SELECT
+                stock_code,
+                eps as prev_eps,
+                effective_date as prev_effective_date,
+                ROW_NUMBER() OVER (PARTITION BY stock_code ORDER BY seq DESC) AS rn
+            FROM
+                eps_history
+            WHERE
+                effective_date &lt; #{baseDate} <!-- 금일 날짜 제외 -->
+            ) h
+        WHERE h.rn = 1
     </select>
 </mapper>

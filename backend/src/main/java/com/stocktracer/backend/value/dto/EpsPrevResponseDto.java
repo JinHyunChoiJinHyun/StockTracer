@@ -9,7 +9,6 @@ public record EpsPrevResponseDto(
         LocalDate baseDate,
         int lag,
         int count,
-        int undecidableCount, // prevEps == null인 건수
         List<EpsHistory> items
 ) {
     /* domain -> dto 변환 */
@@ -20,12 +19,10 @@ public record EpsPrevResponseDto(
             int lag,
             List<EpsHistory> items
     ){
-        long undecidable = items.stream().filter(i -> i.prevEps() == null).count(); // prevEps가 null인 객체의 수를 long 타입으로 반환
         return new EpsPrevResponseDto(
                 baseDate,
                 lag,
                 items.size(),
-                (int) undecidable,
                 items
         );
     }
