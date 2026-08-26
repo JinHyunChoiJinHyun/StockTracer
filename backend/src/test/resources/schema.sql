@@ -56,3 +56,14 @@ CREATE TABLE investor_flow_analysis (
 
     PRIMARY KEY (base_date, stock_code)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- 5. eps history 테이블
+CREATE TABLE eps_history (
+     stock_code     CHAR(6)        NOT NULL,
+     effective_date DATE           NOT NULL,
+     eps            DECIMAL(18,2)  NOT NULL,
+     seq            INT            NOT NULL,
+     created_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     PRIMARY KEY (stock_code, effective_date),
+     UNIQUE KEY uk_eps_code_seq (stock_code, seq)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
