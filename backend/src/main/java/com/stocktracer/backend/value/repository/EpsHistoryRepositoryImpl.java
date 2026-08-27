@@ -15,7 +15,7 @@ public class EpsHistoryRepositoryImpl implements EpsHistoryRepository {
     private final EpsHistoryMapper mapper;
 
     @Override
-    public List<EpsHistory> findPrevEps(LocalDate baseDate, int lag) {
-        return mapper.findPrevEps(baseDate, lag);
+    public List<EpsHistory> findPrevEps(LocalDate baseDate) {
+        return mapper.findPrevEps(baseDate);
     }
 }

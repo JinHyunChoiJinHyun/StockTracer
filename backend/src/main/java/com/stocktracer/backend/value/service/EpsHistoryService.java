@@ -18,17 +18,17 @@ public class EpsHistoryService {
     private final EpsHistoryRepository repository;
 
     @Transactional(readOnly = true)
-    public EpsPrevResponseDto getPrevEps(LocalDate baseDate, int lag){
+    public EpsPrevResponseDto getPrevEps(LocalDate baseDate){
         validate(baseDate);
-        List<EpsHistory> items = repository.findPrevEps(baseDate, lag);
+        List<EpsHistory> items = repository.findPrevEps(baseDate);
 
         if(items.isEmpty()){
-            log.warn("prev_eps 이력 없음: baseDate={} lag={}", baseDate, lag);
+            log.warn("prev_eps 이력 없음: baseDate={}", baseDate);
         } else {
-            log.info("prev_eps 조회: baseDate={} lag={} 건수={}", baseDate, lag, items.size());
+            log.info("prev_eps 조회: baseDate={} 건수={}", baseDate, items.size());
         }
 
-        return EpsPrevResponseDto.of(baseDate,lag,items);
+        return EpsPrevResponseDto.of(baseDate, 1,items);
     }
 
     /* 검증 */

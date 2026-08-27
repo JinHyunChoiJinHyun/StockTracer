@@ -1,8 +1,7 @@
-package com.stocktracer.backend.value;
+package com.stocktracer.backend.value.mapper;
 
 import com.stocktracer.backend.annotation.MapperTest;
 import com.stocktracer.backend.value.domain.EpsHistory;
-import com.stocktracer.backend.value.mapper.EpsHistoryMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,7 +57,7 @@ public class EpsHistoryMapperTest {
         insert("000660", "2026-05-15", "12000");
         insert("000660", "2026-05-16", "12040");
 
-        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE, 1));
+        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
         assertThat(result).hasSize(2);
         assertThat(result.get("005930").prevEps()).isEqualByComparingTo("6012");
@@ -69,7 +68,7 @@ public class EpsHistoryMapperTest {
     @Test
     @DisplayName("이력이 비어있으면 빈 리스트 반환 - 수집 첫날 대비")
     void emptyEpsHistory(){
-        assertThat(mapper.findPrevEps(BASE_DATE,1));
+        assertThat(mapper.findPrevEps(BASE_DATE));
     }
 
     @Test
@@ -78,7 +77,7 @@ public class EpsHistoryMapperTest {
         insert("005930", "2026-05-15", "6012");
         insert("005930", "2026-08-26", "5678"); // 금일 적재분
 
-        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE, 1));
+        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
         assertThat(result.get("005930").prevEps()).isEqualByComparingTo("6012");
     }
@@ -89,7 +88,7 @@ public class EpsHistoryMapperTest {
         insert("005930", "2026-05-15", "6012");
         insert("005930", "2026-09-30", "5678");
 
-        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE, 1));
+        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
         assertThat(result.get("005930").prevEps()).isEqualByComparingTo("6012");
     }
@@ -100,7 +99,7 @@ public class EpsHistoryMapperTest {
         insert("005930", "2026-05-15", "6012");
         insert("999999", "2026-08-26", "300");
 
-        assertThat(byCode(mapper.findPrevEps(BASE_DATE,1))).containsOnlyKeys("005930");
+        assertThat(byCode(mapper.findPrevEps(BASE_DATE))).containsOnlyKeys("005930");
     }
 
     @Test
@@ -109,7 +108,7 @@ public class EpsHistoryMapperTest {
         insert("005930", "2026-05-15", "-1200.50");
         insert("000660", "2026-05-15", "0");
 
-        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE,1));
+        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
         assertThat(result.get("005930").prevEps()).isEqualByComparingTo("-1200.50");
         assertThat(result.get("000660").prevEps()).isEqualByComparingTo("0");
@@ -121,7 +120,7 @@ public class EpsHistoryMapperTest {
     void preserveScale(){
         insert("005930", "2026-05-15", "123456789012345.67");
 
-        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE,1));
+        Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
         assertThat(result.get("005930").prevEps()).isEqualByComparingTo("123456789012345.67");
     }
@@ -135,7 +134,7 @@ public class EpsHistoryMapperTest {
             insert(code, "2026-02-10", "1000");
             insert(code, "2026-05-15", "2000");
 
-            List<EpsHistory> result = mapper.findPrevEps(BASE_DATE,1);
+            List<EpsHistory> result = mapper.findPrevEps(BASE_DATE);
 
             assertThat(result).hasSize(2800);
             assertThat(result).allSatisfy(h ->

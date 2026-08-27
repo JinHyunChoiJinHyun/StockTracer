@@ -20,9 +20,8 @@ public class EpsHistoryController {
 
     @GetMapping("/prev-eps")
     public ResponseEntity<EpsPrevResponseDto> getPrevEps(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate baseDate,
-            @RequestParam(defaultValue = "1") int lag
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate baseDate
             ){
-        return ResponseEntity.ok(service.getPrevEps(baseDate, lag));
+        return ResponseEntity.ok(service.getPrevEps(baseDate));
     }
 }

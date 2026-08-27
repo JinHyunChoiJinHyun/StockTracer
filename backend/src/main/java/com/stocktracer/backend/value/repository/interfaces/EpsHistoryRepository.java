@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface EpsHistoryRepository {
 
-    public List<EpsHistory> findPrevEps(LocalDate baseDate, int lag);
+    public List<EpsHistory> findPrevEps(LocalDate baseDate);
 }

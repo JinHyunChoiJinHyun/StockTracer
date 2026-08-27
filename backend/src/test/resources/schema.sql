@@ -62,7 +62,6 @@ CREATE TABLE eps_history (
      stock_code     CHAR(6)        NOT NULL,
      effective_date DATE           NOT NULL,
      eps            DECIMAL(18,2)  NOT NULL,
-     seq            INT            NOT NULL,
      created_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
      PRIMARY KEY (stock_code, effective_date),
      UNIQUE KEY uk_eps_code_seq (stock_code, seq)

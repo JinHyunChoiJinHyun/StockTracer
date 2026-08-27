@@ -20,12 +20,12 @@
                 stock_code,
                 eps as prev_eps,
                 effective_date as prev_effective_date,
-                ROW_NUMBER() OVER (PARTITION BY stock_code ORDER BY seq DESC) AS rn
+                ROW_NUMBER() OVER (PARTITION BY stock_code ORDER BY effective_date DESC) AS rn
             FROM
                 eps_history
             WHERE
                 effective_date &lt; #{baseDate} <!-- 금일 날짜 제외 -->
             ) h
-        WHERE h.rn = 1
+        WHERE h.rn = 1 <!-- 직전 행만 반환 -->
     </select>
 </mapper>
