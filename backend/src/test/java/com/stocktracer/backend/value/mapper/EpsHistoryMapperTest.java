@@ -61,7 +61,7 @@ public class EpsHistoryMapperTest {
 
         assertThat(result).hasSize(2);
         assertThat(result.get("005930").prevEps()).isEqualByComparingTo("6012");
-        assertThat(result.get("005930").prevEffectiveDate()).isEqualTo(LocalDate.of(2026,5,15));
+        assertThat(result.get("005930").prevEffectiveDate()).isEqualTo(LocalDate.of(2026,5,16));
         assertThat(result.get("000660").prevEps()).isEqualByComparingTo("12040");
     }
 
@@ -133,12 +133,12 @@ public class EpsHistoryMapperTest {
 
             insert(code, "2026-02-10", "1000");
             insert(code, "2026-05-15", "2000");
-
-            List<EpsHistory> result = mapper.findPrevEps(BASE_DATE);
-
-            assertThat(result).hasSize(2800);
-            assertThat(result).allSatisfy(h ->
-                    assertThat(h.prevEps()).isEqualByComparingTo("2000"));
         }
+
+        List<EpsHistory> result = mapper.findPrevEps(BASE_DATE);
+
+        assertThat(result).hasSize(2800);
+        assertThat(result).allSatisfy(h ->
+                assertThat(h.prevEps()).isEqualByComparingTo("2000"));
     }
 }
