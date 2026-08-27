@@ -303,7 +303,7 @@ def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
 def analyze_fundamental(raw: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
     # 컬럼명 지정
     OUTPUT_COLUMNS = [
-        "base_date", "code", "sector",
+        "base_date", "stock_code", "sector",
         "per", "pbr", "eps", "bps", "div_yield", "market_cap", "trading_value",
         "per_pct", "pbr_pct", "value_score", "scored_scope",
         "eps_growth", "value_trap",

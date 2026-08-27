@@ -163,6 +163,9 @@ def fetch_fundamental(date: str) -> pd.DataFrame:
 
     # 필드명 변환
     df.columns = df.columns.str.lower()
+    df = df.rename(columns={
+        "div": "div_yield"
+    })
 
     return df
 
@@ -209,7 +212,7 @@ def fetch_market_sector(date: str) -> pd.DataFrame:
     return df[["sector"]] # 확장을 위해 이중 배열 사용
 
 # 과거 eps 조회
-def fetch_prev_eps(date:str, lag:int=1) -> pd.DataFrame:
+def fetch_prev_eps(date:str) -> pd.DataFrame:
     # 상수 선언
     _COLUMNS = ["stock_code", "eps", "prev_eps", "effective_date", "prev_effective_date"]
     _RENAME = {
@@ -224,14 +227,14 @@ def fetch_prev_eps(date:str, lag:int=1) -> pd.DataFrame:
     #     return pd.DataFrame
 
     # param 생성
-    params = {"lag": lag}
+    params = {"base_date": date}
 
     # 백엔드 요청
     payload = get("/value/prev-eps", params=params)
     items = payload.get("items", [])
 
-    logger.info("prev_eps 수신: 대상=%d 판정불가=%d lag=%d",
-                payload.get("count", 0), payload.get("undecidableCount", 0), lag)
+    logger.info("prev_eps 수신: 대상=%d 판정불가=%d",
+                payload.get("count", 0), payload.get("undecidableCount", 0))
 
     # 빈 값 체크
     if not items:
