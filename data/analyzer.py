@@ -253,9 +253,9 @@ def _percentile(df: pd.DataFrame, column: str, cfg: ValueConfig) -> tuple[pd.Ser
     # null이 아닌 행 존재 여부 확인
     has_sector = df["sector"].notna()
 
-    # sector 필드값이 하나도 존재하지 않을 시(모든 행이 다 null일 시)
+    # sector 필드값이 하나도 존재하지 않을 시 (모든 행이 다 null일 시)
     if not has_sector.any(): 
-        return market_pct, pd.Series("market", index=df.index)
+        return market_pct, pd.Series("market", index=df.index) # 전체 벡분위와 market으로 입력된 컬럼 반환
 
     # sector 필드값이 하나라도 존재할 시
     sector_pct = df.groupby("sector")[column].rank(pct=True, method="average") # sector별 백분위 계산
