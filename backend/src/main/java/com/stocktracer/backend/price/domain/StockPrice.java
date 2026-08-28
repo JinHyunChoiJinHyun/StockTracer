@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
 public class StockPrice {
     private String stockCode;
     private LocalDate priceDate;

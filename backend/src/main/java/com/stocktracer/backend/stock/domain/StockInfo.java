@@ -1,10 +1,7 @@
 package com.stocktracer.backend.stock.domain;
 
 import com.stocktracer.backend.stock.entitiy.StockInfoEntity;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Objects;
 
@@ -14,7 +11,7 @@ import java.util.Objects;
  * -> persistence 기술이 바뀌어도 Domain 로직은 영향받지 않는다. (= 기술 변경 시에도 수정 안해도 된다)
  */
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
 @NoArgsConstructor
 @AllArgsConstructor
 public class StockInfo {
@@ -33,7 +30,7 @@ public class StockInfo {
     }
 
     /** 비즈니스 메서드 */
-    // 유일한 생성 지점 -> 외부에서 new를 막고 무조건 검증 후 객체 생성
+    // 유일한 생성 지점 -> 외부에서 생성 시 무조건 검증 후 객체 생성
     public static StockInfo create(String stockCode, String stockName, MarketType market){ // 도메인 객체의 성격에 따라 of로 대체 가능
         validate(stockCode, stockName);
         return new StockInfo(stockCode, stockName, market);
