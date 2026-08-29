@@ -1,6 +1,7 @@
 package com.stocktracer.backend.value.dto;
 
 import com.stocktracer.backend.value.domain.ScoredScope;
+import com.stocktracer.backend.value.domain.ValueFundamental;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
@@ -10,9 +11,11 @@ import java.util.List;
 
 public record ValueFundamentalSaveRequestDto(
         @NotNull (message = "기준일은 필수입니다.")
+        @PastOrPresent(message = "기준일은 미래일 수 없습니다.")
         LocalDate baseDate,
-        @NotEmpty (message = "데이터는 초치소 1건 이상이어야 합니다.")
-        @Valid List<Item> items
+        @NotEmpty (message = "데이터는 최소 1건 이상이어야 합니다.")
+        @Valid
+        List<Item> items
         ) {
     public record Item(
             @NotBlank (message = "종목코드는 필수입니다.")
@@ -23,6 +26,7 @@ public record ValueFundamentalSaveRequestDto(
             BigDecimal per,
             BigDecimal pbr,
             BigDecimal eps,
+            BigDecimal bps,
             BigDecimal divYield,
 
             @PositiveOrZero(message = "시가총액은 0 이상이어야 합니다.")
@@ -46,5 +50,27 @@ public record ValueFundamentalSaveRequestDto(
 
             Boolean valueTrap
     ){}
-
+        public List<ValueFundamental> toDomain(){ // 코드를 줄이기 위해 상위 레코드에 한번만 작성
+            return items.stream()
+                    .map(i -> new ValueFundamental(
+                            baseDate,
+                            i.stockCode(),
+                            i.sector(),
+                            i.per(),
+                            i.pbr(),
+                            i.eps(),
+                            i.bps(),
+                            i.divYield(),
+                            i.marketCap(),
+                            i.tradingValue(),
+                            i.shareOutstanding(),
+                            i.perPct(),
+                            i.pbrPct(),
+                            i.valueScore(),
+                            i.scoredScope(),
+                            i.epsGrowth(),
+                            i.valueTrap()
+                    ))
+                    .toList();
+        }
 }

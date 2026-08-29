@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.value.mapper.ValueFundamentalMapper">
+    <insert id="upsertAll">
+        INSERT INTO value_fundamental (
+            base_date,
+            stock_code,
+            sector,
+            per,
+            pbr,
+            eps,
+            bps,
+            div_yield,
+            market_cap,
+            shares_outstanding,
+            trading_value,
+            per_pct,
+            pbr_pct,
+            value_score,
+            scored_scope,
+            eps_growth,
+            value_trap
+        ) VALUES
+        <foreach collection="values" item="i" separator=",">
+            (
+                #{i.baseDate},
+                #{i.stockCode},
+                #{i.sector},
+                #{i.per},
+                #{i.pbr},
+                #{i.eps},
+                #{i.bps},
+                #{i.divYield},
+                #{i.marketCap},
+                #{i.sharesOutstanding},
+                #{i.tradingValue},
+                #{i.perPct},
+                #{i.pbrPct},
+                #{i.valueScore},
+                #{i.scoredScope},
+                #{i.epsGrowth},
+                #{i.valueTrap}
+            )
+        </foreach>
+        AS new
+        ON DUPLICATE KEY UPDATE
+        sector = new.sector,
+        per = new.per,
+        pbr = new.pbr,
+        eps = new.eps,
+        bps = new.bps,
+        div_yield = new.divYield,
+        market_cap = new.marketCap,
+        shares_outstanding = new.sharesOutstanding,
+        trading_value = new.tradingValue,
+        scored_scope = new.scoredScope,
+        eps_growth = new.epsGrowth,
+        value_trap = new.valueTrap
+    </insert>
+</mapper>
