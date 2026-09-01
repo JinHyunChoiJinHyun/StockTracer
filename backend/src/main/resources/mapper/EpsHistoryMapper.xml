@@ -5,11 +5,12 @@
     <resultMap id="epsPrevMap" type="com.stocktracer.backend.value.domain.EpsHistory">
         <constructor>
             <idArg column="stock_code" javaType="java.lang.String"/>
-            <arg column="prev_eps" javaType="java.math.BigDecimal"/>
-            <arg column="prev_effective_date" javaType="java.time.LocalDate"/>
+            <arg column="eps" javaType="java.math.BigDecimal"/>
+            <arg column="effective_date" javaType="java.time.LocalDate"/>
         </constructor>
     </resultMap>
 
+    <!-- 조회 -->
     <select id="findPrevEps" resultMap="epsPrevMap">
         SELECT
             h.stock_code,
@@ -28,4 +29,25 @@
             ) h
         WHERE h.rn = 1 <!-- 직전 행만 반환 -->
     </select>
+
+    <!-- 저장 및 업데이트 -->
+    <insert id="upsertAll">
+        INSERT INTO eps_history
+            (
+             stock_code,
+             effective_date,
+             eps
+            )
+        VALUES
+        <foreach collection="eps" item="e" separator=",">
+            (
+             #{e.stockCode},
+             #{e.effectiveDate},
+             #{e.eps}
+            )
+        </foreach>
+        AS new
+        ON DUPLICATE KEY UPDATE
+            eps = new.eps
+    </insert>
 </mapper>

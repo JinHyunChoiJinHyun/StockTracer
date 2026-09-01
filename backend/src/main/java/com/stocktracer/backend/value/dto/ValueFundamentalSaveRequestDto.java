@@ -10,9 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record ValueFundamentalSaveRequestDto(
-        @NotNull (message = "기준일은 필수입니다.")
-        @PastOrPresent(message = "기준일은 미래일 수 없습니다.")
-        LocalDate baseDate,
         @NotEmpty (message = "데이터는 최소 1건 이상이어야 합니다.")
         @Valid
         List<Item> items
@@ -21,6 +18,9 @@ public record ValueFundamentalSaveRequestDto(
             @NotBlank (message = "종목코드는 필수입니다.")
             @Pattern(regexp = "[A-Za-z0-9]{6}", message = "종목코드는 영문자와 숫자로 구성된 6자리여야 합니다.")
             String stockCode,
+            @NotNull (message = "기준일은 필수입니다.")
+            @PastOrPresent(message = "기준일은 미래일 수 없습니다.")
+            LocalDate effectiveDate,
             String sector,
 
             BigDecimal per,
@@ -53,7 +53,7 @@ public record ValueFundamentalSaveRequestDto(
         public List<ValueFundamental> toDomain(){ // 코드를 줄이기 위해 상위 레코드에 한번만 작성
             return items.stream()
                     .map(i -> new ValueFundamental(
-                            baseDate,
+                            i.effectiveDate(),
                             i.stockCode(),
                             i.sector(),
                             i.per(),

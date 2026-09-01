@@ -1,7 +1,10 @@
 package com.stocktracer.backend.value.service;
 
 import com.stocktracer.backend.value.domain.EpsHistory;
+import com.stocktracer.backend.value.dto.EpsHistorySaveRequestDto;
+import com.stocktracer.backend.value.dto.EpsHistorySaveResponseDto;
 import com.stocktracer.backend.value.dto.EpsPrevResponseDto;
+import com.stocktracer.backend.value.dto.ValueFundamentalSaveRequestDto;
 import com.stocktracer.backend.value.repository.interfaces.EpsHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -17,9 +22,10 @@ import java.util.List;
 public class EpsHistoryService {
     private final EpsHistoryRepository repository;
 
+    /* 조회 */
     @Transactional(readOnly = true)
     public EpsPrevResponseDto getPrevEps(LocalDate baseDate){
-        validate(baseDate);
+        validateBaseDate(baseDate);
         List<EpsHistory> items = repository.findPrevEps(baseDate);
 
         if(items.isEmpty()){
@@ -31,14 +37,43 @@ public class EpsHistoryService {
         return EpsPrevResponseDto.of(baseDate, 1,items);
     }
 
+    /* 저장 */
+    @Transactional
+    public int save(EpsHistorySaveRequestDto request){
+        // 검증
+        validateNoDuplicateStockCode(request);
+
+        // 도메인 변환
+        List<EpsHistory> eps = request.toDomain();
+
+        int affected = repository.upsertAll(eps);
+
+        log.info("eps 저장 완료: 요청={}건, 반영={}",eps.size(), affected);
+
+        return affected;
+    }
+
     /* 검증 */
-    private void validate(LocalDate baseDate){
+    private void validateBaseDate(LocalDate baseDate){
         if (baseDate == null){
             throw new IllegalArgumentException(("baseDate는 필수입니다"));
         }
 
         if (baseDate.isAfter(LocalDate.now())){
             throw new IllegalArgumentException("미래 일자는 조회할 수 없습니다: " + baseDate);
+        }
+    }
+
+    private void validateNoDuplicateStockCode(EpsHistorySaveRequestDto request){
+        Set<String> seen = new HashSet<>();
+        List<String> duplicates = request.items().stream()
+                .map(EpsHistorySaveRequestDto.Item :: stockCode)
+                .filter(code -> !seen.add(code))
+                .distinct()
+                .toList();
+
+        if (!duplicates.isEmpty()){
+            throw new IllegalArgumentException(("중복된 종목코드: " + duplicates));
         }
     }
 }

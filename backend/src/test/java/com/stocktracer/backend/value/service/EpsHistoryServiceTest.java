@@ -34,7 +34,7 @@ public class EpsHistoryServiceTest {
     private EpsHistoryService service;
 
     private EpsHistory eps(String stockCode, String prevEps, String effectiveDate){
-        return new EpsHistory(stockCode, new BigDecimal(prevEps), LocalDate.parse(effectiveDate));
+        return new EpsHistory(stockCode, LocalDate.parse(effectiveDate), new BigDecimal(prevEps));
     }
 
     @Nested

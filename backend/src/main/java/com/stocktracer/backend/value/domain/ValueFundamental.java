@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 // 불변의 값이 담기므로 record로 작성
 public record ValueFundamental (
-        LocalDate baseDate,
+        LocalDate effectiveDate,
         String stockCode,
         String sector,
         BigDecimal per,
@@ -31,8 +31,8 @@ public record ValueFundamental (
 
     public ValueFundamental {
         /* 생성 규칙 검증 */
-        if (baseDate == null) throw new IllegalArgumentException(("날짜는 필수입니다."));
-        if (stockCode == null || !stockCode.matches("\\d{6}"))
+        if (effectiveDate == null) throw new IllegalArgumentException(("날짜는 필수입니다."));
+        if (stockCode == null || !stockCode.matches("[A-Za-z0-9]{6}"))
             throw new IllegalArgumentException("invalid stockCode: " + stockCode);
         validatePctInRange("perPct", perPct);
         validatePctInRange("pbrPct", pbrPct);

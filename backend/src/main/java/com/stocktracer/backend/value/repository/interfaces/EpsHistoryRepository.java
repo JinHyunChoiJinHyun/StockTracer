@@ -8,4 +8,6 @@ import java.util.List;
 public interface EpsHistoryRepository {
 
     public List<EpsHistory> findPrevEps(LocalDate baseDate);
+
+    public int upsertAll(List<EpsHistory> eps);
 }

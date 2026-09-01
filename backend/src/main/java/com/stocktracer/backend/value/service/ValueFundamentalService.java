@@ -1,11 +1,14 @@
 package com.stocktracer.backend.value.service;
 
+import com.stocktracer.backend.value.domain.EpsHistory;
 import com.stocktracer.backend.value.domain.ValueFundamental;
+import com.stocktracer.backend.value.dto.EpsHistorySaveRequestDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveRequestDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveResponseDto;
 import com.stocktracer.backend.value.repository.interfaces.ValueFundamentalRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -13,22 +16,42 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ValueFundamentalService {
     private final ValueFundamentalRepository repository;
+    private final EpsHistoryService epsHistoryService;
 
     @Transactional
-    public ValueFundamentalSaveResponseDto save(ValueFundamentalSaveRequestDto request){
-
+    public int save(ValueFundamentalSaveRequestDto request){
+        /* 1. ValueFundamental 저장 */
         // 검증
         validateNoDuplicateStockCode(request);
 
         // dto 도메인으로 변환
         List<ValueFundamental> values = request.toDomain();
+
+        // ValueFundamental 저장
         int affected = repository.upsertAll(values);
 
-        return new ValueFundamentalSaveResponseDto(request.baseDate(),values.size(), affected);
+        log.info("value 데이터 저장 완료: 요청={}건, 반영={}건", values.size(), affected);
+
+        /* 2. EpsHistory 전달 */
+        // dto로 변환
+        EpsHistorySaveRequestDto epsRequest = new EpsHistorySaveRequestDto(
+                request.items().stream()
+                        .map(i -> new EpsHistorySaveRequestDto.Item(
+                                i.effectiveDate(),
+                                i.stockCode(),
+                                i.eps()
+                        ))
+                        .toList()
+        );
+
+        epsHistoryService.save(epsRequest);
+
+        return affected;
     }
 
     /**

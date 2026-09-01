@@ -19,4 +19,7 @@ public interface EpsHistoryMapper {
     // 특정 종목 prevEps 조회
     List<EpsHistory> findPrevByStockCodes(
             @Param("codes") List<String> codes);
+
+    int upsertAll(
+            @Param("eps") List<EpsHistory> eps);
 }
