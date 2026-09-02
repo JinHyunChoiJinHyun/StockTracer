@@ -3,6 +3,7 @@ package com.stocktracer.backend.value.controller;
 import com.stocktracer.backend.value.domain.ValueFundamental;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveRequestDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveResponseDto;
+import com.stocktracer.backend.value.facade.FundamentalFacade;
 import com.stocktracer.backend.value.service.ValueFundamentalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,13 +21,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ValueFundamentalController {
 
-    private final ValueFundamentalService service;
+    private final FundamentalFacade facade;
 
     @PostMapping("/save")
     public ResponseEntity<Map<String,Object>> save(
             @Valid @RequestBody ValueFundamentalSaveRequestDto request
             ){
-        int affected = service.save(request);
+        facade.save(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("requested", request.items().size(), "affected", affected));
     }

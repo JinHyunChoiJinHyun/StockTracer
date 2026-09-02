@@ -25,7 +25,6 @@ public class ValueFundamentalService {
 
     @Transactional
     public int save(ValueFundamentalSaveRequestDto request){
-        /* 1. ValueFundamental 저장 */
         // 검증
         validateNoDuplicateStockCode(request);
 
@@ -36,20 +35,6 @@ public class ValueFundamentalService {
         int affected = repository.upsertAll(values);
 
         log.info("value 데이터 저장 완료: 요청={}건, 반영={}건", values.size(), affected);
-
-        /* 2. EpsHistory 전달 */
-        // dto로 변환
-        EpsHistorySaveRequestDto epsRequest = new EpsHistorySaveRequestDto(
-                request.items().stream()
-                        .map(i -> new EpsHistorySaveRequestDto.Item(
-                                i.effectiveDate(),
-                                i.stockCode(),
-                                i.eps()
-                        ))
-                        .toList()
-        );
-
-        epsHistoryService.save(epsRequest);
 
         return affected;
     }
