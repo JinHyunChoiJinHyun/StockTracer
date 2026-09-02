@@ -41,14 +41,14 @@ public class EpsHistoryService {
     @Transactional
     public int save(EpsHistorySaveRequestDto request){
         // 검증
-        validateNoDuplicateStockCode(request);
+        validateNoDuplicateKey(request);
 
         // 도메인 변환
         List<EpsHistory> eps = request.toDomain();
 
         int affected = repository.upsertAll(eps);
 
-        log.info("eps 저장 완료: 요청={}건, 반영={}",eps.size(), affected);
+        log.debug("eps 데이터 저장 완료: 요청={}건, 반영={}",eps.size(), affected);
 
         return affected;
     }
@@ -64,16 +64,16 @@ public class EpsHistoryService {
         }
     }
 
-    private void validateNoDuplicateStockCode(EpsHistorySaveRequestDto request){
+    private void validateNoDuplicateKey(EpsHistorySaveRequestDto request){
         Set<String> seen = new HashSet<>();
         List<String> duplicates = request.items().stream()
-                .map(EpsHistorySaveRequestDto.Item :: stockCode)
-                .filter(code -> !seen.add(code))
+                .map(i -> i.stockCode() + "@" + i.effectiveDate())
+                .filter(key -> !seen.add(key))
                 .distinct()
                 .toList();
 
         if (!duplicates.isEmpty()){
-            throw new IllegalArgumentException(("중복된 종목코드: " + duplicates));
+            throw new IllegalArgumentException(("중복된 key: " + duplicates));
         }
     }
 }

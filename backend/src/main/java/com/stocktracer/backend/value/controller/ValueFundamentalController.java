@@ -1,6 +1,7 @@
 package com.stocktracer.backend.value.controller;
 
 import com.stocktracer.backend.value.domain.ValueFundamental;
+import com.stocktracer.backend.value.dto.FundamentalSaveResponseDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveRequestDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveResponseDto;
 import com.stocktracer.backend.value.facade.FundamentalFacade;
@@ -24,11 +25,9 @@ public class ValueFundamentalController {
     private final FundamentalFacade facade;
 
     @PostMapping("/save")
-    public ResponseEntity<Map<String,Object>> save(
+    public ResponseEntity<FundamentalSaveResponseDto> save(
             @Valid @RequestBody ValueFundamentalSaveRequestDto request
             ){
-        facade.save(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("requested", request.items().size(), "affected", affected));
+        return ResponseEntity.ok(facade.save(request));
     }
 }

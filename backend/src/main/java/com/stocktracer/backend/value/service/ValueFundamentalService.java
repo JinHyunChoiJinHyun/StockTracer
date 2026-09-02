@@ -26,7 +26,7 @@ public class ValueFundamentalService {
     @Transactional
     public int save(ValueFundamentalSaveRequestDto request){
         // 검증
-        validateNoDuplicateStockCode(request);
+        validateNoDuplicateKey(request);
 
         // dto 도메인으로 변환
         List<ValueFundamental> values = request.toDomain();
@@ -34,7 +34,7 @@ public class ValueFundamentalService {
         // ValueFundamental 저장
         int affected = repository.upsertAll(values);
 
-        log.info("value 데이터 저장 완료: 요청={}건, 반영={}건", values.size(), affected);
+        log.debug("value 데이터 저장 완료: 요청={}건, 반영={}건", values.size(), affected);
 
         return affected;
     }
@@ -43,16 +43,16 @@ public class ValueFundamentalService {
      * 종목코드 중복 검증
      * @param request
      */
-    private void validateNoDuplicateStockCode(ValueFundamentalSaveRequestDto request){
+    private void validateNoDuplicateKey(ValueFundamentalSaveRequestDto request){
         Set<String> seen = new HashSet<>();
         List<String> duplicates = request.items().stream()
-                .map(ValueFundamentalSaveRequestDto.Item :: stockCode)
-                .filter(code -> !seen.add(code))
+                .map(i -> i.stockCode() + "@" + i.effectiveDate())
+                .filter(key -> !seen.add(key))
                 .distinct()
                 .toList();
 
         if (!duplicates.isEmpty()){
-            throw new IllegalArgumentException(("중복된 종목코드: " + duplicates));
+            throw new IllegalArgumentException(("중복된 key: " + duplicates));
         }
     }
 }
