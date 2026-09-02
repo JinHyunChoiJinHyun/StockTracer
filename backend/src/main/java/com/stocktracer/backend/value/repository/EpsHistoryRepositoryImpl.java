@@ -22,10 +22,13 @@ public class EpsHistoryRepositoryImpl implements EpsHistoryRepository {
 
     @Override
     public int upsertAll(List<EpsHistory> eps) {
+        // 빈 값 검증 (mapper 오류 방지)
+        if (eps.isEmpty()) return 0;
+
         int affected = 0;
         List<List<EpsHistory>> batches = ListUtils.partition(eps, 1000);
         for (List<EpsHistory> batch : batches){
-            affected = mapper.upsertAll(eps);
+            affected = mapper.upsertAll(batch);
         }
         return affected;
     }

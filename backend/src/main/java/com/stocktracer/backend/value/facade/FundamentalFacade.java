@@ -1,6 +1,7 @@
 package com.stocktracer.backend.value.facade;
 
 import com.stocktracer.backend.value.dto.EpsHistorySaveRequestDto;
+import com.stocktracer.backend.value.dto.FundamentalSaveResponseDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveRequestDto;
 import com.stocktracer.backend.value.service.EpsHistoryService;
 import com.stocktracer.backend.value.service.ValueFundamentalService;
@@ -19,7 +20,7 @@ public class FundamentalFacade {
     private final EpsHistoryService epsHistoryService;
 
     @Transactional
-    public void save(ValueFundamentalSaveRequestDto request){
+    public FundamentalSaveResponseDto save(ValueFundamentalSaveRequestDto request){
         /* 1. ValueFundamental 저장 */
         int valueAffected = valueFundamentalService.save(request);
 
@@ -39,6 +40,8 @@ public class FundamentalFacade {
                 request.items().size(), valueAffected,
                 epsRequest.items().size(), epsAffected, epsSkipped
                 );
+
+        return new FundamentalSaveResponseDto(valueAffected, epsAffected, epsSkipped);
     }
 
     /* 변환 */
