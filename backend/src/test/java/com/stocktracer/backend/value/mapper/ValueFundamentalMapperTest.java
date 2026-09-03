@@ -14,7 +14,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 @MapperTest
 public class ValueFundamentalMapperTest {
@@ -80,14 +81,14 @@ public class ValueFundamentalMapperTest {
                 .isEqualTo("005930");
         assertThat(result.get("sector"))
                 .isEqualTo("반도체");
-        assertThat(result.get("per"))
-                .isEqualTo("10.5");
-        assertThat(result.get("pbr"))
-                .isEqualTo("1.2");
-        assertThat(result.get("value_score"))
-                .isEqualTo("72.5");
+        assertThat((BigDecimal) result.get("per"))
+                .isEqualByComparingTo(new BigDecimal("10.5"));
+        assertThat((BigDecimal) result.get("pbr"))
+                .isEqualByComparingTo(new BigDecimal("1.2"));
+        assertThat((BigDecimal) result.get("value_score"))
+                .isEqualByComparingTo("72.5");
         assertThat(result.get("scored_scope"))
-                .isEqualTo("sector");
+                .isEqualTo("SECTOR");
         assertThat(result.get("value_trap"))
                 .isEqualTo(false);
     }
@@ -128,8 +129,8 @@ public class ValueFundamentalMapperTest {
                 Integer.class
         )).isEqualTo(2);
 
-        assertThat(currentResult.get("per")).isEqualTo(10.5);
-        assertThat(prevResult.get("per")).isEqualTo(18.5);
+        assertThat((BigDecimal) currentResult.get("per")).isEqualByComparingTo("10.5");
+        assertThat((BigDecimal) prevResult.get("per")).isEqualByComparingTo("18.5");
 
 
     }

@@ -60,9 +60,9 @@ public class EpsHistoryMapperTest {
         Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
         assertThat(result).hasSize(2);
-        assertThat(result.get("005930").prevEps()).isEqualByComparingTo("6012");
-        assertThat(result.get("005930").prevEffectiveDate()).isEqualTo(LocalDate.of(2026,5,16));
-        assertThat(result.get("000660").prevEps()).isEqualByComparingTo("12040");
+        assertThat(result.get("005930").eps()).isEqualByComparingTo("6012");
+        assertThat(result.get("005930").effectiveDate()).isEqualTo(LocalDate.of(2026,5,16));
+        assertThat(result.get("000660").eps()).isEqualByComparingTo("12040");
     }
 
     @Test
@@ -79,7 +79,7 @@ public class EpsHistoryMapperTest {
 
         Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
-        assertThat(result.get("005930").prevEps()).isEqualByComparingTo("6012");
+        assertThat(result.get("005930").eps()).isEqualByComparingTo("6012");
     }
 
     @Test
@@ -90,7 +90,7 @@ public class EpsHistoryMapperTest {
 
         Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
-        assertThat(result.get("005930").prevEps()).isEqualByComparingTo("6012");
+        assertThat(result.get("005930").eps()).isEqualByComparingTo("6012");
     }
 
     @Test
@@ -110,8 +110,8 @@ public class EpsHistoryMapperTest {
 
         Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
-        assertThat(result.get("005930").prevEps()).isEqualByComparingTo("-1200.50");
-        assertThat(result.get("000660").prevEps()).isEqualByComparingTo("0");
+        assertThat(result.get("005930").eps()).isEqualByComparingTo("-1200.50");
+        assertThat(result.get("000660").eps()).isEqualByComparingTo("0");
 
     }
 
@@ -122,7 +122,7 @@ public class EpsHistoryMapperTest {
 
         Map<String, EpsHistory> result = byCode(mapper.findPrevEps(BASE_DATE));
 
-        assertThat(result.get("005930").prevEps()).isEqualByComparingTo("123456789012345.67");
+        assertThat(result.get("005930").eps()).isEqualByComparingTo("123456789012345.67");
     }
 
     @Test
@@ -139,6 +139,6 @@ public class EpsHistoryMapperTest {
 
         assertThat(result).hasSize(2800);
         assertThat(result).allSatisfy(h ->
-                assertThat(h.prevEps()).isEqualByComparingTo("2000"));
+                assertThat(h.eps()).isEqualByComparingTo("2000"));
     }
 }

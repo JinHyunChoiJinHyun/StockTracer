@@ -185,16 +185,19 @@ public class StockPriceServiceTest {
 
 
     private StockPrice createStockPrice(String stockCode, String open, String high, String low, String close){
-        return StockPrice.builder()
-                .stockCode(stockCode)
-                .priceDate(LocalDate.of(2026, 8, 6))
-                .openPrice(new BigDecimal(open))
-                .highPrice(new BigDecimal(high))
-                .lowPrice(new BigDecimal(low))
-                .closePrice(new BigDecimal(close))
-                .priceChange(BigDecimal.ZERO)
-                .volume(1_000_000L)
-                .build();
+        return StockPrice.of(
+                stockCode,
+                LocalDate.of(2026, 8, 6),
+                new BigDecimal(open),
+                new BigDecimal(high),
+                new BigDecimal(low),
+                new BigDecimal(close),
+                BigDecimal.ZERO,
+                1_000_000L,
+                new BigDecimal(1_000_000_000),
+                new BigDecimal(1_000_000_000)
+                );
+
     }
 
 }
