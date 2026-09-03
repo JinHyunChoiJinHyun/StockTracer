@@ -4,7 +4,7 @@
 <mapper namespace="com.stocktracer.backend.value.mapper.ValueFundamentalMapper">
     <insert id="upsertAll">
         INSERT INTO value_fundamental (
-            base_date,
+            effective_date,
             stock_code,
             sector,
             per,
@@ -24,7 +24,7 @@
         ) VALUES
         <foreach collection="values" item="i" separator=",">
             (
-                #{i.baseDate},
+                #{i.effectiveDate},
                 #{i.stockCode},
                 #{i.sector},
                 #{i.per},
@@ -50,12 +50,15 @@
         pbr = new.pbr,
         eps = new.eps,
         bps = new.bps,
-        div_yield = new.divYield,
-        market_cap = new.marketCap,
-        shares_outstanding = new.sharesOutstanding,
-        trading_value = new.tradingValue,
-        scored_scope = new.scoredScope,
-        eps_growth = new.epsGrowth,
-        value_trap = new.valueTrap
+        div_yield = new.div_yield,
+        market_cap = new.market_cap,
+        shares_outstanding = new.shares_outstanding,
+        trading_value = new.trading_value,
+        per_pct = new.per_pct,
+        pbr_pct = new.pbr_pct,
+        value_score = new.value_score,
+        scored_scope = new.scored_scope,
+        eps_growth = new.eps_growth,
+        value_trap = new.value_trap
     </insert>
 </mapper>

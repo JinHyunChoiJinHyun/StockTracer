@@ -19,7 +19,7 @@ public class FundamentalFacade {
     private final ValueFundamentalService valueFundamentalService;
     private final EpsHistoryService epsHistoryService;
 
-    @Transactional
+    @Transactional // 두 서비스 중 하나라도 실패하면 저장 x
     public FundamentalSaveResponseDto save(ValueFundamentalSaveRequestDto request){
         /* 1. ValueFundamental 저장 */
         int valueAffected = valueFundamentalService.save(request);

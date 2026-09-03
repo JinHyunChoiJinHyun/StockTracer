@@ -65,3 +65,25 @@ CREATE TABLE eps_history (
      created_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
      PRIMARY KEY (stock_code, effective_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 6. value_fundamental 테이블
+CREATE TABLE value_fundamental (
+    effective_date          DATE          NOT NULL,
+    stock_code         CHAR(6)       NOT NULL,
+    sector             VARCHAR(64)   NULL,
+    per                DECIMAL(12, 4) NULL,
+    pbr                DECIMAL(12, 4) NULL,
+    eps                DECIMAL(18, 4) NULL,
+    bps                DECIMAL(18, 4) NULL,
+    div_yield          DECIMAL(8, 4)  NULL,
+    market_cap         BIGINT        NULL,
+    shares_outstanding BIGINT        NULL,
+    trading_value      BIGINT        NULL,
+    per_pct            DECIMAL(7, 4)  NULL,
+    pbr_pct            DECIMAL(7, 4)  NULL,
+    value_score        DECIMAL(7, 4)  NULL,
+    scored_scope       VARCHAR(16)   NULL,
+    eps_growth         DECIMAL(12, 6) NULL,
+    value_trap         BOOLEAN       NULL,
+    PRIMARY KEY (effective_date, stock_code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
