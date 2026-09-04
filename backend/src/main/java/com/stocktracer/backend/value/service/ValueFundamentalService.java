@@ -6,10 +6,10 @@ import com.stocktracer.backend.value.dto.EpsHistorySaveRequestDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveRequestDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveResponseDto;
 import com.stocktracer.backend.value.repository.interfaces.ValueFundamentalRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -21,7 +21,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ValueFundamentalService {
     private final ValueFundamentalRepository repository;
-    private final EpsHistoryService epsHistoryService;
 
     @Transactional
     public int save(ValueFundamentalSaveRequestDto request){
@@ -46,7 +45,7 @@ public class ValueFundamentalService {
     private void validateNoDuplicateKey(ValueFundamentalSaveRequestDto request){
         Set<String> seen = new HashSet<>();
         List<String> duplicates = request.items().stream()
-                .map(i -> i.stockCode() + "@" + i.effectiveDate())
+                .map(i -> i.effectiveDate() + "@" + i.stockCode())
                 .filter(key -> !seen.add(key))
                 .distinct()
                 .toList();
