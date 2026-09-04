@@ -287,8 +287,8 @@ def score_value(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
 def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
     eps_df = df.copy()
     prev = eps_df["prev_eps"].replace(0, np.nan) # 0을 null로 변환 / series
-    eps_df["eps_growth"] = ((eps_df["eps"] - prev) / prev.abs()).round(4) # index를 기준으로 계산
-    eps_df["value_trap"] = eps_df["eps_growth"].lt(0).fillna(False) 
+    eps_df["eps_growth"] = ((eps_df["eps"] - prev) / prev.abs()).round(4) # index를 기준으로 계산 # prev가 nan이면 nan으로 저장
+    eps_df["value_trap"] = eps_df["eps_growth"].lt(0) # (Nan -> Nan) / (음수 -> true) / (양수 -> false)
 
     logger.info(
         "밸류트랩 판정: 대상=%d 경고=%d 판정불가(prev_eps 결측)=%d",
