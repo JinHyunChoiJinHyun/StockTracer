@@ -227,8 +227,8 @@ public class ValueFundamentalMapperTest {
         assertThat((BigDecimal) result.get("eps")).isEqualByComparingTo("80.00");
         assertThat((BigDecimal) result.get("bps")).isEqualByComparingTo("70000.00");
         assertThat((BigDecimal) result.get("div_yield")).isEqualByComparingTo("10.50");
-        assertThat(result.get("market_cap")).isEqualTo(2_000_000_000L);
-        assertThat(result.get("share_outstanding")).isEqualTo(20_000_000L);
+        assertThat(result.get("market_cap")).isEqualTo(200_000_000_000L);
+        assertThat(result.get("shares_outstanding")).isEqualTo(20_000_000L);
         assertThat(result.get("trading_value")).isEqualTo(700_000_000L);
         assertThat((BigDecimal) result.get("per_pct")).isEqualByComparingTo("1.25");
         assertThat((BigDecimal) result.get("pbr_pct")).isEqualByComparingTo("1.30");
@@ -284,9 +284,9 @@ public class ValueFundamentalMapperTest {
         // then
         assertThat(count()).isEqualTo(3);
         // insert 확인
-        assertThat(newResult.get("per")).isEqualTo("10.5");
+        assertThat((BigDecimal) newResult.get("per")).isEqualByComparingTo("10.5");
         // update 확인
-        assertThat(updatedResult.get("per")).isEqualTo("20.5");
+        assertThat((BigDecimal) updatedResult.get("per")).isEqualByComparingTo("20.5");
     }
 
     @Test
@@ -416,8 +416,8 @@ public class ValueFundamentalMapperTest {
 
         assertThat((BigDecimal) zeroResult.get("eps")).isEqualByComparingTo("0");
         assertThat((BigDecimal) zeroResult.get("eps_growth")).isEqualByComparingTo("0");
-        assertThat((BigDecimal) negativeResult.get("eps")).isEqualByComparingTo("0");
-        assertThat((BigDecimal) negativeResult.get("eps_growth")).isEqualByComparingTo("0");
+        assertThat((BigDecimal) negativeResult.get("eps")).isEqualByComparingTo("-1234.5678");
+        assertThat((BigDecimal) negativeResult.get("eps_growth")).isEqualByComparingTo("-1.000000");
 
     }
 
@@ -446,8 +446,8 @@ public class ValueFundamentalMapperTest {
         Map<String, Object> result = createQueryMap(updatedValues.get(0));
         assertThat(count()).isEqualTo(500);
         assertThat(result.get("sector")).isEqualTo("변경된업종");
-        assertThat((BigDecimal) result.get("per")).isEqualTo("2");
-        assertThat((BigDecimal) result.get("pbr")).isEqualTo("2");
+        assertThat((BigDecimal) result.get("per")).isEqualByComparingTo("2");
+        assertThat((BigDecimal) result.get("pbr")).isEqualByComparingTo("2");
     }
 
     /* 헬퍼 메서드 */
@@ -470,6 +470,7 @@ public class ValueFundamentalMapperTest {
                             pbr_pct,
                             value_score,
                             scored_scope,
+                            eps_growth,
                             value_trap
                         FROM value_fundamental
                         WHERE
