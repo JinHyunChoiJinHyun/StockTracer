@@ -145,7 +145,7 @@ public class InvestorFlowAnalysisServiceTest {
 
             analysisService.save(List.of(request(SAMSUNG)));
 
-            ArgumentCaptor<List<InvestorFlowAnalysis>> captor = ArgumentCaptor.forClass(List.class);
+            ArgumentCaptor<List<InvestorFlowAnalysis>> captor = ArgumentCaptor.forClass(List.class      );
             verify(analysisRepository).bulkUpsert(captor.capture());
             assertThat(captor.getValue()).hasSize(1);
         }

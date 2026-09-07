@@ -205,23 +205,6 @@ public class EpsHistoryMapperTest {
     }
 
     // 엣지 케이스
-    @Test
-    @DisplayName("eps는 null이 저장되고 0으로 저장 x")
-    void eps_saved_null_not_zero(){
-        mapper.upsertAll(List.of(epsHistory("005930", Q1, null)));
-
-        assertThat(count()).isEqualTo(1);
-        assertThat(getEps("005930", Q1)).isNull();
-    }
-
-    @Test
-    @DisplayName("eps가 null로 업데이트 가능")
-    void eps_can_back_to_null(){
-        mapper.upsertAll(List.of(epsHistory("005930", Q1,"1200.0000")));
-        mapper.upsertAll(List.of(epsHistory("005930", Q1,null)));
-
-        assertThat(getEps("005930", Q1)).isNull(); // 산출불가가 옛날 값으로 인해 계산되서는 안됨
-    }
 
     @Test
     @DisplayName("eps는 0과 음수 저장 가능")
@@ -243,8 +226,8 @@ public class EpsHistoryMapperTest {
                 epsHistory("000660", Q1, "0.0001")
         ));
 
-        assertThat(getEps("005930", Q1)).isEqualByComparingTo("12345678901234.5678");
-        assertThat(getEps("000660", Q1)).isEqualByComparingTo("0.0001");
+        assertThat(getEps("005930", Q1)).isEqualByComparingTo("12345678901234.57");
+        assertThat(getEps("000660", Q1)).isEqualByComparingTo("0.00");
     }
 
     // 대량

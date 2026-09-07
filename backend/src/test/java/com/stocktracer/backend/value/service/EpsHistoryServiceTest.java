@@ -4,10 +4,14 @@ import com.stocktracer.backend.value.domain.EpsHistory;
 import com.stocktracer.backend.value.dto.EpsHistorySaveRequestDto;
 import com.stocktracer.backend.value.dto.EpsPrevResponseDto;
 import com.stocktracer.backend.value.repository.interfaces.EpsHistoryRepository;
+import net.bytebuddy.implementation.bind.annotation.Argument;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -17,10 +21,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -138,6 +144,44 @@ public class EpsHistoryServiceTest {
                     .containsExactly("005930", "000660");
         }
 
+        @ParameterizedTest(name = "{0}") // 0번째 요소 출력 (label)
+        @MethodSource("com.stocktracer.backend.value.service.EpsHistoryServiceTest#duplicate_requests")
+        @DisplayName("중복 키가 있으면 레포지토리 호출 x")
+        void rejects_duplicate_key(String label, List<EpsHistorySaveRequestDto.Item> items){
+            EpsHistorySaveRequestDto request = createDto(items);
+
+            assertThatThrownBy(() -> service.save(request))
+                    .isInstanceOf(IllegalArgumentException.class)
+                            .hasMessageContaining("중복된 key");
+
+            verifyNoInteractions(repository);
+        }
+
+    }
+
+    static Stream<Arguments> duplicate_requests(){ // junit이 인스턴스(new) 없이 직접 호출할 수 있도록 static으로 선언
+        return Stream.of(
+                arguments("중복 키 2회",List.of(
+                        item("005930", Q1, "1"),
+                        item("005930", Q1, "2")
+                )),
+                arguments("중복 키 3회",List.of(
+                        item("005930", Q1, "1"),
+                        item("005930", Q1, "2"),
+                        item("005930", Q1, "3")
+                )),
+                arguments("중복 사이 다른 항목",List.of(
+                        item("005930", Q1, "1"),
+                        item("000660", Q1, "2"),
+                        item("005930", Q1, "3")
+                )),
+                arguments("두 종목에서 각각 중복",List.of(
+                        item("005930", Q1, "1"),
+                        item("000660", Q1, "2"),
+                        item("005930", Q1, "3"),
+                        item("000660", Q1, "4")
+                ))
+        );
     }
 
     /* 객체 생성 */
@@ -145,11 +189,11 @@ public class EpsHistoryServiceTest {
         return new EpsHistory(stockCode, LocalDate.parse(effectiveDate), new BigDecimal(eps));
     }
 
-    private EpsHistorySaveRequestDto createDto(List<EpsHistorySaveRequestDto.Item> items){
+    private static EpsHistorySaveRequestDto createDto(List<EpsHistorySaveRequestDto.Item> items){
         return new EpsHistorySaveRequestDto(items);
     }
 
-    private EpsHistorySaveRequestDto.Item item(
+    private static EpsHistorySaveRequestDto.Item item(
             String stockCode,
             LocalDate effectiveDate,
             String eps
