@@ -28,7 +28,7 @@ public class EpsHistoryRepositoryImpl implements EpsHistoryRepository {
         int affected = 0;
         List<List<EpsHistory>> batches = ListUtils.partition(eps, 1000);
         for (List<EpsHistory> batch : batches){
-            affected = mapper.upsertAll(batch);
+            affected += mapper.upsertAll(batch);
         }
         return affected;
     }

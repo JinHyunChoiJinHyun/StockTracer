@@ -2,6 +2,7 @@ package com.stocktracer.backend.value.mapper;
 
 import com.stocktracer.backend.annotation.MapperTest;
 import com.stocktracer.backend.value.domain.EpsHistory;
+import com.stocktracer.backend.value.domain.ValueFundamental;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,10 +18,14 @@ import java.util.stream.Collectors;
 
 import static java.time.YearMonth.parse;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.map;
 
 @MapperTest
 public class EpsHistoryMapperTest {
     private static final LocalDate BASE_DATE = LocalDate.of(2026,8,26);
+    private static final LocalDate Q1 = LocalDate.of(2026, 3, 31);
+    private static final LocalDate Q2 = LocalDate.of(2026, 6, 30);
+    private static final LocalDate Q3 = LocalDate.of(2026, 9, 30);
 
     @Autowired
     private EpsHistoryMapper mapper;
@@ -49,6 +54,7 @@ public class EpsHistoryMapperTest {
                 .collect(Collectors.toMap(EpsHistory::stockCode, Function.identity()));
     }
 
+    /* 조회 */
     @Test
     @DisplayName("종목별 최신 1건만 prev_eps로 반환한다")
     void latestPerStock(){
@@ -140,5 +146,159 @@ public class EpsHistoryMapperTest {
         assertThat(result).hasSize(2800);
         assertThat(result).allSatisfy(h ->
                 assertThat(h.eps()).isEqualByComparingTo("2000"));
+    }
+
+    /* 저장 */
+    // 정상
+    @Test
+    @DisplayName("신규 행이면 그대로 저장")
+    void insert_new(){
+        mapper.upsertAll(List.of(
+                epsHistory("005930", Q1, "1200.5000"),
+                epsHistory("000660", Q1, "1300.5000")
+        ));
+
+        assertThat(count()).isEqualTo(2);
+        assertThat(getEps("005930", Q1)).isEqualByComparingTo("1200.5000");
+        assertThat(getEps("000660", Q1)).isEqualByComparingTo("1300.5000");
+    }
+
+    @Test
+    @DisplayName("같은 종목이더라도 분기가 다르면 별도로 저장")
+    void save_history_per_effective_date(){
+        mapper.upsertAll(List.of(
+                epsHistory("005930", Q1, "1200.0000"),
+                epsHistory("005930", Q2, "1350.0000"),
+                epsHistory("005930", Q3, "1410.0000")
+        ));
+
+        assertThat(count()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("같은 pk로 재실행 시 업데이트")
+    void same_key_update_eps(){
+        mapper.upsertAll(List.of(epsHistory("005930", Q1,"1200.0000")));
+        mapper.upsertAll(List.of(epsHistory("005930", Q1,"9999.0000")));
+
+        assertThat(count()).isEqualTo(1);
+        assertThat(getEps("005930",Q1)).isEqualByComparingTo("9999.0000");
+    }
+
+    @Test
+    @DisplayName("한번에 신규 insert와 기존 update를 각각 처리")
+    void mixed_insert_and_update_in_once(){
+        mapper.upsertAll(List.of(
+                epsHistory("005930", Q1,"1200.0000"),
+                epsHistory("000660", Q1,"800.0000")
+        ));
+
+        mapper.upsertAll(List.of(
+                epsHistory("005930", Q1,"1250.0000"), // update
+                epsHistory("035420", Q1,"300.0000")   // insert
+        ));
+
+        assertThat(count()).isEqualTo(3);
+        assertThat(getEps("005930",Q1)).isEqualByComparingTo("1250.0000");
+        assertThat(getEps("035420",Q1)).isEqualByComparingTo("300.0000");
+        assertThat(getEps("000660",Q1)).isEqualByComparingTo("800.0000");
+    }
+
+    // 엣지 케이스
+    @Test
+    @DisplayName("eps는 null이 저장되고 0으로 저장 x")
+    void eps_saved_null_not_zero(){
+        mapper.upsertAll(List.of(epsHistory("005930", Q1, null)));
+
+        assertThat(count()).isEqualTo(1);
+        assertThat(getEps("005930", Q1)).isNull();
+    }
+
+    @Test
+    @DisplayName("eps가 null로 업데이트 가능")
+    void eps_can_back_to_null(){
+        mapper.upsertAll(List.of(epsHistory("005930", Q1,"1200.0000")));
+        mapper.upsertAll(List.of(epsHistory("005930", Q1,null)));
+
+        assertThat(getEps("005930", Q1)).isNull(); // 산출불가가 옛날 값으로 인해 계산되서는 안됨
+    }
+
+    @Test
+    @DisplayName("eps는 0과 음수 저장 가능")
+    void eps_can_zero_and_negative(){
+        mapper.upsertAll(List.of(
+                epsHistory("005930", Q1,"0"),
+                epsHistory("000660", Q1,"-800.0000")
+        ));
+
+        assertThat(getEps("005930", Q1)).isZero();
+        assertThat(getEps("000660", Q1)).isEqualByComparingTo("-800.0000");
+    }
+
+    @Test
+    @DisplayName("DECIMAL 정밀도가 손실 없이 저장된다")
+    void decimal_scale_preserved() {
+        mapper.upsertAll(List.of(
+                epsHistory("005930", Q1, "12345678901234.5678"),
+                epsHistory("000660", Q1, "0.0001")
+        ));
+
+        assertThat(getEps("005930", Q1)).isEqualByComparingTo("12345678901234.5678");
+        assertThat(getEps("000660", Q1)).isEqualByComparingTo("0.0001");
+    }
+
+    // 대량
+    @Test
+    @DisplayName("대량 upsert 정상 동작 확인")
+    void bulk_upsert(){
+        List<EpsHistory> values = java.util.stream.IntStream.range(0,1000)
+                .mapToObj(i -> epsHistory(
+                        String.format("%06d", i), Q1, "1"
+                ))
+                .toList();
+
+        mapper.upsertAll(values);
+
+        List<EpsHistory> updatedValues = java.util.stream.IntStream.range(0,1000)
+                .mapToObj(i -> epsHistory(
+                        String.format("%06d", i), Q1, "2"
+                ))
+                .toList();
+
+        mapper.upsertAll(updatedValues);
+
+        assertThat(count()).isEqualTo(1000);
+        assertThat(getEps("000001",Q1)).isEqualByComparingTo("2");
+    }
+
+
+    /* 객체 생성 */
+    private EpsHistory epsHistory(
+            String stockCode,
+            LocalDate effectiveDate,
+            String eps
+    ){
+        return new EpsHistory(
+                stockCode,
+                effectiveDate,
+                new BigDecimal(eps)
+        );
+    }
+
+    /* 헬퍼 메서드 */
+
+    private Integer count(){
+        return jdbc.queryForObject(
+                """
+                    SELECT count(*) FROM eps_history
+                    """,
+                Integer.class
+        );
+    }
+
+    private BigDecimal getEps(String stockCode, LocalDate effectiveDate) {
+        return jdbc.queryForObject(
+                "SELECT eps FROM eps_history WHERE stock_code = ? AND effective_date = ?",
+                BigDecimal.class, stockCode, effectiveDate);
     }
 }

@@ -21,7 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -97,8 +97,27 @@ public class ValueFundamentalServiceTest {
 
     /* 엣지 케이스 */
     @Test
-    @DisplayName("빈 요청은 검증을 통과해 레포지토리로 입력")
+    @DisplayName("빈 요청은 검증을 통과해 레포지토리로 전달 (빈 리스트 검증은 레포지토리의 책임)")
+    void empty_request_is_delegated_as_is(){
+        given(repository.upsertAll(anyList())).willReturn(0);
 
+        int affected = service.save(createDto(List.of()));
+
+        assertThat(affected).isZero();
+        verify(repository).upsertAll(captor.capture());
+
+        assertThat(captor.getValue()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("EpsHistoryService 호출 x")
+    void does_not_touch_eps_history_service(){
+        given(repository.upsertAll(anyList())).willReturn(1);
+
+        service.save(createDto(List.of(item("005930",BASE_DATE))));
+
+        verifyNoInteractions(epsHistoryService); // 서비스간의 조율은 facade의 책임 // 서비스끼리 손대면 트랜젝션 경계가 갈라짐
+    }
 
 
     /* 헬퍼 */

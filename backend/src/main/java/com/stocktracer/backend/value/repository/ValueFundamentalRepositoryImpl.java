@@ -22,7 +22,7 @@ public class ValueFundamentalRepositoryImpl implements ValueFundamentalRepositor
         int affected = 0;
         List<List<ValueFundamental>> batches = ListUtils.partition(values, 500);
         for(List<ValueFundamental> batch : batches){
-            affected = mapper.upsertAll(batch);
+            affected += mapper.upsertAll(batch);
         }
         return affected;
     }
