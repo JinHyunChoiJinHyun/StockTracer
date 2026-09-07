@@ -16,10 +16,13 @@ public class ValueFundamentalRepositoryImpl implements ValueFundamentalRepositor
 
     @Override
     public int upsertAll(List<ValueFundamental> values) {
+        // 빈 값 검증
+        if (values.isEmpty()) return 0;
+
         int affected = 0;
         List<List<ValueFundamental>> batches = ListUtils.partition(values, 500);
         for(List<ValueFundamental> batch : batches){
-            affected = mapper.upsertAll(values);
+            affected = mapper.upsertAll(batch);
         }
         return affected;
     }

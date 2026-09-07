@@ -22,6 +22,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,20 +62,44 @@ public class ValueFundamentalServiceTest {
                 .containsExactly("005930","000660");
     }
 
+    @Test
+    @DisplayName("날짜가 다르면 정상 저장")
+    void same_stock_different_date_not_duplicate(){
+        given(repository.upsertAll(anyList())).willReturn(2);
+
+        int affected = service.save(createDto(List.of(
+                item("005930", BASE_DATE),
+                item("005930", BASE_DATE.minusDays(1))
+        )));
+
+        assertThat(affected).isEqualTo(2);
+    }
+
     /* 중복 검증 */
     @Test
     @DisplayName("같은 키가 두번 들어오면 예외 발생")
     void rejects_duplicate_key(){
         ValueFundamentalSaveRequestDto request = createDto(List.of(
                 item("005930", BASE_DATE),
-                item("005930", BASE_DATE)
+                item("005930", BASE_DATE),
+                item("000660", BASE_DATE),
+                item("000660", BASE_DATE)
         ));
 
         assertThatThrownBy(()-> service.save(request))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("005930");
+                .hasMessageContaining("005930")
+                .hasMessageContaining("000660");
 
+        // 레포지토리 호출 여부 확인
+        verify(repository, never()).upsertAll(anyList());
     }
+
+    /* 엣지 케이스 */
+    @Test
+    @DisplayName("빈 요청은 검증을 통과해 레포지토리로 입력")
+
+
 
     /* 헬퍼 */
     // item 생성
