@@ -7,7 +7,6 @@ import java.util.List;
 
 public record EpsPrevResponseDto(
         LocalDate baseDate,
-        int lag,
         int count,
         List<EpsHistory> items
 ) {
@@ -16,12 +15,10 @@ public record EpsPrevResponseDto(
     // 이미 검증된 값이 들어오므로 굳이 다시 검증할 필요 없음
     public static EpsPrevResponseDto of (
             LocalDate baseDate,
-            int lag,
             List<EpsHistory> items
     ){
         return new EpsPrevResponseDto(
                 baseDate,
-                lag,
                 items.size(),
                 items
         );

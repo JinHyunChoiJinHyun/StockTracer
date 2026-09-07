@@ -1,12 +1,15 @@
 package com.stocktracer.backend.value.service;
 
 import com.stocktracer.backend.value.domain.EpsHistory;
+import com.stocktracer.backend.value.dto.EpsHistorySaveRequestDto;
 import com.stocktracer.backend.value.dto.EpsPrevResponseDto;
 import com.stocktracer.backend.value.repository.interfaces.EpsHistoryRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,7 +28,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class EpsHistoryServiceTest {
     private static final LocalDate BASE_DATE = LocalDate.of(2026,8,26);
-    private static final int LAG = 1;
+    private static final LocalDate Q1 = LocalDate.of(2026, 3, 31);
+    private static final LocalDate Q2 = LocalDate.of(2026, 6, 30);
 
     @Mock
     private EpsHistoryRepository repository;
@@ -33,9 +37,9 @@ public class EpsHistoryServiceTest {
     @InjectMocks
     private EpsHistoryService service;
 
-    private EpsHistory eps(String stockCode, String prevEps, String effectiveDate){
-        return new EpsHistory(stockCode, LocalDate.parse(effectiveDate), new BigDecimal(prevEps));
-    }
+    @Captor
+    private ArgumentCaptor<List<EpsHistory>> captor;
+
 
     @Nested
     @DisplayName("조회")
@@ -44,8 +48,8 @@ public class EpsHistoryServiceTest {
         @DisplayName("조회 결과를 응답 DTO로 변환한다")
         void mapsToResponse(){
             List<EpsHistory> items = List.of(
-                    eps("005930", "6012", "2026-05-15"),
-                    eps("000660", "12040", "2026-05-15")
+                    epsHistory("005930", "6012", "2026-05-15"),
+                    epsHistory("000660", "12040", "2026-05-15")
             );
 
             given(repository.findPrevEps(BASE_DATE)).willReturn(items);
@@ -112,5 +116,48 @@ public class EpsHistoryServiceTest {
 
             verifyNoInteractions(repository);
         }
+    }
+
+    @Nested
+    @DisplayName("저장")
+    class Save{
+        @Test
+        @DisplayName("요청을 도메인으로 변환해 레포지토리로 전달")
+        void converts_and_delegates(){
+            given(repository.upsertAll(anyList())).willReturn(2);
+
+            service.save(createDto(List.of(
+                    item("005930", Q1, "1200.0000"),
+                    item("000660", Q1, "500.0000")
+                    )
+            ));
+
+            verify(repository).upsertAll(captor.capture()); // 서비스에서 정상 변환 후 전달 확인
+            assertThat(captor.getValue())
+                    .extracting(EpsHistory::stockCode)
+                    .containsExactly("005930", "000660");
+        }
+
+    }
+
+    /* 객체 생성 */
+    private EpsHistory epsHistory(String stockCode, String effectiveDate, String eps ){
+        return new EpsHistory(stockCode, LocalDate.parse(effectiveDate), new BigDecimal(eps));
+    }
+
+    private EpsHistorySaveRequestDto createDto(List<EpsHistorySaveRequestDto.Item> items){
+        return new EpsHistorySaveRequestDto(items);
+    }
+
+    private EpsHistorySaveRequestDto.Item item(
+            String stockCode,
+            LocalDate effectiveDate,
+            String eps
+    ){
+        return new EpsHistorySaveRequestDto.Item(
+                effectiveDate,
+                stockCode,
+                new BigDecimal(eps)
+        );
     }
 }

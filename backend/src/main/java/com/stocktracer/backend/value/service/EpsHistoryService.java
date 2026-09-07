@@ -36,7 +36,7 @@ public class EpsHistoryService {
             log.info("prev_eps 조회: baseDate={} 건수={}", baseDate, items.size());
         }
 
-        return EpsPrevResponseDto.of(baseDate, 1,items);
+        return EpsPrevResponseDto.of(baseDate,items);
     }
 
     /* 저장 */
