@@ -16,6 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.stocktracer.backend.common.validate.Validates.duplicateKeys;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,7 @@ public class ValueFundamentalService {
     @Transactional
     public int save(ValueFundamentalSaveRequestDto request){
         // 검증
-        validateNoDuplicateKey(request);
+        duplicateKeys(request.items(), item -> item.stockCode() + "@" + item.effectiveDate()); // List와 함수 전달
 
         // dto 도메인으로 변환
         List<ValueFundamental> values = request.toDomain();
@@ -38,20 +40,4 @@ public class ValueFundamentalService {
         return affected;
     }
 
-    /**
-     * 종목코드 중복 검증
-     * @param request
-     */
-    private void validateNoDuplicateKey(ValueFundamentalSaveRequestDto request){
-        Set<String> seen = new HashSet<>();
-        List<String> duplicates = request.items().stream()
-                .map(i -> i.effectiveDate() + "@" + i.stockCode())
-                .filter(key -> !seen.add(key))
-                .distinct()
-                .toList();
-
-        if (!duplicates.isEmpty()){
-            throw new IllegalArgumentException(("중복된 key: " + duplicates));
-        }
-    }
 }
