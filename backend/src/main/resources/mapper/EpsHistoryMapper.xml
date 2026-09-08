@@ -5,8 +5,8 @@
     <resultMap id="epsPrevMap" type="com.stocktracer.backend.value.domain.EpsHistory">
         <constructor>
             <idArg column="stock_code" javaType="java.lang.String"/>
-            <arg column="eps" javaType="java.math.BigDecimal"/>
             <arg column="effective_date" javaType="java.time.LocalDate"/>
+            <arg column="eps" javaType="java.math.BigDecimal"/>
         </constructor>
     </resultMap>
 
@@ -14,13 +14,13 @@
     <select id="findPrevEps" resultMap="epsPrevMap">
         SELECT
             h.stock_code,
-            h.prev_eps,
-            h.prev_effective_date
+            h.eps,
+            h.effective_date
         FROM(
             SELECT
                 stock_code,
-                eps as prev_eps,
-                effective_date as prev_effective_date,
+                eps,
+                effective_date,
                 ROW_NUMBER() OVER (PARTITION BY stock_code ORDER BY effective_date DESC) AS rn
             FROM
                 eps_history

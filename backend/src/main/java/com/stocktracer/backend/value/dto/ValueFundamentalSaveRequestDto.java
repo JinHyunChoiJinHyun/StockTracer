@@ -32,7 +32,7 @@ public record ValueFundamentalSaveRequestDto(
             @PositiveOrZero(message = "시가총액은 0 이상이어야 합니다.")
             Long marketCap,
             @PositiveOrZero(message = "상장주식수는 0 이상이어야 합니다.")
-            Long shareOutstanding,
+            Long sharesOutstanding,
             @PositiveOrZero(message = "거래대금은 0 이상이어야 합니다.")
             Long tradingValue,
 
@@ -62,8 +62,8 @@ public record ValueFundamentalSaveRequestDto(
                             i.bps(),
                             i.divYield(),
                             i.marketCap(),
+                            i.sharesOutstanding(),
                             i.tradingValue(),
-                            i.shareOutstanding(),
                             i.perPct(),
                             i.pbrPct(),
                             i.valueScore(),
