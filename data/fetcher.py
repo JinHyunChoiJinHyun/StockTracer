@@ -1,6 +1,7 @@
 # fetcher => 수집 및 전처리
 
 import logging, dotenv
+from datetime import datetime
 
 import pandas as pd
 import FinanceDataReader as fdr # 추후 확장성을 위해 사용
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # 영업일 여부 확인
 def is_business_days(date:str) -> bool:
+    dotenv.load_dotenv()
     ts = pd.Timestamp(date)
     days = stock.get_previous_business_days(year=ts.year, month=ts.month)
     return ts in days
@@ -27,21 +29,24 @@ def fetch_stocks() -> pd.DataFrame:
     logger.info("KRX 시장 데이터 수집 시작...")
     dotenv.load_dotenv()
 
-    # 1) KRX 상위 종목 정보 불러오기
-    raw_df = fdr.StockListing("KRX") # 시가총액이 큰 순으로 조회
+    rows = []
+   
+    for market in ["KOSPI", "KOSDAQ", "KONEX"]:
+        tickers = stock.get_market_ticker_list(market=market)
 
-    # 2) 데이터 전처리
-    # KOSDAQ GLOBAL -> KOSDAQ으로 변환
-    raw_df["Market"] = raw_df["Market"].replace("KOSDAQ GLOBAL", "KOSDAQ")
+        for ticker in tickers:
+            rows.append({
+                "Code": ticker,
+                "Name": stock.get_market_ticker_name(ticker),
+                "Market": market
+            })
 
-    # 3) 필요한 컬럼 추출
-    df_master = raw_df[["Code","Name","Market"]].copy()
-
-    return df_master
+    return pd.DataFrame(rows)
 
 # 상위 종목 일봉 데이터 수집
 def fetch_prices(date: str) -> pd.DataFrame:
     logger.info("%s KRX 시장 주가 데이터 수집 시작...", date)
+    dotenv.load_dotenv()
     try:
         raw_df = stock.get_market_ohlcv_by_ticker(date, market="ALL") # 코드를 기준으로 결과 나열 (날짜는 하나로 고정)
 
@@ -155,6 +160,8 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
 """ 저평가 종목 """
 # 종목 시장 기본 요소 수집
 def fetch_fundamental(date: str) -> pd.DataFrame:
+    dotenv.load_dotenv()
+
     df = stock.get_market_fundamental(date, market="ALL")
 
     # 빈 df 체크
@@ -171,6 +178,7 @@ def fetch_fundamental(date: str) -> pd.DataFrame:
 
 # 종목 시가총액 수집
 def fetch_marketcap(date: str) -> pd.DataFrame:
+    dotenv.load_dotenv()
     df = stock.get_market_cap(date, market="ALL")
 
     # 빈 df 체크
@@ -188,6 +196,7 @@ def fetch_marketcap(date: str) -> pd.DataFrame:
 
 # 종목 업종 수집
 def fetch_market_sector(date: str) -> pd.DataFrame:
+    dotenv.load_dotenv()
     kospi_df = stock.get_market_sector_classifications(date, market="KOSPI")
     kosdaq_df = stock.get_market_sector_classifications(date, market="KOSDAQ")
 
@@ -214,20 +223,21 @@ def fetch_market_sector(date: str) -> pd.DataFrame:
 # 과거 eps 조회
 def fetch_prev_eps(date:str) -> pd.DataFrame:
     # 상수 선언
-    _COLUMNS = ["stock_code", "eps", "prev_eps", "effective_date", "prev_effective_date"]
+    _COLUMNS = ["stock_code", "prev_eps","prev_effective_date"]
     _RENAME = {
         "stockCode": "stock_code",
-        "prevEps": "prev_eps",
-        "effectiveDate": "effective_date",
-        "prevEffectiveDate": "prev_effective_date",
+        "eps": "prev_eps",
+        "effective_date": "prev_effective_date"
     }
 
     # 영업일 조회
     # if not is_business_days(date):
     #     return pd.DataFrame
 
+    date = datetime.strptime(date, "%Y%m%d")
+
     # param 생성
-    params = {"base_date": date}
+    params = {"baseDate": date.strftime("%Y-%m-%d")}
 
     # 백엔드 요청
     payload = get("/value/prev-eps", params=params)
@@ -239,12 +249,10 @@ def fetch_prev_eps(date:str) -> pd.DataFrame:
     # 빈 값 체크
     if not items:
         logger.warning("prev_eps 이력 없음")
-        return pd.DataFrame(columns=_COLUMNS)
+        return pd.DataFrame(columns=_COLUMNS).set_index("stock_code")
 
     # df 생성
-    df = pd.DataFrame(items).rename(columns=_RENAME)[_COLUMNS]
-    df.set_index("stock_code")
-
+    df = pd.DataFrame(items).rename(columns=_RENAME).set_index("stock_code")
     return df
 
 
@@ -269,13 +277,4 @@ def build_value_fundamental(date:str) -> pd.DataFrame:
     logger.info("저평가 종목 수집 완료: date=%s rows=%d", date, len(df))
 
     return df.reset_index()
-
-
-
-
-
-
-
-
-
 

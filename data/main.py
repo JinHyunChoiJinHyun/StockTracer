@@ -1,11 +1,13 @@
-import logging, time, sys
-import numpy as np
-from datetime import datetime
-
 from fetcher import fetch_prices, fetch_stocks, fetch_investor_flow, build_value_fundamental, is_business_days
-from analyzer import build_investor_flow, analyze_investor_flow
+from analyzer import build_investor_flow, analyze_investor_flow, analyze_fundamental
 from mapper import to_stock_payload, to_price_payload, to_payload
 from api_client import post_to_backend
+
+import logging, time, sys
+import numpy as np
+import pandas as pd
+from datetime import datetime
+
 from typing import Callable
 from functools import partial
 
@@ -20,7 +22,7 @@ STOCK_INFO_ENDPOINT = "/info"
 STOCK_PRICE_ENDPOINT = "/prices/bulk"
 STOCK_INVESTOR_FLOW_DAILY_ENDPOINT = "/investor-flows/daily"
 STOCK_INVESTOR_FLOW_RANK_ENDPOINT = "/investor-flows/analysis"
-STOCK_VALUE_ENDPOINT = "/value"
+STOCK_VALUE_ENDPOINT = "/value/save"
 
 """ 유틸 """
 
@@ -110,9 +112,11 @@ def run_value_pipeline(date: str) -> bool:
         value_df = build_value_fundamental(date)
         validate_df(value_df, "종목 시장 기본 요소 조회")
 
-        value_payload = {"items": to_payload(value_df)}
+        fundamental_df = analyze_fundamental(value_df)
 
-        success_value = post_to_backend(STOCK_VALUE_ENDPOINT,value_payload)
+        fundamental_payload = {"items": to_payload(fundamental_df)}
+        
+        success_value = post_to_backend(STOCK_VALUE_ENDPOINT,fundamental_payload)
 
         logger.info("=== 저평가 종목 파이프라인 종료 (성공: %s) ===", success_value)
 
@@ -128,8 +132,8 @@ def run_daily_batch() -> bool:
     overall_success = False
     try:
         # 거래일 목록에 오늘 날짜가 포함되면 파이프라인 실행 아니면 중단
-        date = datetime.now().strftime("%Y%m%d")
-        # date = "20260810"
+        # date = datetime.now().strftime("%Y%m%d")
+        date = "20260904"
         if not is_business_days(date):
             logger.info("[%s] 비영업일이므로 종료합니다", date)
             return False
@@ -155,6 +159,8 @@ def run_daily_batch() -> bool:
 
         overall_success = not failed
         return overall_success
+    except Exception as e:
+        print(e)
     
     finally:
         elapsed = time.time() - start

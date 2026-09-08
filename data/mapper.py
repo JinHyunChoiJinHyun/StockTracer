@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def to_payload(df, field_map:dict) -> list[dict]:
+def map_payload(df, field_map:dict) -> list[dict]:
     """필드명 백엔드에 맞게 변환"""
     return[
         {
@@ -18,7 +18,7 @@ def to_stock_payload(df) -> list[dict]:
         "Market": "market"
     }
 
-    return to_payload(df, field_map)
+    return map_payload(df, field_map)
 
 def to_price_payload(df) -> list[dict]:
     field_map = {
@@ -34,7 +34,7 @@ def to_price_payload(df) -> list[dict]:
         "시가총액": "market_cap"
     }
 
-    return to_payload(df, field_map)
+    return map_payload(df, field_map)
 
 def to_payload(df:pd.DataFrame) -> list[dict]:
     return df.replace({np.nan: None}).to_dict(orient="records")

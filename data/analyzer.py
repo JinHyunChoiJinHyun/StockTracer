@@ -264,7 +264,7 @@ def _percentile(df: pd.DataFrame, column: str, cfg: ValueConfig) -> tuple[pd.Ser
     # sector 기준 백분위 적용 여부 결정
     use_sector = has_sector & sector_size.ge(cfg.min_sector_size) # 유효한 sector 계산
     pct = sector_pct.where(use_sector, market_pct) # sector가 유효할 시 sector_pct 사용, 아니라면 market_pct 사용
-    scope = pd.Series(np.where(use_sector, "sector", "market"), index = df.index) # true면 전자, false면 후자를 필드값으로 삽입
+    scope = pd.Series(np.where(use_sector, "SECTOR", "MARKET"), index = df.index) # true면 전자, false면 후자를 필드값으로 삽입
 
     return pct, scope
 
@@ -287,6 +287,7 @@ def score_value(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
 def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
     eps_df = df.copy()
     prev = eps_df["prev_eps"].replace(0, np.nan) # 0을 null로 변환 / series
+    prev = pd.to_numeric(prev, errors="coerce")
     eps_df["eps_growth"] = ((eps_df["eps"] - prev) / prev.abs()).round(4) # index를 기준으로 계산 # prev가 nan이면 nan으로 저장
     eps_df["value_trap"] = eps_df["eps_growth"].lt(0) # (Nan -> Nan) / (음수 -> true) / (양수 -> false)
 
@@ -300,11 +301,11 @@ def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
     return eps_df
 
 # 저평가 종목 분석
-def analyze_fundamental(raw: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
+def analyze_fundamental(raw: pd.DataFrame, cfg:ValueConfig = ValueConfig()) -> pd.DataFrame:
     # 컬럼명 지정
     OUTPUT_COLUMNS = [
         "effective_date", "stock_code", "sector",
-        "per", "pbr", "eps", "bps", "div_yield", "market_cap", "trading_value",
+        "per", "pbr", "eps", "bps", "div_yield", "market_cap", "trading_value", "shares_outstanding",
         "per_pct", "pbr_pct", "value_score", "scored_scope",
         "eps_growth", "value_trap",
     ]
