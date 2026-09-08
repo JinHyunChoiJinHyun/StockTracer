@@ -5,10 +5,10 @@ import com.stocktracer.backend.value.dto.FundamentalSaveResponseDto;
 import com.stocktracer.backend.value.dto.ValueFundamentalSaveRequestDto;
 import com.stocktracer.backend.value.service.EpsHistoryService;
 import com.stocktracer.backend.value.service.ValueFundamentalService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

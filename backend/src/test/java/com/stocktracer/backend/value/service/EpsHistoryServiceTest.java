@@ -17,6 +17,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -144,9 +145,10 @@ public class EpsHistoryServiceTest {
                     .containsExactly("005930", "000660");
         }
 
+
         @ParameterizedTest(name = "{0}") // 0번째 요소 출력 (label)
         @MethodSource("com.stocktracer.backend.value.service.EpsHistoryServiceTest#duplicate_requests")
-        @DisplayName("중복 키가 있으면 레포지토리 호출 x")
+        @DisplayName("중복 키가 있으면 오류를 반환하고 레포지토리 호출 x")
         void rejects_duplicate_key(String label, List<EpsHistorySaveRequestDto.Item> items){
             EpsHistorySaveRequestDto request = createDto(items);
 
@@ -155,6 +157,28 @@ public class EpsHistoryServiceTest {
                             .hasMessageContaining("중복된 key");
 
             verifyNoInteractions(repository);
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("com.stocktracer.backend.value.service.EpsHistoryServiceTest#not_duplicate_requests")
+        @DisplayName("중복이 아닌 경우 정상 저장")
+        void passes_through_no_duplicate(String label, List<EpsHistorySaveRequestDto.Item> items){
+            given(repository.upsertAll(anyList())).willReturn(items.size());
+
+            service.save(createDto(items)); // static 메서드에서 생성한 리스트를 넣어서 dto 생성
+
+            verify(repository).upsertAll(captor.capture());
+            assertThat(captor.getValue()).hasSize(items.size());
+        }
+
+        @Test
+        @DisplayName("빈 요청 그대로 레포지토리 전달")
+        void empty_request_is_delegated_as_is(){
+            given(repository.upsertAll(anyList())).willReturn(0);
+
+            assertThat(service.save(createDto(List.of()))).isZero();
+
+            verify(repository).upsertAll(any()); // 빈 리스트 차단은 repository의 책임
         }
 
     }
@@ -180,6 +204,28 @@ public class EpsHistoryServiceTest {
                         item("000660", Q1, "2"),
                         item("005930", Q1, "3"),
                         item("000660", Q1, "4")
+                ))
+        );
+    }
+
+    static Stream<Arguments> not_duplicate_requests(){
+        return Stream.of(
+                arguments("단건", List.of(
+                        item("005930", Q1, "1")
+                )),
+                arguments("다른 종목", List.of(
+                        item("005930", Q1, "1"),
+                        item("000660", Q1, "1")
+                )),
+                arguments("종목이 같으나 다른 분기", List.of(
+                        item("005930", Q1, "1"),
+                        item("005930", Q2, "2")
+                )),
+                arguments("다른 종목 다른 분기", List.of(
+                        item("005930", Q1, "1"),
+                        item("005930", Q2, "2"),
+                        item("000660", Q1, "1"),
+                        item("000660", Q2, "2")
                 ))
         );
     }
