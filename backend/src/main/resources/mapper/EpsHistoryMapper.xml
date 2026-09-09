@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.value.mapper.EpsHistoryMapper">
+    <resultMap id="epsPrevMap" type="com.stocktracer.backend.value.domain.EpsHistory">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="effective_date" javaType="java.time.LocalDate"/>
+            <arg column="eps" javaType="java.math.BigDecimal"/>
+        </constructor>
+    </resultMap>
+
+    <!-- 조회 -->
+    <select id="findPrevEps" resultMap="epsPrevMap">
+        SELECT
+            h.stock_code,
+            h.eps,
+            h.effective_date
+        FROM(
+            SELECT
+                stock_code,
+                eps,
+                effective_date,
+                ROW_NUMBER() OVER (PARTITION BY stock_code ORDER BY effective_date DESC) AS rn
+            FROM
+                eps_history
+            WHERE
+                effective_date &lt; #{baseDate} <!-- 금일 날짜 제외 -->
+            ) h
+        WHERE h.rn = 1 <!-- 직전 행만 반환 -->
+    </select>
+
+    <!-- 저장 및 업데이트 -->
+    <insert id="upsertAll">
+        INSERT INTO eps_history
+            (
+             stock_code,
+             effective_date,
+             eps
+            )
+        VALUES
+        <foreach collection="eps" item="e" separator=",">
+            (
+             #{e.stockCode},
+             #{e.effectiveDate},
+             #{e.eps}
+            )
+        </foreach>
+        AS new
+        ON DUPLICATE KEY UPDATE
+            eps = new.eps
+    </insert>
+</mapper>

@@ -1,10 +1,14 @@
 # fetcher => 수집 및 전처리
 
 import logging, dotenv
+from datetime import datetime
 
 import pandas as pd
-from pykrx import stock
 import FinanceDataReader as fdr # 추후 확장성을 위해 사용
+import requests
+from pykrx import stock
+
+from common.api_client import get
 
 # .\venv\Scripts\Activate.ps1
 # >> 가상환경 실행 코드 (venv 폴더 내 스크립트 실행)
@@ -13,26 +17,36 @@ import FinanceDataReader as fdr # 추후 확장성을 위해 사용
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__) 
 
+# 영업일 여부 확인
+def is_business_days(date:str) -> bool:
+    dotenv.load_dotenv()
+    ts = pd.Timestamp(date)
+    days = stock.get_previous_business_days(year=ts.year, month=ts.month)
+    return ts in days
+
 # 상위 종목 원본 데이터 수집
 def fetch_stocks() -> pd.DataFrame:
     logger.info("KRX 시장 데이터 수집 시작...")
     dotenv.load_dotenv()
 
-    # 1) KRX 상위 종목 정보 불러오기
-    raw_df = fdr.StockListing("KRX") # 시가총액이 큰 순으로 조회
+    rows = []
+   
+    for market in ["KOSPI", "KOSDAQ", "KONEX"]:
+        tickers = stock.get_market_ticker_list(market=market)
 
-    # 2) 데이터 전처리
-    # KOSDAQ GLOBAL -> KOSDAQ으로 변환
-    raw_df["Market"] = raw_df["Market"].replace("KOSDAQ GLOBAL", "KOSDAQ")
+        for ticker in tickers:
+            rows.append({
+                "Code": ticker,
+                "Name": stock.get_market_ticker_name(ticker),
+                "Market": market
+            })
 
-    # 3) 필요한 컬럼 추출
-    df_master = raw_df[["Code","Name","Market"]].copy()
-
-    return df_master
+    return pd.DataFrame(rows)
 
 # 상위 종목 일봉 데이터 수집
 def fetch_prices(date: str) -> pd.DataFrame:
     logger.info("%s KRX 시장 주가 데이터 수집 시작...", date)
+    dotenv.load_dotenv()
     try:
         raw_df = stock.get_market_ohlcv_by_ticker(date, market="ALL") # 코드를 기준으로 결과 나열 (날짜는 하나로 고정)
 
@@ -141,7 +155,126 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
         today_df["순매수거래대금"], errors="coerce"
     ).fillna(0.0)
 
-    return today_df.reset_index()
+    return today_df.reset_index() # index 값을 필드로 이동
+
+""" 저평가 종목 """
+# 종목 시장 기본 요소 수집
+def fetch_fundamental(date: str) -> pd.DataFrame:
+    dotenv.load_dotenv()
+
+    df = stock.get_market_fundamental(date, market="ALL")
+
+    # 빈 df 체크
+    if df.empty:
+        raise ValueError(f"fundamental 조회 결과 없음: {date}")
+
+    # 필드명 변환
+    df.columns = df.columns.str.lower()
+    df = df.rename(columns={
+        "div": "div_yield"
+    })
+
+    return df
+
+# 종목 시가총액 수집
+def fetch_marketcap(date: str) -> pd.DataFrame:
+    dotenv.load_dotenv()
+    df = stock.get_market_cap(date, market="ALL")
+
+    # 빈 df 체크
+    if df.empty:
+        raise ValueError(f"marketcap 조회 결과 없음: {date}")
+    
+    # 필드명 변환
+    df = df.rename(columns={
+            "시가총액": "market_cap",
+            "거래대금": "trading_value",
+            "상장주식수": "shares_outstanding"
+        })
+
+    return df
+
+# 종목 업종 수집
+def fetch_market_sector(date: str) -> pd.DataFrame:
+    dotenv.load_dotenv()
+    kospi_df = stock.get_market_sector_classifications(date, market="KOSPI")
+    kosdaq_df = stock.get_market_sector_classifications(date, market="KOSDAQ")
+
+    # 수집한 업종 결합
+    df = pd.concat([
+        kosdaq_df,
+        kospi_df
+    ], axis=0)
+
+    # 중복 index 제거
+    df = df[~df.index.duplicated(keep="first")]
+
+    # 빈 df 체크
+    if df.empty:
+        raise ValueError(f"market sector 조회 결과 없음: {date}")
+
+    # 필드명 변환
+    df = df.rename(columns={
+        "업종명": "sector"
+    })
+
+    return df[["sector"]] # 확장을 위해 이중 배열 사용
+
+# 과거 eps 조회
+def fetch_prev_eps(date:str) -> pd.DataFrame:
+    # 상수 선언
+    _COLUMNS = ["stock_code", "prev_eps","prev_effective_date"]
+    _RENAME = {
+        "stockCode": "stock_code",
+        "eps": "prev_eps",
+        "effective_date": "prev_effective_date"
+    }
+
+    # 영업일 조회
+    # if not is_business_days(date):
+    #     return pd.DataFrame
+
+    date = datetime.strptime(date, "%Y%m%d")
+
+    # param 생성
+    params = {"baseDate": date.strftime("%Y-%m-%d")}
+
+    # 백엔드 요청
+    payload = get("/value/prev-eps", params=params)
+    items = payload.get("items", [])
+
+    logger.info("prev_eps 수신: 대상=%d 판정불가=%d",
+                payload.get("count", 0), payload.get("undecidableCount", 0))
+
+    # 빈 값 체크
+    if not items:
+        logger.warning("prev_eps 이력 없음")
+        return pd.DataFrame(columns=_COLUMNS).set_index("stock_code")
+
+    # df 생성
+    df = pd.DataFrame(items).rename(columns=_RENAME).set_index("stock_code")
+    return df
 
 
+# 수집 정보 결합
+def build_value_fundamental(date:str) -> pd.DataFrame:
+    fundamental_df = fetch_fundamental(date)
+    marketcap_df = fetch_marketcap(date)
+    sector_df = fetch_market_sector(date)
+    prev_eps_df = fetch_prev_eps(date)
+
+    # df 결합
+    df = fundamental_df.join(marketcap_df[["market_cap","trading_value","shares_outstanding"]], how="inner")
+
+    df = df.join(sector_df, how="left")
+
+    df = df.join(prev_eps_df, how="left")
+
+    df["effective_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+
+    # 티커 필드명 변환
+    df.index.name = "stock_code"
+    logger.info("저평가 종목 수집 완료: date=%s rows=%d", date, len(df))
+
+    return df.reset_index()
 

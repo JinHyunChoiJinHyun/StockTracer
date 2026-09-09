@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from dotenv import  load_dotenv
 from pykrx import stock
+from dataclasses import dataclass
 
 # 로그 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -182,5 +183,147 @@ def _build_reason(row: pd.Series) -> str:
         return f"기관이 {inst:,.0f}억 담았어요. 외국인 매수는 아직 붙지 않았습니다."
     return f"외국인·기관 합쳐 {row['major_net'] / EOK:,.0f}억이 들어왔어요."
 
+""" 저평가 종목 분석 """
+# 저평가 종목 설정값
+@dataclass(frozen=True)
+class ValueConfig:
+    min_market_cap: int = 50_000_000_000 # 최소 시가총액: 500억
+    min_trading_value: int = 500_000_000 # 최소 거래대금: 5억
+    min_sector_size: int = 15 # 업종 표본 하한 (표본이 적으면 업종이 아닌 전체 시장 기준 백분위)
+    per_weight: float = 0.5 # per 가중치
+    pbr_weight: float = 0.5 # pbr 가중치
+    exclude_preferred: bool = True # 우선주 제외 여부
 
+    def __post_init__(self) -> None:
+        # 가중치 합 검증 (가중치의 합은 무조건 100%)
+        total = self.per_weight + self.pbr_weight
+        if not np.isclose(total, 1.0):
+            raise ValueError(f"per_weight + pbr_weight 는 1.0 이어야 합니다: {total}")
+
+# 분석 대상 필터
+def filter_fundamental(df:pd.DataFrame, cfg: ValueConfig) -> pd.DataFrame:
+    before = len(df)
+
+    # 의미없는 값 리스트 저장
+    steps: list[tuple[str, pd.Series]] = [
+        # 적자 기업 제외
+        ("per<=0 또는 결측", df["per"].gt(0).fillna(False)), # 0보다 크면 true 아니면 false
+        ("pbr<=0 또는 결측", df["pbr"].gt(0).fillna(False)),
+        ("시총 미달", df["market_cap"].ge(cfg.min_market_cap).fillna(False)),
+        ("거래대금 미달", df["trading_value"].ge(cfg.min_trading_value).fillna(False))
+    ]
+
+    # 우선주 배제
+    if cfg.exclude_preferred:
+        steps.append(("우선주", df["stock_code"].str.endswith("0"))) # 보통주는 끝자리가 0이므로 보통주만 true로 저장 (우선주는 false로 저장)
+
+    # 각 조건으로 필터
+    mask = pd.Series(True, index=df.index) # 조건 통과 여부를 저장할 변수
+    for label, condition in steps: 
+        dropped = int((mask & ~condition).sum()) # 현재 조건을 통과하지 못한 종목 수 합계 계산
+        if dropped:
+            logger.info("제외 [%s]: %d건", label, dropped)
+        mask &= condition # mask와 condition 상태를 비교하여 true인 경우만 mask에 저장
+
+    """
+        mask 없이 필터링 시 (위 과정과 동일)
+
+        df = df[df["market_cap"].ge(cfg.min_market_cap).fillna(False)]
     
+        df = df[df["trading_value"].ge(cfg.min_trading_value).fillna(False)]
+    
+        df = df[df["per"].gt(0).fillna(False)]
+        
+    """
+
+    filter_df = df[mask].copy()
+
+    logger.info("확정: %d -> %d", before, len(filter_df))
+
+    if filter_df.empty:
+            raise ValueError("필터 결과가 비었습니다. ValueConfig 임계값을 확인하세요.")
+
+    return filter_df
+
+# 백분위 변환
+def _percentile(df: pd.DataFrame, column: str, cfg: ValueConfig) -> tuple[pd.Series, pd.Series]:
+    """ 절대평가 시 특정 분야로만 채워지므로 상대평가 필요"""
+    market_pct = df[column].rank(pct=True, method="average") # 전체 백분위 계산
+
+    # null이 아닌 행 존재 여부 확인
+    has_sector = df["sector"].notna()
+
+    # sector 필드값이 하나도 존재하지 않을 시 (모든 행이 다 null일 시)
+    if not has_sector.any(): 
+        return market_pct, pd.Series("market", index=df.index) # 전체 벡분위와 market으로 입력된 컬럼 반환
+
+    # sector 필드값이 하나라도 존재할 시
+    sector_pct = df.groupby("sector")[column].rank(pct=True, method="average") # sector별 백분위 계산
+    sector_size = df.groupby("sector")[column].transform("size") # sector 갯수 계산
+
+    # sector 기준 백분위 적용 여부 결정
+    use_sector = has_sector & sector_size.ge(cfg.min_sector_size) # 유효한 sector 계산
+    pct = sector_pct.where(use_sector, market_pct) # sector가 유효할 시 sector_pct 사용, 아니라면 market_pct 사용
+    scope = pd.Series(np.where(use_sector, "SECTOR", "MARKET"), index = df.index) # true면 전자, false면 후자를 필드값으로 삽입
+
+    return pct, scope
+
+# 분석 대상 점수화
+def score_value(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
+    pct_df = df.copy()
+    per_pct, per_scope = _percentile(pct_df, "per", cfg)
+    pbr_pct, _ = _percentile(pct_df, "pbr", cfg) # pbr_scope는 per_scope와 동일하므로 반환 x
+
+    pct_df["per_pct"] = per_pct.round(4)
+    pct_df["pbr_pct"] = pbr_pct.round(4)
+    pct_df["scored_scope"] = per_scope # 백분위 계산 기준
+    pct_df["value_score"] = (
+        ((1 - per_pct) * cfg.per_weight + (1 - pbr_pct) * cfg.pbr_weight) * 100
+    ).round(2) # 가중치 계산 (높을수록 상대적으로 저평가)
+
+    return pct_df
+
+# 저평가 이유 판정 (실적이 좋은데 저평가인지 아니면 진짜 실적이 안좋은건지)
+def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
+    eps_df = df.copy()
+    prev = eps_df["prev_eps"].replace(0, np.nan) # 0을 null로 변환 / series
+    prev = pd.to_numeric(prev, errors="coerce") # 변환 가능한 값은 숫자로 변환 / 불가하면 NaN으로 변환
+    eps_df["eps_growth"] = ((eps_df["eps"] - prev) / prev.abs()).round(4) # index를 기준으로 계산 # prev가 nan이면 nan으로 저장
+    eps_df["value_trap"] = eps_df["eps_growth"].lt(0).where(
+        eps_df["eps_growth"].notna(),
+        None
+    ) # eps_growth가 none이 아니면 true/false null이면 None
+
+    logger.info(
+        "밸류트랩 판정: 대상=%d 경고=%d 판정불가(prev_eps 결측)=%d",
+        len(eps_df),
+        int(eps_df["value_trap"].sum()),
+        int(eps_df["eps_growth"].isna().sum()),
+    )
+
+    return eps_df
+
+# 저평가 종목 분석
+def analyze_fundamental(raw: pd.DataFrame, cfg:ValueConfig = ValueConfig()) -> pd.DataFrame:
+    # 컬럼명 지정
+    OUTPUT_COLUMNS = [
+        "effective_date", "stock_code", "sector",
+        "per", "pbr", "eps", "bps", "div_yield", "market_cap", "trading_value", "shares_outstanding",
+        "per_pct", "pbr_pct", "value_score", "scored_scope",
+        "eps_growth", "value_trap",
+    ]
+
+    # 파이프라인 실행
+    result = (
+        raw.pipe(filter_fundamental, cfg)
+        .pipe(score_value, cfg)
+        .pipe(flag_value_trap)
+    )
+
+    logger.info(
+        "밸류 분석 완료: rows=%d score_max=%.2f score_min=%.2f",
+        len(result),
+        float(result["value_score"].max()),
+        float(result["value_score"].min()),
+    )
+    return result

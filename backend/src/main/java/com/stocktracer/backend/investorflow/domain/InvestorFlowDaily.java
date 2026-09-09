@@ -2,6 +2,7 @@ package com.stocktracer.backend.investorflow.domain;
 
 import com.stocktracer.backend.investorflow.dto.InvestorFlowDailyRequestDto;
 import com.stocktracer.backend.stock.domain.StockInfo;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,7 +11,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
 public class InvestorFlowDaily {
     private final String stockCode;
     private final LocalDate baseDate;
