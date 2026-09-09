@@ -28,7 +28,6 @@ public class ValueFundamentalService {
     public int save(ValueFundamentalSaveRequestDto request){
         // 검증
         duplicateKeys(request.items(), item -> item.stockCode() + "@" + item.effectiveDate()); // List와 함수 전달
-        System.out.println(request.items().stream().map(ValueFundamentalSaveRequestDto.Item::tradingValue).toList());
 
         // dto 도메인으로 변환
         List<ValueFundamental> values = request.toDomain();
