@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom' // router 사용 시 추가
 
-import './index.css'
+// import './index.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
