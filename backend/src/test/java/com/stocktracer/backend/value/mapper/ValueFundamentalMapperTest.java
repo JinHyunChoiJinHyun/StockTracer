@@ -324,8 +324,8 @@ public class ValueFundamentalMapperTest {
         assertThat(result.get("eps")).isNull();
         assertThat(result.get("bps")).isNull();
         assertThat(result.get("div_yield")).isNull();
-        assertThat(result.get("perPct")).isNull();
-        assertThat(result.get("pbrPct")).isNull();
+        assertThat(result.get("per_pct")).isNull();
+        assertThat(result.get("pbr_pct")).isNull();
         assertThat(result.get("value_score")).isNull();
         assertThat(result.get("eps_growth")).isNull();
         assertThat(result.get("value_trap")).isNull();

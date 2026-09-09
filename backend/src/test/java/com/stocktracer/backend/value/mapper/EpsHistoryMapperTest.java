@@ -74,7 +74,7 @@ public class EpsHistoryMapperTest {
     @Test
     @DisplayName("이력이 비어있으면 빈 리스트 반환 - 수집 첫날 대비")
     void emptyEpsHistory(){
-        assertThat(mapper.findPrevEps(BASE_DATE));
+        assertThat(mapper.findPrevEps(BASE_DATE).isEmpty());
     }
 
     @Test
