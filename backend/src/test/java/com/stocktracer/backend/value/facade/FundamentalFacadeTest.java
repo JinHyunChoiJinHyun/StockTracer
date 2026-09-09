@@ -60,8 +60,8 @@ public class FundamentalFacadeTest {
 
             FundamentalSaveResponseDto response = facade.save(request);
 
-            assertThat(response.savedValueCount()).isEqualTo(2);
-            assertThat(response.savedEpsCount()).isEqualTo(2);
+            assertThat(response.affectedValueCount()).isEqualTo(2);
+            assertThat(response.affectedEpsCount()).isEqualTo(2);
             assertThat(response.missingEpsCount()).isEqualTo(0);
 
             verify(valueFundamentalService).save(request);
@@ -88,8 +88,8 @@ public class FundamentalFacadeTest {
 
             FundamentalSaveResponseDto response = facade.save(request);
 
-            assertThat(response.savedValueCount()).isEqualTo(3);
-            assertThat(response.savedEpsCount()).isEqualTo(2);
+            assertThat(response.affectedValueCount()).isEqualTo(3);
+            assertThat(response.affectedEpsCount()).isEqualTo(2);
             assertThat(response.missingEpsCount()).isEqualTo(1);
 
             verify(valueFundamentalService).save(request);
