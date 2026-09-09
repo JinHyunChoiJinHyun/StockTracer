@@ -52,6 +52,8 @@ def get(end_point: str, params: dict, retry_count:int = 3) -> Any:
             if 400 <= status < 500:
                 logger.error("GET 클라이언트 오류(재시도 안 함): url=%s status=%d", url, status)
                 raise
+            if attempt < retry_count:
+                time.sleep(2 ** (attempt - 1))
             last_exc = e
         except requests.RequestException as e:
             logger.warning("GET 실패 (%d번째 시도) url=%s error=%s", attempt, url, e)
