@@ -12,8 +12,8 @@ import java.util.Objects;
  */
 @Getter
 @Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class StockInfo {
     private String stockCode;
     private String stockName;

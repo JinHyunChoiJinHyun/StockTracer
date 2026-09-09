@@ -151,7 +151,7 @@ public class StockPriceServiceTest {
         );
         StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(requestDto));
 
-        StockInfo mockInfo = new StockInfo("005930", "삼성전자", MarketType.KOSPI);
+        StockInfo mockInfo = StockInfo.create("005930", "삼성전자", MarketType.KOSPI);
 
         given(stockInfoRepository.findAllByStockCodeIn(anyList())).willReturn(List.of(mockInfo));
 

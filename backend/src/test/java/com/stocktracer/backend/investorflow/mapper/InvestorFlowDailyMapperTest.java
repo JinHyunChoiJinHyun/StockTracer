@@ -80,7 +80,7 @@ public class InvestorFlowDailyMapperTest {
                 500000000L
         );
 
-        StockInfo samsungStock = new StockInfo("005930", "삼성전자", MarketType.KOSPI); // 가정된 생성자
+        StockInfo samsungStock = StockInfo.create("005930", "삼성전자", MarketType.KOSPI); // 가정된 생성자
 
         mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
                 "005930",
