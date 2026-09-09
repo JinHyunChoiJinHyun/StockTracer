@@ -8,7 +8,7 @@ import FinanceDataReader as fdr # 추후 확장성을 위해 사용
 import requests
 from pykrx import stock
 
-from api_client import get
+from common.api_client import get
 
 # .\venv\Scripts\Activate.ps1
 # >> 가상환경 실행 코드 (venv 폴더 내 스크립트 실행)

@@ -1,18 +1,13 @@
-from fetcher import fetch_prices, fetch_stocks, fetch_investor_flow, build_value_fundamental, is_business_days
-from analyzer import build_investor_flow, analyze_investor_flow, analyze_fundamental
-from mapper import to_stock_payload, to_price_payload, to_payload
-from api_client import post_to_backend
-from main import validate_df
+from common.fetcher import build_value_fundamental
+from common.analyzer import analyze_fundamental
+from common.mapper import to_payload
+from common.api_client import post_to_backend
+from common.util import validate_df
+import logging
+
+logger = logging.getLogger(__name__)
 
 STOCK_VALUE_ENDPOINT = "/value/save"
-
-import logging, time, sys, dotenv
-
-date = "20260903"
-
-# 로그 설정
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger(__name__) 
 
 def run_value_pipeline(date: str) -> bool:
     logger.info("=== 저평가 종목 파이프라인 시작 ===")
@@ -32,5 +27,3 @@ def run_value_pipeline(date: str) -> bool:
     except Exception as e:
         logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
         return False
-
-print(run_value_pipeline(date))
