@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Validated
 @RestController
-@RequestMapping("api/v1/main")
-public class MainController {
+@RequestMapping("api/v1/main/stocks")
+public class MainStockController {
+    private static final int MAX_PAGE_SIZE = 100;
+
 }
