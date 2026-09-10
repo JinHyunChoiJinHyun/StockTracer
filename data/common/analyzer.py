@@ -274,8 +274,9 @@ def score_value(df: pd.DataFrame, cfg:ValueConfig) -> pd.DataFrame:
     per_pct, per_scope = _percentile(pct_df, "per", cfg)
     pbr_pct, _ = _percentile(pct_df, "pbr", cfg) # pbr_scope는 per_scope와 동일하므로 반환 x
 
-    pct_df["per_pct"] = per_pct.round(4)
-    pct_df["pbr_pct"] = pbr_pct.round(4)
+    # percent로 변환
+    pct_df["per_pct"] = (per_pct * 100).round(2)
+    pct_df["pbr_pct"] = (pbr_pct * 100).round(2)
     pct_df["scored_scope"] = per_scope # 백분위 계산 기준
     pct_df["value_score"] = (
         ((1 - per_pct) * cfg.per_weight + (1 - pbr_pct) * cfg.pbr_weight) * 100
