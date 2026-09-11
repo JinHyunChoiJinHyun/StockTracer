@@ -39,6 +39,7 @@ public enum AnalysisLens {
 
     /**
      * 렌즈 필터 조건 (해당 파일 내에서만 유효하므로 해당 파일에만 작성)
+     * 추후 sql where절에 들어갈 조건 (의미없는 조합을 제거하기 위해 enum으로 작성)
      * @param minValueScore
      * @param maxPerPct
      * @param maxPbrPct

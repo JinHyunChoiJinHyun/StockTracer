@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.main.mapper.MainStockQueryMapper">
+    <resultMap id="mainStockRowMap" type="com.stocktracer.backend.main.mapper.MainStockRow">
+        <constructor>
+            <arg name="info"
+                 javaType="com.stocktracer.backend.stock.domain.StockInfo"
+                 resultMap="stockInfoMap"
+                 columnPrefix="si_"
+            />
+            <arg name="price"
+                 javaType="com.stocktracer.backend.price.domain.StockPrice"
+                 resultMap="stockPriceMap"
+                 columnPrefix="sp_"
+            />
+
+            <arg name="valueFundamental"
+                 javaType="com.stocktracer.backend.value.domain.ValueFundamental"
+                 resultMap="valueFundamentalMap"
+                 columnPrefix="vf_"
+                 notNullColumn="vf_stock_code"
+            />
+        </constructor>
+    </resultMap>
+
+    <!-- info map -->
+    <resultMap id="stockInfoMap" type="com.stocktracer.backend.stock.domain.StockInfo">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="stock_name" javaType="java.lang.String"/>
+            <arg column="market" javaType="com.stocktracer.backend.stock.domain.MarketType"/>
+        </constructor>
+    </resultMap>
+
+    <!-- price map -->
+    <resultMap id="stockPriceMap" type="com.stocktracer.backend.price.domain.StockPrice">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="base_date" javaType="java.time.LocalDate"/>
+            <arg column="close_price" javaType="long"/>
+            <arg column="change_price" javaType="long"/>
+            <arg column="volume" javaType="long"/>
+            <arg column="trading_value" javaType="java.math.BigDecimal"/>
+            <arg column="market_cap" javaType="java.math.BigDecimal"/>
+        </constructor>
+    </resultMap>
+
+    <!-- value fundamental map -->
+    <resultMap id="valueFundamentalMap" type="com.stocktracer.backend.value.domain.ValueFundamental">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="effective_date" javaType="java.time.LocalDate"/>
+            <idArg column="sector" javaType="java.lang.String"/>
+
+            <arg column="per" javaType="java.math.BigDecimal"/>
+            <arg column="pbr" javaType="java.math.BigDecimal"/>
+            <arg column="eps" javaType="java.math.BigDecimal"/>
+            <arg column="bps" javaType="java.math.BigDecimal"/>
+            <arg column="div_yield" javaType="java.math.BigDecimal"/>
+
+            <arg column="per_pct" javaType="java.math.BigDecimal"/>
+            <arg column="pbr_pct" javaType="java.math.BigDecimal"/>
+            <arg column="value_score" javaType="java.math.BigDecimal"/>
+            <arg column="scored_scope" javaType="com.stocktracer.backend.value.domain.ScoredScope"/>
+
+            <arg column="eps_growth" javaType="java.math.BigDecimal"/>
+            <arg column="value_trap" javaType="java.lang.Boolean"/>
+        </constructor>
+    </resultMap>
+
+    <!-- from 절 (추후 flow 테이블도 추가) -->
+    <sql id="fromClause">
+        FROM stock_info si
+        INNER JOIN stock_price sp
+            ON sp.stock_code = si.stock_code
+        LEFT JOIN value_fundamental vf
+            ON vf.stock_code = si.stock_code
+    </sql>
+
+    <!-- where 절 -->
+    <sql id="whereClause">
+        <where>
+            si.is_active = 1
+
+            <!-- score가 필요한 경우 null인 값은 필요없으므로 제외 -->
+            <if test="query.requiredScored">
+                AND vf.scored_scope IS NOT NULL
+            </if>
+
+            <if test="query.minValueScore != null">
+                AND vf.scored_scope &gt;= #{query.minValueScore}
+            </if>
+
+            <if test="query.maxPerPct != null">
+                AND vf.scored_scope &lt;= #{query.maxPerPct}
+            </if>
+
+            <if test="query.maxPbrPct != null">
+                AND vf.scored_scope &lt;= #{query.maxPbrPct}
+            </if>
+
+            <if test="query.minDivYield != null">
+                AND vf.scored_scope &gt;= #{query.minDivYield}
+            </if>
+
+            <if test="query.excludeValueTrap">
+                AND (vf.value_trap IS NULL OR vf.value_trap = 0)
+            </if>
+        </where>
+    </sql>
+
+</mapper>

@@ -1,4 +1,4 @@
-package com.stocktracer.backend.main.repository;
+package com.stocktracer.backend.main.mapper;
 
 import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
@@ -10,15 +10,11 @@ import com.stocktracer.backend.value.domain.ValueFundamental;
  * join한 결과값 저장
  * @param info
  * @param price
- * @param dailyFlow
- * @param analysisFlow
  * @param valueFundamental
  */
 public record MainStockRow (
         StockInfo info,
         StockPrice price,
-        InvestorFlowDaily dailyFlow,
-        InvestorFlowAnalysis analysisFlow,
         ValueFundamental valueFundamental
 ){
 }

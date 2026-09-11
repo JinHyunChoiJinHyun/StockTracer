@@ -2,7 +2,7 @@ package com.stocktracer.backend.main.dto;
 
 import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
-import com.stocktracer.backend.main.repository.MainStockRow;
+import com.stocktracer.backend.main.mapper.MainStockRow;
 import com.stocktracer.backend.price.domain.StockPrice;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.tag.StockTag;
@@ -34,8 +34,6 @@ public record MainStockResponseDto(
 
         // 존재하지 않을 수도 있는 값
         Optional<StockPrice> price = Optional.ofNullable(row.price());
-        Optional<InvestorFlowDaily> dailyFlow = Optional.ofNullable(row.dailyFlow());
-        Optional<InvestorFlowAnalysis> analysisFlow = Optional.ofNullable(row.analysisFlow());
         Optional<ValueFundamental> valueFundamental = Optional.ofNullable(row.valueFundamental());
 
         return new MainStockResponseDto(
