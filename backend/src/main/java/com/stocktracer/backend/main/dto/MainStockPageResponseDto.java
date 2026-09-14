@@ -9,7 +9,6 @@ import java.util.List;
  */
 public record MainStockPageResponseDto(
         LocalDate baseDate,
-        String lens,
         List<MainStockResponseDto> stocks,
         int page,
         int size,
@@ -18,7 +17,6 @@ public record MainStockPageResponseDto(
 ) {
     public static MainStockPageResponseDto of(
             LocalDate baseDate,
-            AnalysisLens lens,
             List<MainStockResponseDto> stocks,
             int page,
             int size,
@@ -27,7 +25,6 @@ public record MainStockPageResponseDto(
         int totalPages = size == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
         return new MainStockPageResponseDto(
                 baseDate,
-                lens.name(),
                 stocks,
                 page,
                 size,

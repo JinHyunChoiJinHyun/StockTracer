@@ -15,6 +15,7 @@ import com.stocktracer.backend.value.domain.ValueFundamental;
 public record MainStockRow (
         StockInfo info,
         StockPrice price,
+        InvestorFlowAnalysis flow,
         ValueFundamental valueFundamental
 ){
 }

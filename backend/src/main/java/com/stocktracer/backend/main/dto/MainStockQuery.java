@@ -5,12 +5,7 @@ import java.time.LocalDate;
 
 /* 필터 사용 시 쿼리문에 넘길 조회 조건 */
 public record MainStockQuery(
-        BigDecimal minValueScore,
-        BigDecimal maxPerPct,
-        BigDecimal maxPbrPct,
-        BigDecimal minDivYield,
-        boolean excludeValueTrap,
-        boolean requireScored,
+        LocalDate baseDate,
         MainStockSort sort,
         long offset,
         int limit
@@ -18,12 +13,15 @@ public record MainStockQuery(
 ) {
     public enum MainStockSort {
         // null인 값을 아래로 보내고 값이 있으면 내림차순 정렬
-        VALUE_SCORE("vf.value_score IS NULL ASC, vf.value_score DESC"),
-        PER_PCT("vf.per_pct IS NULL ASC, vf.per_pct ASC"),
-        DIV_YIELD("vf.div_yield IS NULL ASC, vf.div_yield DESC"),
         MARKET_CAP("vf.market_cap DESC"),
+        VALUE_SCORE("vf.value_score IS NULL ASC, vf.value_score DESC"),
+        SUPPLY_SCORE("f.score IS NULL ASC, f.score DESC"),
+        PER_PCT("vf.per_pct IS NULL ASC, vf.per_pct ASC"),
+        PBR_PCT("vf.pbr_pct IS NULL ASC, vf.pbr_pct ASC"),
+        DIV_YIELD("vf.div_yield IS NULL ASC, vf.div_yield DESC"),
         PRICE_CHANGE_DESC("sp.price_change DESC"),
-        PRICE_CHANGE_ASC("sp.price_change ASC");
+        PRICE_CHANGE_ASC("sp.price_change ASC"),
+        STOCK_NAME("si.stock_name ASC");
 
         private final String orderByClause;
 
@@ -46,19 +44,13 @@ public record MainStockQuery(
     }
 
     public static MainStockQuery of (
-        AnalysisLens lens,
+        LocalDate baseDate,
         String rawSort,
         int page,
         int size
     ){
-        AnalysisLens.LensFilter f = lens.filter();
         return new MainStockQuery(
-                f.minValueScore(),
-                f.maxPerPct(),
-                f.maxPbrPct(),
-                f.minDivYield(),
-                f.excludeValueTrap(),
-                f.requiredScored(),
+                baseDate,
                 MainStockSort.from(rawSort),
                 (long) page * size,
                 size

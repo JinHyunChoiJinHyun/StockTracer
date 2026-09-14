@@ -19,7 +19,7 @@ public class StockPrice {
     private BigDecimal closePrice;
     private BigDecimal lowPrice;
     private BigDecimal highPrice;
-    private BigDecimal priceChange;
+    private BigDecimal priceChange; // changeAmount로 변경 예정
     private Long volume;
     private BigDecimal tradingValue; // 거래대금
     private BigDecimal marketCap; // 시가총액
