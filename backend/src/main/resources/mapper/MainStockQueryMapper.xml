@@ -4,88 +4,23 @@
 <mapper namespace="com.stocktracer.backend.main.mapper.MainStockQueryMapper">
     <resultMap id="mainStockRowMap" type="com.stocktracer.backend.main.mapper.MainStockRow">
         <constructor>
-            <arg name="info"
-                 javaType="com.stocktracer.backend.stock.domain.StockInfo"
-                 resultMap="stockInfoMap"
-                 columnPrefix="si_"
-            />
-            <arg name="price"
-                 javaType="com.stocktracer.backend.price.domain.StockPrice"
-                 resultMap="stockPriceMap"
-                 columnPrefix="sp_"
-            />
-
-            <arg name="flow"
-                 javaType="com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis"
-                 resultMap="investorFlowMap"
-                 columnPrefix="f_"
-                 notNullColumn="f_stock_code"
-            />
-
-            <arg name="valueFundamental"
-                 javaType="com.stocktracer.backend.value.domain.ValueFundamental"
-                 resultMap="valueFundamentalMap"
-                 columnPrefix="vf_"
-                 notNullColumn="vf_stock_code"
-            />
-        </constructor>
-    </resultMap>
-
-    <!-- info map -->
-    <resultMap id="stockInfoMap" type="com.stocktracer.backend.stock.domain.StockInfo">
-        <constructor>
             <idArg column="stock_code" javaType="java.lang.String"/>
             <arg column="stock_name" javaType="java.lang.String"/>
-            <arg column="market" javaType="com.stocktracer.backend.stock.domain.MarketType"/>
-        </constructor>
-    </resultMap>
+            <arg column="market" javaType="java.lang.String"/>
 
-    <!-- price map -->
-    <resultMap id="stockPriceMap" type="com.stocktracer.backend.price.domain.StockPrice">
-        <constructor>
-            <idArg column="stock_code" javaType="java.lang.String"/>
-            <arg column="base_date" javaType="java.time.LocalDate"/>
-            <arg column="close_price" javaType="long"/>
-            <arg column="change_price" javaType="long"/>
-            <arg column="volume" javaType="long"/>
+            <arg column="close_price" javaType="java.math.BigDecimal"/>
+            <arg column="price_change" javaType="java.math.BigDecimal"/>
             <arg column="trading_value" javaType="java.math.BigDecimal"/>
             <arg column="market_cap" javaType="java.math.BigDecimal"/>
-        </constructor>
-    </resultMap>
 
-    <!-- investor flow map -->
-    <resultMap id="investorFlowMap" type="com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis">
-        <constructor>
-            <idArg column="stock_code" javaType="java.lang.String"/>
-            <arg column="base_date" javaType="java.time.LocalDate"/>
-            <arg column="net_ratio" javaType="java.math.BigDecimal"/>
             <arg column="score" javaType="java.math.BigDecimal"/>
-            <arg column="doubleBuy" javaType="boolean"/> <!-- NULL이 없으므로 boolean으로 매핑 가능 -->
-            <arg column="cleanBuy" javaType="boolean"/>
             <arg column="reason" javaType="java.lang.String"/>
-        </constructor>
-    </resultMap>
 
-    <!-- value fundamental map -->
-    <resultMap id="valueFundamentalMap" type="com.stocktracer.backend.value.domain.ValueFundamental">
-        <constructor>
-            <idArg column="stock_code" javaType="java.lang.String"/>
-            <arg column="effective_date" javaType="java.time.LocalDate"/>
-            <idArg column="sector" javaType="java.lang.String"/>
-
+            <arg column="sector" javaType="java.lang.String"/>
             <arg column="per" javaType="java.math.BigDecimal"/>
             <arg column="pbr" javaType="java.math.BigDecimal"/>
-            <arg column="eps" javaType="java.math.BigDecimal"/>
-            <arg column="bps" javaType="java.math.BigDecimal"/>
             <arg column="div_yield" javaType="java.math.BigDecimal"/>
-
-            <arg column="per_pct" javaType="java.math.BigDecimal"/>
-            <arg column="pbr_pct" javaType="java.math.BigDecimal"/>
             <arg column="value_score" javaType="java.math.BigDecimal"/>
-            <arg column="scored_scope" javaType="com.stocktracer.backend.value.domain.ScoredScope"/>
-
-            <arg column="eps_growth" javaType="java.math.BigDecimal"/>
-            <arg column="value_trap" javaType="java.lang.Boolean"/>
         </constructor>
     </resultMap>
 
@@ -94,15 +29,18 @@
         FROM stock_info si
         INNER JOIN stock_price sp
             ON sp.stock_code = si.stock_code
+            AND sp.price_date = #{query.baseDate}
         LEFT JOIN value_fundamental vf
             ON vf.stock_code = si.stock_code
+            AND vf.effective_date = #{query.baseDate}
         LEFT JOIN investor_flow_analysis f
             ON f.stock_code = si.stock_code
+            AND f.base_date = #{query.baseDate}
     </sql>
 
     <!-- 최신 영업일 정보 조회 -->
     <select id="findLatestBaseDate" resultType="java.time.LocalDate">
-        SELECT MAX(base_date) FROM stock_price
+        SELECT MAX(price_date) FROM stock_price
     </select>
 
     <!-- 주식 정보 조회 -->
@@ -115,6 +53,7 @@
             sp.close_price,
             sp.price_change,
             sp.trading_value,
+            sp.market_cap,
 
             f.score,
             f.reason,
@@ -131,7 +70,7 @@
     </select>
 
     <!-- 갯수 조회 -->
-    <select id="countMainStockRows" resultMap="long">
+    <select id="countMainStockRows" resultType="long">
         SELECT count(*)
         <include refid="fromClause"/>
     </select>

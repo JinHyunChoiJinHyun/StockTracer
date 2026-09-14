@@ -13,7 +13,7 @@ public record MainStockQuery(
 ) {
     public enum MainStockSort {
         // null인 값을 아래로 보내고 값이 있으면 내림차순 정렬
-        MARKET_CAP("vf.market_cap DESC"),
+        MARKET_CAP("sp.market_cap DESC"),
         VALUE_SCORE("vf.value_score IS NULL ASC, vf.value_score DESC"),
         SUPPLY_SCORE("f.score IS NULL ASC, f.score DESC"),
         PER_PCT("vf.per_pct IS NULL ASC, vf.per_pct ASC"),

@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
 public class StockPrice {
     private String stockCode;
-    private LocalDate priceDate;
+    private LocalDate priceDate; // 추후 baseDate로 수정 예정
     private BigDecimal openPrice;
     private BigDecimal closePrice;
     private BigDecimal lowPrice;
