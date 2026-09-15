@@ -2,6 +2,7 @@ import React, {useState} from "react"
 import { Routes, Route } from 'react-router-dom';
 import './App.css'
 import HomePage from "./HomePage";
+import MainPage from "./MainPage";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,7 +13,7 @@ function App() {
       {/* 분석 결과 카드 */}
 
       <Routes>
-        <Route path="/" element={<HomePage/>} />
+        <Route path="/" element={<MainPage/>} />
       </Routes>
     </div>
   );

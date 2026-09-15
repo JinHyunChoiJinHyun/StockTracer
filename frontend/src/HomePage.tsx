@@ -24,7 +24,7 @@ type TagCode =
   | 'HIGH_DIVIDEND'
   | 'MOMENTUM_UP';
 
-interface SignalSummary {
+interface MainStock {
   stock_code: string;
   stock_name: string;
   sector: string | null;
@@ -66,7 +66,7 @@ function formatDate(isoDate: string): string {
 }
 
 /* API 요청 */
-async function fetchSignals(signal: AbortSignal): Promise<SignalSummary[]> {
+async function fetchSignals(signal: AbortSignal): Promise<MainStock[]> {
 
     // 실제 호출
     // const query = new URLSearchParams({ limitRaw: String(FETCH_LIMIT)});
@@ -77,7 +77,7 @@ async function fetchSignals(signal: AbortSignal): Promise<SignalSummary[]> {
     });
 
     // json 변환
-    const result = (await response.json()) as ApiResult<SignalSummary[]>; // 형태 지정
+    const result = (await response.json()) as ApiResult<MainStock[]>; // 형태 지정
     
     if (result.stocks === null) {
       throw new Error(result.message ?? '목록을 불러오지 못했습니다.');
@@ -148,14 +148,14 @@ async function fetchSignals(signal: AbortSignal): Promise<SignalSummary[]> {
  * div + onClick 이 아니라 a 로 감싸면 탭 이동과 새 탭으로 열기가 그냥 따라온다.
  * react-router 를 쓰면 a 를 Link 로 바꾸면 된다.
  */
-function StockRow({ signal }: { signal: SignalSummary }) {
-  const rising = (signal.price_change ?? 0) >= 0;
-  const lowConfidence = signal.confidence < 0.5;
+function StockRow({ stock }: { stock: MainStock }) {
+  const rising = (stock.price_change ?? 0) >= 0;
+  const lowConfidence = stock.confidence < 0.5;
   
   return (
     <li>
       <a
-        href={`/stocks/${signal.stock_code}`}
+        href={`/stocks/${stock.stock_code}`}
         className={cn(
           'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3',
           'border-b border-slate-100 px-2 py-4 transition-colors hover:bg-slate-50',
@@ -166,13 +166,13 @@ function StockRow({ signal }: { signal: SignalSummary }) {
         {/* 종목명 + 태그 */}
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className="truncate font-medium text-slate-900">{signal.stock_name}</span>
+            <span className="truncate font-medium text-slate-900">{stock.stock_name}</span>
             <span className="shrink-0 text-xs text-slate-400 [font-variant-numeric:tabular-nums]">
-              {signal.stock_code}
+              {stock.stock_code}
             </span>
-            {signal.sector && (
+            {stock.sector && (
               <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">
-                {signal.sector}
+                {stock.sector}
               </span>
             )}
           </div>
@@ -202,12 +202,12 @@ function StockRow({ signal }: { signal: SignalSummary }) {
         {/* 현재가 · 등락률 */}
         <div className="text-right [font-variant-numeric:tabular-nums]">
           <div className="text-sm text-slate-900">
-            {signal.price_change?.toLocaleString('ko-KR') ?? '—'}
+            {stock.price_change?.toLocaleString('ko-KR') ?? '—'}
           </div>
           <div className={cn('text-xs', rising ? 'text-rose-600' : 'text-blue-600')}>
-            {signal.price_change === null
+            {stock.price_change === null
               ? '—'
-              : `${rising ? '+' : ''}${signal.price_change.toFixed(2)}%`}
+              : `${rising ? '+' : ''}${stock.price_change.toFixed(2)}%`}
           </div>
         </div>
 
@@ -220,10 +220,10 @@ function StockRow({ signal }: { signal: SignalSummary }) {
           >
           </span>
           <div className="mt-1 text-xs text-slate-500 [font-variant-numeric:tabular-nums]">
-            {signedScore(signal.supply_score)}
+            {signedScore(stock.supply_score)}
             {lowConfidence && (
               <span className="ml-1 text-amber-600" title="데이터가 부족한 지표가 많습니다">
-                {Math.round(signal.confidence * 100)}%
+                {Math.round(stock.confidence * 100)}%
               </span>
             )}
           </div>
@@ -238,7 +238,7 @@ function StockRow({ signal }: { signal: SignalSummary }) {
  * ========================================================================== */
 
 export default function HomePage() {
-  const [signals, setSignals] = useState<SignalSummary[]>([]);
+  const [signals, setSignals] = useState<MainStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
@@ -467,7 +467,7 @@ export default function HomePage() {
 
           <ul className="border-t border-slate-200 sm:border-t-0">
             {visible.map((signal) => (
-              <StockRow key={signal.stock_code} signal={signal} />
+              <StockRow key={signal.stock_code} stock={stock} />
             ))}
           </ul>
         </>
