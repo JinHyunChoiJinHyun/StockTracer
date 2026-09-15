@@ -1,15 +1,18 @@
 /**
  * 메인 페이지입니다.
  * 데이터 관련 로직은 전부 useStockList 훅에 있고, 여기서는 화면 조립만 합니다.
+ *
+ * 카드를 클릭하면 /stocks/{종목코드} 주소의 상세 페이지로 이동합니다.
  */
 
-import FilterBar from './components/FilterBar';
-import PageHeader from './components/PageHeader';
-import Pagination from './components/Pagination';
-import SearchBar from './components/SearchBar';
-import SortSelect from './components/SortSelect';
-import StockList from './components/StockList';
-import { useStockList } from './hooks/useStockList';
+import { useNavigate } from 'react-router-dom';
+import FilterBar from '../components/FilterBar';
+import PageHeader from '../components/PageHeader';
+import Pagination from '../components/Pagination';
+import SearchBar from '../components/SearchBar';
+import SortSelect from '../components/SortSelect';
+import StockList from '../components/StockList';
+import { useStockList } from '../hooks/UseStockList';
 
 export default function MainPage() {
   const {
@@ -27,6 +30,12 @@ export default function MainPage() {
     handlePageChange,
     handleRetry,
   } = useStockList();
+
+  const navigate = useNavigate();
+
+  function handleSelectStock(stockCode: string) {
+    navigate(`/stocks/${stockCode}`);
+  }
 
   const baseDate = stocks.length > 0 ? stocks[0].baseDate : '-';
 
@@ -49,7 +58,13 @@ export default function MainPage() {
         </div>
 
         <div className="mt-4">
-          <StockList stocks={stocks} isLoading={isLoading} hasError={hasError} onRetry={handleRetry} />
+          <StockList
+            stocks={stocks}
+            isLoading={isLoading}
+            hasError={hasError}
+            onRetry={handleRetry}
+            onSelectStock={handleSelectStock}
+          />
         </div>
 
         {!isLoading && !hasError && (

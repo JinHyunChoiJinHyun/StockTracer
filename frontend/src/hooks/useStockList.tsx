@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { fetchMainStocks } from '../api/stockApi';
+import { fetchMainStocks } from '../api/StockApi';
 import type { FilterId, SortId, Stock } from '../types/Stock';
 
 /** 한 페이지에 보여줄 종목 수 */
@@ -45,7 +45,7 @@ export function useStockList() {
           keyword,
           filter: selectedFilter,
         });
-
+        console.log(result)
         if (!isLatestRequest) return;
 
         setStocks(result.stocks);

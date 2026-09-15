@@ -15,6 +15,17 @@ export const GRADE_LABEL: Record<StockGrade, string> = {
 };
 
 /**
+ * 등급별 색상입니다. 메인 카드와 상세 화면이 같은 색을 쓰도록 여기에 모아뒀습니다.
+ * 색만으로 뜻을 전달하지 않도록 글자(GRADE_LABEL)도 항상 함께 보여줍니다.
+ */
+export const GRADE_STYLE: Record<StockGrade, { badge: string; bar: string; score: string }> = {
+  BUY_INTEREST: { badge: 'bg-red-50 text-red-700 border-red-200', bar: 'bg-red-500', score: 'text-red-600' },
+  INTEREST: { badge: 'bg-amber-50 text-amber-700 border-amber-200', bar: 'bg-amber-500', score: 'text-amber-600' },
+  NEUTRAL: { badge: 'bg-slate-100 text-slate-600 border-slate-200', bar: 'bg-slate-400', score: 'text-slate-600' },
+  CAUTION: { badge: 'bg-blue-50 text-blue-700 border-blue-200', bar: 'bg-blue-500', score: 'text-blue-600' },
+};
+
+/**
  * 화면에서 사용하는 종목 한 건의 데이터입니다.
  * 백엔드 JSON은 snake_case 이므로, api/stockApi.ts 에서 camelCase 로 변환한 뒤 이 타입으로 사용합니다.
  */
@@ -45,15 +56,71 @@ export interface Stock {
 
   grade: StockGrade;
 
+  /** 싸 보이지만 실적·수급이 따라오지 않는 상태(가치 함정)인지 여부 */
+  isValueTrap: boolean;
+
   /** 현재는 프론트에서 만든 임시 태그입니다. (mock/mockTags.ts 참고) */
   tags: string[];
+}
+
+/** 주가 차트용 하루치 데이터 */
+export interface PricePoint {
+  date: string;
+  closePrice: number;
+}
+
+/** 수급 차트용 하루치 데이터 (단위: 억원, 음수면 순매도) */
+export interface InvestorFlowPoint {
+  date: string;
+  foreignNetBuy: number;
+  institutionNetBuy: number;
+}
+
+/** 같은 섹터 종목들의 평균값. 내 종목이 비싼지 싼지 비교할 때 씁니다. */
+export interface SectorAverage {
+  per: number | null;
+  pbr: number | null;
+  divYield: number | null;
+}
+
+/**
+ * 상세 화면에서만 추가로 필요한 데이터입니다.
+ * 목록 API는 가벼워야 하므로 이 값들은 상세 API(GET /api/v1/stocks/{stockCode})로 따로 받아옵니다.
+ */
+export interface StockDetail extends Stock {
+  /** 주당순이익(원) */
+  eps: number | null;
+  /** 주당순자산(원) */
+  bps: number | null;
+  /** 시가총액(원) */
+  marketCap: number | null;
+
+  /** 같은 섹터 안에서 저평가 점수 상위 몇 %인지. 숫자가 작을수록 좋습니다. */
+  sectorPercentile: number | null;
+
+  /** 최근 5일 외국인 순매수(억원). 음수면 순매도입니다. */
+  foreignNetBuyAmount: number | null;
+  /** 최근 5일 기관 순매수(억원). 음수면 순매도입니다. */
+  institutionNetBuyAmount: number | null;
+  /** 외국인이 연속으로 순매수한 날짜 수 */
+  foreignNetBuyDays: number;
+
+  /** 가치 함정으로 본 이유. isValueTrap 이 false 면 빈 배열입니다. */
+  valueTrapReasons: string[];
+
+  /** 최근 20 영업일 종가 (오래된 날짜가 앞) */
+  priceHistory: PricePoint[];
+  /** 최근 20 영업일 외국인·기관 순매수 */
+  investorFlowHistory: InvestorFlowPoint[];
+  /** 같은 섹터 평균 지표 */
+  sectorAverage: SectorAverage;
 }
 
 /* ------------------------------------------------------------------ */
 /* 필터 / 정렬                                                          */
 /* ------------------------------------------------------------------ */
 
-export type FilterId = 'ALL' | 'UNDERVALUED' | 'LOW_PER' | 'LOW_PBR' | 'HIGH_DIVIDEND';
+export type FilterId = 'ALL' | 'UNDERVALUED' | 'LOW_PER' | 'LOW_PBR' | 'HIGH_DIVIDEND' | 'VALUE_TRAP';
 
 export const FILTER_OPTIONS: { id: FilterId; label: string }[] = [
   { id: 'ALL', label: '전체' },
@@ -61,6 +128,7 @@ export const FILTER_OPTIONS: { id: FilterId; label: string }[] = [
   { id: 'LOW_PER', label: '저PER' },
   { id: 'LOW_PBR', label: '저PBR' },
   { id: 'HIGH_DIVIDEND', label: '고배당' },
+  { id: 'VALUE_TRAP', label: '가치 함정' },
 ];
 
 /** 정렬 값은 그대로 API 쿼리 파라미터(sort=...)로 전달됩니다. */
@@ -122,6 +190,26 @@ export interface StockApiItem {
   eps_growth_rate: number | null;
 
   grade: StockGrade;
+  is_value_trap: boolean;
+}
+
+/** 상세 API 응답 원본입니다. 목록 항목에 상세 전용 필드가 더 붙은 모양입니다. */
+export interface StockDetailApiItem extends StockApiItem {
+  eps: number | null;
+  bps: number | null;
+  market_cap: number | null;
+  sector_percentile: number | null;
+  foreign_net_buy_amount: number | null;
+  institution_net_buy_amount: number | null;
+  foreign_net_buy_days: number;
+  value_trap_reasons: string[];
+  price_history: { date: string; close_price: number }[];
+  investor_flow_history: {
+    date: string;
+    foreign_net_buy: number;
+    institution_net_buy: number;
+  }[];
+  sector_average: { per: number | null; pbr: number | null; div_yield: number | null };
 }
 
 /** 페이지 응답 모양 (Spring Page 형태를 가정) */

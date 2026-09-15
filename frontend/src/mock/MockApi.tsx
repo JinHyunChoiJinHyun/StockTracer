@@ -25,7 +25,21 @@ const FILTER_TO_TAG: Record<FilterId, string | null> = {
   LOW_PER: '저PER',
   LOW_PBR: '저PBR',
   HIGH_DIVIDEND: '배당 매력',
+  VALUE_TRAP: null,
 };
+
+/** 종목이 선택된 필터 조건에 맞는지 확인합니다. */
+function matchesFilter(stock: Stock, filter: FilterId): boolean {
+  if (filter === 'ALL') {
+    return true;
+  }
+  if (filter === 'VALUE_TRAP') {
+    return stock.isValueTrap;
+  }
+
+  const filterTag = FILTER_TO_TAG[filter];
+  return filterTag === null ? true : stock.tags.includes(filterTag);
+}
 
 /** 정렬에 사용할 값을 꺼냅니다. 값이 없으면 맨 뒤로 보내기 위해 아주 작은 수를 씁니다. */
 function getSortValue(stock: Stock, sort: SortId): number {
@@ -51,11 +65,8 @@ export async function fetchMainStocksFromMock(request: StockListRequest): Promis
     );
   }
 
-  // 2. 필터 (임시 태그 기준)
-  const filterTag = FILTER_TO_TAG[request.filter];
-  if (filterTag !== null) {
-    filteredStocks = filteredStocks.filter((stock) => stock.tags.includes(filterTag));
-  }
+  // 2. 필터 (임시 태그 / 가치 함정 기준)
+  filteredStocks = filteredStocks.filter((stock) => matchesFilter(stock, request.filter));
 
   // 3. 정렬 (전부 내림차순)
   const sortedStocks = [...filteredStocks].sort(

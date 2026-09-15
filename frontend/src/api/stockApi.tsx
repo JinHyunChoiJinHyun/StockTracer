@@ -6,11 +6,14 @@
 import type {
   Stock,
   StockApiItem,
+  StockDetail,
+  StockDetailApiItem,
   StockListApiResponse,
   StockListRequest,
   StockListResult,
 } from '../types/Stock';
 import { fetchMainStocksFromMock } from '../mock/MockApi';
+import { fetchStockDetailFromMock } from '../mock/MockDetail';
 import { createMockTags } from '../mock/MockTags';
 
 /**
@@ -45,6 +48,7 @@ function convertApiStockToStock(apiStock: StockApiItem): Stock {
     epsGrowthRate: apiStock.eps_growth_rate,
 
     grade: apiStock.grade,
+    isValueTrap: apiStock.is_value_trap,
 
     tags: [],
   };
@@ -87,4 +91,52 @@ export async function fetchMainStocks(request: StockListRequest): Promise<StockL
     totalPages: apiResponse.total_pages,
     totalCount: apiResponse.total_elements,
   };
+}
+
+/** 상세 응답(snake_case)을 화면에서 쓰는 StockDetail(camelCase)로 바꿉니다. */
+function convertApiStockDetailToStockDetail(apiDetail: StockDetailApiItem): StockDetail {
+  return {
+    ...convertApiStockToStock(apiDetail),
+
+    eps: apiDetail.eps,
+    bps: apiDetail.bps,
+    marketCap: apiDetail.market_cap,
+    sectorPercentile: apiDetail.sector_percentile,
+    foreignNetBuyAmount: apiDetail.foreign_net_buy_amount,
+    institutionNetBuyAmount: apiDetail.institution_net_buy_amount,
+    foreignNetBuyDays: apiDetail.foreign_net_buy_days,
+    valueTrapReasons: apiDetail.value_trap_reasons,
+
+    priceHistory: apiDetail.price_history.map((point) => ({
+      date: point.date,
+      closePrice: point.close_price,
+    })),
+    investorFlowHistory: apiDetail.investor_flow_history.map((point) => ({
+      date: point.date,
+      foreignNetBuy: point.foreign_net_buy,
+      institutionNetBuy: point.institution_net_buy,
+    })),
+    sectorAverage: {
+      per: apiDetail.sector_average.per,
+      pbr: apiDetail.sector_average.pbr,
+      divYield: apiDetail.sector_average.div_yield,
+    },
+  };
+}
+
+/** 종목 하나의 상세 정보를 가져옵니다. */
+export async function fetchStockDetail(stockCode: string): Promise<StockDetail> {
+  if (USE_MOCK) {
+    return fetchStockDetailFromMock(stockCode);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/stocks/${stockCode}`);
+
+  if (!response.ok) {
+    throw new Error(`종목 상세 요청 실패 (status: ${response.status})`);
+  }
+
+  const apiDetail: StockDetailApiItem = await response.json();
+
+  return convertApiStockDetailToStockDetail(apiDetail);
 }

@@ -9,7 +9,7 @@ import type { Stock, StockGrade } from '../types/Stock';
 import { createMockTags } from './MockTags';
 
 /** 점수/등급/태그를 뺀 "원본 숫자"만 적어둡니다. 나머지는 아래에서 계산합니다. */
-type MockStockSource = Omit<Stock, 'totalScore' | 'grade' | 'tags'>;
+type MockStockSource = Omit<Stock, 'totalScore' | 'grade' | 'tags' | 'isValueTrap'>;
 
 const BASE_DATE = '2026-09-14';
 
@@ -75,6 +75,21 @@ function decideGrade(totalScore: number): StockGrade {
   return 'CAUTION';
 }
 
+/**
+ * 가치 함정(Value Trap) 여부를 판단합니다.
+ * "지표상으로는 싼데, 수급이나 실적이 전혀 따라오지 않는 상태"를 뜻합니다.
+ */
+function decideValueTrap(source: MockStockSource): boolean {
+  if (source.valueScore === null || source.valueScore < 65) {
+    return false;
+  }
+
+  const hasWeakSupply = source.supplyScore < 40;
+  const hasShrinkingProfit = source.epsGrowthRate !== null && source.epsGrowthRate < -10;
+
+  return hasWeakSupply || hasShrinkingProfit;
+}
+
 /** 화면에서 사용할 최종 mock 종목 목록입니다. */
 export const MOCK_STOCKS: Stock[] = MOCK_STOCK_SOURCES.map((source) => {
   const totalScore = calculateTotalScore(source.supplyScore, source.valueScore);
@@ -84,6 +99,7 @@ export const MOCK_STOCKS: Stock[] = MOCK_STOCK_SOURCES.map((source) => {
     ...source,
     totalScore,
     grade,
+    isValueTrap: decideValueTrap(source),
     tags: createMockTags({ ...source, grade }),
   };
 });

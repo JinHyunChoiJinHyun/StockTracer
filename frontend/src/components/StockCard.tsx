@@ -1,34 +1,20 @@
 /**
- * 종목 한 개를 보여주는 카드입니다.
+ * 종목 한 개를 보여주는 카드입니다. 카드 전체가 버튼이라서 클릭하면 상세창이 열립니다.
  *
- * 정보 순서를 일부러 이렇게 잡았습니다.
+ * 메인 카드에는 "판단에 바로 필요한 것"만 둡니다.
  *   1) 등급(매수 관심 / 주의)  ← 가장 먼저 보여야 하는 판단
  *   2) 종목명
  *   3) 가격과 등락률
  *   4) 태그 (판단의 요약)
- *   5) 수급 / 저평가 점수 막대 (판단의 근거)
- *   6) PER, PBR, 배당 (세부 지표)
+ *   5) 수급 / 저평가 점수 막대 (해석형 - 숫자 대신 '좋음/보통')
+ *   6) 가치 함정 경고, 배당률
+ *
+ * PER, PBR, EPS, BPS, 시가총액, 섹터 백분위 같은 세부 숫자는 상세창에서 보여줍니다.
  */
 
-import type { Stock, StockGrade } from '../types/Stock';
-import { GRADE_LABEL } from '../types/Stock';
-import {
-  formatDividend,
-  formatMultiple,
-  formatPercent,
-  formatPrice,
-  formatPriceChange,
-  getChangeDirection,
-  getScoreLabel,
-} from '../utils/Format';
-
-/** 등급별 색상입니다. 색만으로 뜻을 전달하지 않도록 글자(GRADE_LABEL)도 항상 함께 보여줍니다. */
-const GRADE_STYLE: Record<StockGrade, { badge: string; bar: string; score: string }> = {
-  BUY_INTEREST: { badge: 'bg-red-50 text-red-700 border-red-200', bar: 'bg-red-500', score: 'text-red-600' },
-  INTEREST: { badge: 'bg-amber-50 text-amber-700 border-amber-200', bar: 'bg-amber-500', score: 'text-amber-600' },
-  NEUTRAL: { badge: 'bg-slate-100 text-slate-600 border-slate-200', bar: 'bg-slate-400', score: 'text-slate-600' },
-  CAUTION: { badge: 'bg-blue-50 text-blue-700 border-blue-200', bar: 'bg-blue-500', score: 'text-blue-600' },
-};
+import type { Stock } from '../types/Stock';
+import { GRADE_LABEL, GRADE_STYLE } from '../types/Stock';
+import { formatDividend, formatPrice, formatPriceChange, getChangeDirection, getScoreLabel } from '../utils/Format';
 
 /** 태그 색상. '주의'만 눈에 띄게 하고 나머지는 조용하게 둡니다. */
 function getTagStyle(tag: string): string {
@@ -58,17 +44,12 @@ function ScoreBar({ title, score }: { title: string; score: number | null }) {
   );
 }
 
-/** 카드 아래쪽 세부 지표 한 칸입니다. */
-function MetricItem({ title, value }: { title: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs text-slate-400">{title}</p>
-      <p className="mt-0.5 text-sm font-medium tabular-nums text-slate-700">{value}</p>
-    </div>
-  );
+interface StockCardProps {
+  stock: Stock;
+  onSelect: (stockCode: string) => void;
 }
 
-export default function StockCard({ stock }: { stock: Stock }) {
+export default function StockCard({ stock, onSelect }: StockCardProps) {
   const gradeStyle = GRADE_STYLE[stock.grade];
   const changeDirection = getChangeDirection(stock.priceChange);
 
@@ -77,7 +58,11 @@ export default function StockCard({ stock }: { stock: Stock }) {
     changeDirection === 'up' ? 'text-red-600' : changeDirection === 'down' ? 'text-blue-600' : 'text-slate-500';
 
   return (
-    <article className="flex overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <button
+      type="button"
+      onClick={() => onSelect(stock.stockCode)}
+      className="flex w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
+    >
       {/* 왼쪽 색 띠로 등급을 한 번 더 알려줍니다. */}
       <div className={`w-1 shrink-0 ${gradeStyle.bar}`} />
 
@@ -87,6 +72,11 @@ export default function StockCard({ stock }: { stock: Stock }) {
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
               <h3 className="truncate text-lg font-bold text-slate-900">{stock.stockName}</h3>
+              {stock.isValueTrap && (
+                <span className="shrink-0 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700">
+                  가치 함정
+                </span>
+              )}
               <span className="shrink-0 text-xs tabular-nums text-slate-400">{stock.stockCode}</span>
             </div>
             <p className="mt-0.5 hidden text-xs text-slate-400 sm:block">{stock.sector ?? '-'}</p>
@@ -132,16 +122,21 @@ export default function StockCard({ stock }: { stock: Stock }) {
           <ScoreBar title="저평가" score={stock.valueScore} />
         </div>
 
-        {/* 4) 세부 지표 (모바일에서는 EPS 성장률을 숨깁니다) */}
-        <div className="mt-4 grid grid-cols-3 gap-3 border-t border-slate-100 pt-3 sm:grid-cols-4">
-          <MetricItem title="PER" value={formatMultiple(stock.per)} />
-          <MetricItem title="PBR" value={formatMultiple(stock.pbr)} />
-          <MetricItem title="배당" value={formatDividend(stock.divYield)} />
-          <div className="hidden sm:block">
-            <MetricItem title="EPS 성장" value={formatPercent(stock.epsGrowthRate)} />
-          </div>
+        {/* 4) 가치 함정 경고 - 해당될 때만 보여줍니다. */}
+        {stock.isValueTrap && (
+          <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800">
+            싸 보이지만 실적과 수급이 따라오지 않고 있습니다.
+          </p>
+        )}
+
+        {/* 5) 배당률 + 상세 안내 */}
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+          <p className="text-sm text-slate-500">
+            배당 <span className="font-medium tabular-nums text-slate-700">{formatDividend(stock.divYield)}</span>
+          </p>
+          <span className="text-xs font-medium text-slate-500">자세히 보기</span>
         </div>
       </div>
-    </article>
+    </button>
   );
 }

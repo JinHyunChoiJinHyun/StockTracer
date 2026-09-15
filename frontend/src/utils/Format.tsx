@@ -55,6 +55,38 @@ export function getScoreLabel(score: number | null): string {
   return '낮음';
 }
 
+/** 5820 -> "5,820원" (EPS, BPS 처럼 단순한 원 단위 금액) */
+export function formatWon(amount: number | null): string {
+  if (amount === null) return EMPTY_TEXT;
+  return `${amount.toLocaleString('ko-KR')}원`;
+}
+
+/** 468500000000000 -> "468.5조원", 324000000000 -> "3,240억원" */
+export function formatMarketCap(marketCap: number | null): string {
+  if (marketCap === null) return EMPTY_TEXT;
+
+  const oneTrillion = 1_0000_0000_0000;
+  const oneHundredMillion = 1_0000_0000;
+
+  if (marketCap >= oneTrillion) {
+    return `${(marketCap / oneTrillion).toFixed(1)}조원`;
+  }
+  return `${Math.round(marketCap / oneHundredMillion).toLocaleString('ko-KR')}억원`;
+}
+
+/** 1240 -> "+1,240억원" / -320 -> "-320억원" (입력 단위는 억원) */
+export function formatNetBuyAmount(amountInHundredMillion: number | null): string {
+  if (amountInHundredMillion === null) return EMPTY_TEXT;
+  const sign = amountInHundredMillion > 0 ? '+' : '';
+  return `${sign}${amountInHundredMillion.toLocaleString('ko-KR')}억원`;
+}
+
+/** 12 -> "섹터 상위 12%" */
+export function formatSectorPercentile(percentile: number | null): string {
+  if (percentile === null) return EMPTY_TEXT;
+  return `섹터 상위 ${Math.round(percentile)}%`;
+}
+
 /** 등락률이 올랐는지 내렸는지 판단합니다. (한국 증시 관례: 상승 빨강 / 하락 파랑) */
 export function getChangeDirection(priceChange: number | null): 'up' | 'down' | 'flat' {
   if (priceChange === null || priceChange === 0) return 'flat';

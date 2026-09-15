@@ -11,9 +11,11 @@ interface StockListProps {
   isLoading: boolean;
   hasError: boolean;
   onRetry: () => void;
+  /** 카드를 클릭했을 때 종목코드를 부모에게 알려줍니다. */
+  onSelectStock: (stockCode: string) => void;
 }
 
-export default function StockList({ stocks, isLoading, hasError, onRetry }: StockListProps) {
+export default function StockList({ stocks, isLoading, hasError, onRetry, onSelectStock }: StockListProps) {
   if (isLoading) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white py-20 text-center">
@@ -50,7 +52,7 @@ export default function StockList({ stocks, isLoading, hasError, onRetry }: Stoc
   return (
     <div className="space-y-3">
       {stocks.map((stock) => (
-        <StockCard key={stock.stockCode} stock={stock} />
+        <StockCard key={stock.stockCode} stock={stock} onSelect={onSelectStock} />
       ))}
     </div>
   );
