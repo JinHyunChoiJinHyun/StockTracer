@@ -1,42 +1,42 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 
-/* ============================================================================
- * 설정
- * ========================================================================== */
-
-/** 백엔드 주소. 비우면 같은 오리진으로 요청한다(vite proxy 사용 시). */
-const API_BASE = 'http://localhost:8080';
-
-/* ============================================================================
+/* ==================================================================
  * 타입
- * ========================================================================== */
+ * ================================================================== */
 
-type SignalGrade = 'STRONG_BUY' | 'BUY' | 'NEUTRAL' | 'SELL' | 'STRONG_SELL';
+export type TagType = "POSITIVE" | "CAUTION" | "NEUTRAL";
 
-type TagCode =
-  | 'FOREIGN_BUYING'
-  | 'INSTITUTION_BUYING'
-  | 'BOTH_BUYING'
-  | 'STREAK_BUYING'
-  | 'FOREIGN_SELLING'
-  | 'UNDERVALUED'
-  | 'OVERVALUED'
-  | 'HIGH_DIVIDEND'
-  | 'MOMENTUM_UP';
+export type Market = "KOSPI" | "KOSDAQ";
 
-interface MainStock {
-  stock_code: string;
-  stock_name: string;
-  sector: string | null;
-  base_date: string;
-  supply_score: number;
-  grade: SignalGrade;
-  confidence: number;
-  close_price: number | null;
-  price_change: number | null;
-  /** 미니 그래프용 최근 종가 (오래된 것 -> 최신) */
-  sparkline: number[];
-  tags: TagCode[];
+export interface StockTag {
+  code: string;
+  label: string;
+  type: TagType;
+}
+
+export interface MainStock {
+  stockCode: string;
+  stockName: string;
+  market: Market;
+  sector: string;
+  baseDate: string; // YYYY-MM-DD
+
+  closePrice: number;
+  priceChange: number;
+  changeRate: number;
+
+  /** 0~100. 화면에는 막대로만 표현하고 숫자는 노출하지 않습니다. */
+  valueScore: number;
+
+  /** null = 판단 보류. false 로 치환하면 안 됩니다. */
+  valueTrapFlag: boolean | null;
+
+  divYield: number;
+  firstDetectedDate: string;
+  tags: StockTag[];
+
+  /** 최근 20거래일 종가. 목록 응답이 무거우면 별도 엔드포인트로 분리하세요. */
+  priceTrend: number[];
 }
 
 /** 백엔드 ApiResponse 봉투 */
@@ -47,436 +47,496 @@ interface ApiResult<T> {
   message: string | null;
 }
 
-type SortKey = 'score' | 'changeRate' | 'name';
+export const MARKET_LABEL: Record<Market, string> = {
+  KOSPI: "코스피",
+  KOSDAQ: "코스닥",
+};
 
-/* ============================================================================
- * 표기 유틸
- * ========================================================================== */
+/* ==================================================================
+ * API 연동
+ * ================================================================== */
 
-function cn(...values: (string | false | null | undefined)[]): string {
-  return values.filter(Boolean).join(' ');
+const API_BASE = "http://localhost:8080";
+
+/** 상태 코드별로 사용자에게 보여줄 문구를 정합니다. */
+function messageForStatus(status: number): string {
+  if (status === 404) return "요청한 종목을 찾을 수 없습니다.";
+  if (status === 400) return "요청 조건이 올바르지 않습니다.";
+  if (status >= 500) return "서버에 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.";
+  return "데이터를 불러오지 못했습니다.";
 }
 
-function signedScore(score: number): string {
-  return `${score > 0 ? '+' : ''}${score.toFixed(1)}`;
-}
+/** GET /api/v1/main/stocks */
+async function fetchMainStocks(): Promise<MainStock[]> {
+  const response = await fetch(`${API_BASE}/api/v1/main/stocks`);
 
-function formatDate(isoDate: string): string {
-  return isoDate.replace(/-/g, '.');
-}
+  if (!response.ok) throw new Error(messageForStatus(response.status));
 
-/* API 요청 */
-async function fetchSignals(signal: AbortSignal): Promise<MainStock[]> {
+  const result = (await response.json()) as ApiResult<MainStock[]>;
+  console.log(result.stocks);
 
-    // 실제 호출
-    // const query = new URLSearchParams({ limitRaw: String(FETCH_LIMIT)});
-
-    const response = await fetch(`${API_BASE}/api/v1/main/stocks`, {
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-    });
-
-    // json 변환
-    const result = (await response.json()) as ApiResult<MainStock[]>; // 형태 지정
-    
-    if (result.stocks === null) {
-      throw new Error(result.message ?? '목록을 불러오지 못했습니다.');
-    }
-    console.log(result.stocks)
-    return result.stocks;
-}
-
-/* ============================================================================
- * 미니 그래프
- * ========================================================================== */
-
-/**
- * 축도 눈금도 없는 목록용 그래프. 모양만 읽히면 된다.
- * 절대 수준이 아니라 구간 내 최저~최고를 높이에 맞춰 늘린다.
- */
-/* function Sparkline({ values, label }: { values: number[]; label: string }) {
-  const width = 100;
-  const height = 28;
-
-  if (values.length < 2) {
-    return <div className="h-7 w-full" role="img" aria-label={`${label} 추이 없음`} />;
+  if (result.stocks === null) {
+    throw new Error(result.message ?? "데이터를 불러오지 못했습니다.");
   }
+  return result.stocks;
+}
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1; // 전 구간 같은 값이면 0으로 나눠진다
+/* ---------------------------- 조회 훅 ---------------------------- */
 
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width;
-      const y = height - ((value - min) / range) * height;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
+/** 메인 목록. reload 로 수동 재시도할 수 있습니다. */
+function useMainStocks() {
+  const [stocks, setStocks] = useState<MainStock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    fetchMainStocks()
+      .then((data) => setStocks(data))
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : "데이터를 불러오지 못했습니다.");
+        setStocks([]);
+      })
+      .finally(() => setLoading(false));
+  }, [nonce]);
+
+  return { stocks, loading, error, reload: () => setNonce((n) => n + 1) };
+}
+
+/* ==================================================================
+ * 화면
+ * ================================================================== */
+
+/* ---------------------------- 포맷터 ---------------------------- */
+
+const nf = new Intl.NumberFormat("ko-KR");
+
+const fmtPrice = (v: number): string => nf.format(v);
+
+const signed = (v: number, digits = 2, suffix = ""): string =>
+  `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(digits)}${suffix}`;
+
+/* 한국 시장 관례: 상승 빨강, 하락 파랑 */
+type Direction = "up" | "down" | "flat";
+const dir = (v: number): Direction => (v > 0 ? "up" : v < 0 ? "down" : "flat");
+
+/** 기준일로부터 7일 이내에 목록에 들어온 종목 */
+const isNew = (
+  r: Pick<MainStock, "firstDetectedDate">,
+  baseDate: string
+): boolean =>
+  (new Date(baseDate).getTime() - new Date(r.firstDetectedDate).getTime()) /
+    86_400_000 <=
+  7;
+
+/** "2026-09-11" → "9월 11일" */
+function formatKoreanDate(iso: string): string {
+  const [, m, d] = iso.split("-");
+  return `${Number(m)}월 ${Number(d)}일`;
+}
+
+/* ---------------------------- 판정 ---------------------------- */
+
+type VerdictTone = "good" | "caution" | "unknown" | "plain";
+
+interface Verdict {
+  text: string;
+  tone: VerdictTone;
+}
+
+/** 사라/팔아라가 아니라 "지금 어떤 상태인가"를 말합니다. */
+function verdictOf(r: Pick<MainStock, "valueTrapFlag" | "valueScore">): Verdict {
+  if (r.valueTrapFlag === true)
+    return { text: "싸 보이지만 이유를 확인하세요", tone: "caution" };
+  if (r.valueTrapFlag === null)
+    return { text: "아직 판단하지 않았어요", tone: "unknown" };
+  if (r.valueScore >= 85) return { text: "많이 싼 편이에요", tone: "good" };
+  if (r.valueScore >= 72) return { text: "싼 편이에요", tone: "good" };
+  return { text: "보통 수준이에요", tone: "plain" };
+}
+
+type PresetKey = "valueScore" | "divYield";
+
+interface Preset {
+  key: PresetKey;
+  label: string;
+}
+
+const PRESETS: Preset[] = [
+  { key: "valueScore", label: "저평가 순" },
+  { key: "divYield", label: "배당 많은 순" },
+];
+
+/* ---------------------------- 조각 ---------------------------- */
+
+interface SparklineProps {
+  data: number[];
+  width?: number;
+  height?: number;
+}
+
+function Sparkline({ data, width = 64, height = 20 }: SparklineProps) {
+  if (data.length < 2) return null;
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = max - min || 1;
+  const points = data
+    .map((v, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((v - min) / span) * (height - 3) - 1.5;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
-    .join(' ');
-
-  const rising = values[values.length - 1]! >= values[0]!;
-  const stroke = rising ? '#e11d48' : '#2563eb'; // 상승 빨강, 하락 파랑 (국내 관행)
+    .join(" ");
+  const rising = data[data.length - 1] >= data[0];
 
   return (
     <svg
+      className="spark"
       viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      className="h-7 w-full"
-      role="img"
-      aria-label={`${label} 최근 ${values.length}거래일 ${rising ? '상승' : '하락'}`}
+      width={width}
+      height={height}
+      aria-hidden="true"
     >
-      <polygon points={`${points} ${width},${height} 0,${height}`} fill={stroke} opacity="0.08" />
-      <polyline
-        points={points}
-        fill="none"
-        stroke={stroke}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
+      <polyline points={points} className={rising ? "s-up" : "s-down"} />
     </svg>
   );
-} */
+}
 
-/* ============================================================================
- * 목록 한 행
- * ========================================================================== */
+function TagChip({ tag }: { tag: StockTag }) {
+  return <span className={`tag t-${tag.type.toLowerCase()}`}>{tag.label}</span>;
+}
 
-/**
- * 행 전체가 상세 페이지로 가는 링크다.
- * div + onClick 이 아니라 a 로 감싸면 탭 이동과 새 탭으로 열기가 그냥 따라온다.
- * react-router 를 쓰면 a 를 Link 로 바꾸면 된다.
- */
-function StockRow({ stock }: { stock: MainStock }) {
-  const rising = (stock.price_change ?? 0) >= 0;
-  const lowConfidence = stock.confidence < 0.5;
-  
+function Meter({ value, tone }: { value: number; tone: VerdictTone }) {
   return (
-    <li>
-      <a
-        href={`/stocks/${stock.stock_code}`}
-        className={cn(
-          'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3',
-          'border-b border-slate-100 px-2 py-4 transition-colors hover:bg-slate-50',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-slate-900',
-          'sm:grid-cols-[minmax(0,1fr)_7rem_6rem_5.5rem]',
-        )}
-      >
-        {/* 종목명 + 태그 */}
-        <div className="min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="truncate font-medium text-slate-900">{stock.stock_name}</span>
-            <span className="shrink-0 text-xs text-slate-400 [font-variant-numeric:tabular-nums]">
-              {stock.stock_code}
-            </span>
-            {stock.sector && (
-              <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">
-                {stock.sector}
-              </span>
-            )}
-          </div>
-
-          {/* <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {signal.tags.length > 0 ? (
-              signal.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={cn(
-                    'inline-block whitespace-nowrap rounded border px-1.5 py-0.5 text-xs',
-                  )}
-                >
-                </span>
-              ))
-            ) : (
-              <span className="text-xs text-slate-400">특이 신호 없음</span>
-            )}
-          </div> */}
-        </div>
-
-        {/* 미니 그래프 — 좁은 화면에서는 감춘다 */}
-        {/* <div className="hidden sm:block">
-          <Sparkline values={signal.sparkline} label={signal.stock_name} />
-        </div> */}
-
-        {/* 현재가 · 등락률 */}
-        <div className="text-right [font-variant-numeric:tabular-nums]">
-          <div className="text-sm text-slate-900">
-            {stock.price_change?.toLocaleString('ko-KR') ?? '—'}
-          </div>
-          <div className={cn('text-xs', rising ? 'text-rose-600' : 'text-blue-600')}>
-            {stock.price_change === null
-              ? '—'
-              : `${rising ? '+' : ''}${stock.price_change.toFixed(2)}%`}
-          </div>
-        </div>
-
-        {/* 판정 */}
-        <div className="text-right">
-          <span
-            className={cn(
-              'inline-block whitespace-nowrap rounded-full border px-2 py-0.5 text-xs',
-            )}
-          >
-          </span>
-          <div className="mt-1 text-xs text-slate-500 [font-variant-numeric:tabular-nums]">
-            {signedScore(stock.supply_score)}
-            {lowConfidence && (
-              <span className="ml-1 text-amber-600" title="데이터가 부족한 지표가 많습니다">
-                {Math.round(stock.confidence * 100)}%
-              </span>
-            )}
-          </div>
-        </div>
-      </a>
-    </li>
+    <div className="meter" aria-hidden="true">
+      <span className={`meter-fill m-${tone}`} style={{ width: `${value}%` }} />
+    </div>
   );
 }
 
-/* ============================================================================
- * 메인 페이지
- * ========================================================================== */
+/* ---------------------------- 종목 카드 ---------------------------- */
 
-export default function HomePage() {
-  const [signals, setSignals] = useState<MainStock[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [reloadToken, setReloadToken] = useState(0);
+interface StockCardProps {
+  stock: MainStock;
+  onOpen: (stock: MainStock) => void;
+}
 
-  const [keywordInput, setKeywordInput] = useState('');
-  const [keyword, setKeyword] = useState('');
-  const [selectedTags, setSelectedTags] = useState<TagCode[]>([]);
-  const [sort, setSort] = useState<SortKey>('score');
-
-  /* --- 목록 요청 --------------------------------------------------------- */
-  useEffect(() => {
-    const controller = new AbortController();
-    setIsLoading(true);
-    setError(null);
-
-    fetchSignals(controller.signal)
-      .then((data) => {
-        setSignals(data);
-        setIsLoading(false);
-      })
-      .catch((e: unknown) => {
-        // 언마운트로 인한 취소는 에러로 취급하지 않는다
-        if (e instanceof DOMException && e.name === 'AbortError') return;
-        setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
-        setIsLoading(false);
-      });
-    return () => controller.abort();
-  }, [reloadToken]);
-
-  /* --- 검색어 디바운스 --------------------------------------------------- */
-  useEffect(() => {
-    // 타이핑할 때마다 필터가 도는 걸 막는다. cleanup 에서 반드시 타이머를 정리할 것.
-    const timer = setTimeout(() => setKeyword(keywordInput), 250);
-    return () => clearTimeout(timer);
-  }, [keywordInput]);
-
-  /* --- 필터링 + 정렬 ----------------------------------------------------- */
-  const visible = useMemo(() => {
-    const needle = keyword.trim().toLowerCase();
-
-    return signals
-      .filter((s) => {
-        const matchesKeyword =
-          !needle ||
-          s.stock_code.includes(needle) ||
-          s.stock_name.toLowerCase().includes(needle);
-
-        // AND 조건 — "외국인 순매수이면서 저평가"를 찾는 것이 이 화면의 주 용도.
-        // OR 로 바꾸려면 every 를 some 으로.
-        const matchesTags = selectedTags.every((tag) => s.tags.includes(tag));
-
-        return matchesKeyword && matchesTags;
-      })
-      .sort((a, b) => {
-        switch (sort) {
-          case 'changeRate':
-            return (b.price_change ?? 0) - (a.price_change ?? 0);
-          case 'name':
-            return a.stock_name.localeCompare(b.stock_name, 'ko');
-          default:
-            return b.supply_score - a.supply_score;
-        }
-      });
-  }, [signals, keyword, selectedTags, sort]);
-
-  const isFiltered = keyword !== '' || selectedTags.length > 0;
-  const baseDate = signals[0]?.base_date;
-
-  const toggleTag = (tag: TagCode) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  };
-
-  const clearFilters = () => {
-    setKeywordInput('');
-    setKeyword('');
-    setSelectedTags([]);
-  };
+function StockCard({ stock, onOpen }: StockCardProps) {
+  const verdict = verdictOf(stock);
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          종목 둘러보기
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-          외국인·기관의 순매수 흐름과 업종 대비 밸류에이션으로 종목에 태그를 붙였습니다.
-          {baseDate && ` ${formatDate(baseDate)} 종가 기준입니다.`}
-        </p>
+    <button type="button" className={`card c-${verdict.tone}`} onClick={() => onOpen(stock)}>
+      <div className="card-top">
+        <div className="who">
+          <span className="who-name">{stock.stockName}</span>
+          {isNew(stock, stock.baseDate) && <span className="new">새로 들어옴</span>}
+          <span className="who-sub">
+            {MARKET_LABEL[stock.market]} · {stock.sector}
+          </span>
+        </div>
+        <div className="price">
+          <span className="p-num">{fmtPrice(stock.closePrice)}원</span>
+          <span className={`p-chg ${dir(stock.changeRate)}`}>
+            {signed(stock.changeRate, 2, "%")}
+          </span>
+          <Sparkline data={stock.priceTrend} />
+        </div>
+      </div>
+
+      <div className="card-mid">
+        <span className={`verdict vd-${verdict.tone}`}>{verdict.text}</span>
+        <Meter value={stock.valueScore} tone={verdict.tone} />
+      </div>
+
+      <div className="card-bot">
+        <span className="div-chip">
+          {stock.divYield > 0 ? `배당 ${stock.divYield.toFixed(1)}%` : "배당 없음"}
+        </span>
+        <div className="tag-line">
+          {stock.tags.slice(0, 2).map((t) => (
+            <TagChip key={t.code} tag={t} />
+          ))}
+          {stock.tags.length > 2 && (
+            <span className="tag t-more">+{stock.tags.length - 2}</span>
+          )}
+        </div>
+        <span className="more">자세히 보기</span>
+      </div>
+    </button>
+  );
+}
+
+/* ---------------------------- 메인 ---------------------------- */
+
+function ListSkeleton() {
+  return (
+    <ul className="list" role="status" aria-label="목록 불러오는 중">
+      {[0, 1, 2, 3].map((i) => (
+        <li key={i}>
+          <div className="card card-sk">
+            <span className="sk sk-title" />
+            <span className="sk sk-bar" />
+            <span className="sk sk-chips" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function MainPage() {
+  const { stocks, loading, error, reload } = useMainStocks();
+
+  const [preset, setPreset] = useState<PresetKey>("valueScore");
+  const [hideRisky, setHideRisky] = useState(true);
+  const [selected, setSelected] = useState<MainStock | null>(null);
+
+  const view = useMemo(() => {
+    return stocks
+      .filter((s) => !hideRisky || s.valueTrapFlag !== true)
+      .sort((a, b) => b[preset] - a[preset]);
+  }, [stocks, preset, hideRisky]);
+
+  // 지금은 응답이 전체 목록이라 화면에서 세도 맞습니다.
+  // 페이지네이션이 붙으면 서버가 summary 로 내려줘야 합니다. 현재 페이지만 세게 되니까요.
+  const baseDate = stocks[0]?.baseDate ?? null;
+  const total = stocks.length;
+  const trapCount = stocks.filter((s) => s.valueTrapFlag === true).length;
+
+  return (
+    <div className="page">
+      <style>{CSS}</style>
+
+      <header className="head">
+        <h1>지금 싼 종목</h1>
+        {baseDate ? (
+          <p className="lead">
+            {formatKoreanDate(baseDate)} 종가 기준으로 <b>{total}개</b> 종목이 저평가 조건을
+            통과했어요. 이 중 <b className="warn">{trapCount}개</b>는 싸 보이지만 이익이 줄고
+            있어 확인이 필요합니다.
+          </p>
+        ) : (
+          <p className="lead lead-dim">
+            {loading ? "오늘의 저평가 종목을 불러오고 있어요." : " "}
+          </p>
+        )}
       </header>
 
-      {/* --- 검색 --- */}
-      <div className="relative">
-        <label htmlFor="stock-search" className="sr-only">
-          종목 검색
-        </label>
-        <input
-          id="stock-search"
-          type="search"
-          value={keywordInput}
-          onChange={(e) => setKeywordInput(e.target.value)}
-          placeholder="종목명 또는 종목코드"
-          autoComplete="off"
-          className="w-full rounded-lg border border-slate-300 py-2.5 pl-4 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
-        />
-        {keywordInput && (
-          <button
-            type="button"
-            onClick={() => setKeywordInput('')}
-            aria-label="검색어 지우기"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-          >
-            ×
-          </button>
-        )}
-      </div>
-
-      {/* --- 태그 필터 (그룹별로 묶어야 무엇끼리 배타적인지 읽힌다) --- */}
-      {/* <div className="mt-5 space-y-3">
-        {TAG_GROUPS.map((group) => (
-          <div key={group} className="flex flex-wrap items-center gap-2">
-            <span className="w-16 shrink-0 text-xs text-slate-400">{group}</span>
-
-            {ALL_TAGS.filter((tag) => TAG_META[tag].group === group).map((tag) => {
-              const active = selectedTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  aria-pressed={active}
-                  title={TAG_META[tag].hint}
-                  className={cn(
-                    'rounded-full border px-3 py-1 text-sm transition-colors',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900',
-                    active
-                      ? 'border-slate-900 bg-slate-900 text-white'
-                      : 'border-slate-300 text-slate-600 hover:border-slate-400',
-                  )}
-                >
-                  {TAG_META[tag].label}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div> */}
-
-      {/* --- 건수 + 정렬 --- */}
-      <div className="mb-3 mt-6 flex items-center justify-between gap-4">
-        <p className="text-sm text-slate-500 [font-variant-numeric:tabular-nums]">
-          {isLoading ? '불러오는 중' : `${visible.length}개 종목`}
-          {isFiltered && !isLoading && (
-            <>
-              <span className="text-slate-300"> / {signals.length}</span>
+      {stocks.length > 0 && (
+        <div className="controls">
+          <div className="seg" role="group" aria-label="정렬 기준">
+            {PRESETS.map((p) => (
               <button
+                key={p.key}
                 type="button"
-                onClick={clearFilters}
-                className="ml-3 text-slate-500 underline underline-offset-4 hover:text-slate-800"
+                className={preset === p.key ? "on" : ""}
+                onClick={() => setPreset(p.key)}
               >
-                조건 지우기
+                {p.label}
               </button>
-            </>
-          )}
-        </p>
-
-        <label className="flex items-center gap-2 text-sm text-slate-500">
-          <span className="sr-only">정렬 기준</span>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-slate-900 focus:outline-none"
-          >
-            <option value="score">점수 높은 순</option>
-            <option value="changeRate">등락률 높은 순</option>
-            <option value="name">종목명 순</option>
-          </select>
-        </label>
-      </div>
-
-      {/* --- 로딩 --- */}
-      {isLoading && (
-        <div className="space-y-2" aria-busy="true" aria-label="불러오는 중">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded bg-slate-100" />
-          ))}
-        </div>
-      )}
-
-      {/* --- 에러: 무엇이 잘못됐고 무엇을 하면 되는지 --- */}
-      {error && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
-          <p>{error}</p>
-          <button
-            type="button"
-            onClick={() => setReloadToken((n) => n + 1)}
-            className="mt-3 underline underline-offset-4"
-          >
-            다시 시도
-          </button>
-        </div>
-      )}
-
-      {/* --- 결과 없음 --- */}
-      {!isLoading && !error && visible.length === 0 && (
-        <div className="py-16 text-center">
-          <p className="text-sm text-slate-600">조건에 맞는 종목이 없습니다.</p>
-          <p className="mt-1 text-sm text-slate-400">
-            {selectedTags.length > 1
-              ? '태그는 모두 만족하는 종목만 찾습니다. 하나씩 빼보세요.'
-              : '검색어를 지우거나 다른 태그를 골라보세요.'}
-          </p>
-        </div>
-      )}
-
-      {/* --- 목록 --- */}
-      {!isLoading && !error && visible.length > 0 && (
-        <>
-          <div className="hidden grid-cols-[minmax(0,1fr)_7rem_6rem_5.5rem] gap-x-4 border-b border-slate-200 px-2 pb-2 text-xs text-slate-400 sm:grid">
-            <span>종목 · 신호</span>
-            <span>20일 추이</span>
-            <span className="text-right">현재가</span>
-            <span className="text-right">판정</span>
-          </div>
-
-          <ul className="border-t border-slate-200 sm:border-t-0">
-            {visible.map((signal) => (
-              <StockRow key={signal.stock_code} stock={stock} />
             ))}
-          </ul>
-        </>
+          </div>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={hideRisky}
+              onChange={(e) => setHideRisky(e.target.checked)}
+            />
+            확인이 필요한 종목 숨기기
+          </label>
+        </div>
       )}
 
-      <p className="mt-10 text-xs leading-relaxed text-slate-400">
-        점수는 과거 수급·재무 데이터에 대한 해석입니다. 투자 판단의 근거로 삼기 전에
-        스스로 확인하세요. 미래 수익을 보장하지 않습니다.
-      </p>
-    </main>
+      {error !== null ? (
+        <div className="err-wrap">
+          <div className="errbox" role="alert">
+            <p>{error}</p>
+            <button type="button" className="linkbtn" onClick={reload}>
+              다시 시도
+            </button>
+          </div>
+        </div>
+      ) : loading ? (
+        <ListSkeleton />
+      ) : view.length > 0 ? (
+        <ul className="list">
+          {view.map((s) => (
+            <li key={s.stockCode}>
+              <StockCard stock={s} onOpen={setSelected} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="empty">
+          <p>조건에 맞는 종목이 없어요.</p>
+          {hideRisky && stocks.length > 0 && (
+            <button type="button" className="linkbtn" onClick={() => setHideRisky(false)}>
+              숨긴 종목까지 보기
+            </button>
+          )}
+        </div>
+      )}
+
+      {baseDate && (
+        <footer className="foot">
+          여기 나온 숫자는 {formatKoreanDate(baseDate)} 종가까지 공시된 자료만 사용합니다.
+          투자 판단과 책임은 본인에게 있습니다.
+        </footer>
+      )}
+
+      {/* 상세 패널은 /api/v1/stocks/{stockCode} 붙으면 여기에.
+          selected 는 그때까지 자리만 지킵니다.
+      <DetailPanel
+        stockCode={selected?.stockCode ?? null}
+        baseDate={selected?.baseDate ?? null}
+        fallbackName={selected?.stockName ?? ""}
+        onClose={() => setSelected(null)}
+      /> */}
+    </div>
   );
 }
+
+/* ---------------------------- 스타일 ---------------------------- */
+
+const CSS = `
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css');
+
+.page {
+  --ink: #16202b;
+  --ink-2: #55646f;
+  --ink-3: #8b97a1;
+  --line: #e2e7eb;
+  --line-2: #eef1f4;
+  --paper: #f1f3f5;
+  --surface: #ffffff;
+  --up: #d6173a;
+  --down: #1b64da;
+  --good: #157a63;
+  --caution: #a8620f;
+  --plain: #7b8894;
+
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+    'Malgun Gothic', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100%;
+  padding: 32px 20px 64px;
+  -webkit-font-smoothing: antialiased;
+}
+.page *, .page *::before, .page *::after { box-sizing: border-box; }
+.page button { font: inherit; cursor: pointer; }
+.page :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.head { max-width: 760px; margin: 0 auto 20px; }
+.head h1 { margin: 0; font-size: 27px; font-weight: 700; letter-spacing: -0.03em; }
+.lead { margin: 10px 0 0; font-size: 15px; line-height: 1.65; color: var(--ink-2); max-width: 46ch; }
+.lead b { color: var(--ink); font-weight: 600; }
+.lead b.warn { color: var(--caution); }
+
+.controls {
+  max-width: 760px; margin: 0 auto 14px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+}
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 9px 15px; font-size: 14px; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--ink); color: #fff; font-weight: 600; }
+.check { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--caution); }
+
+.list { max-width: 760px; margin: 0 auto; padding: 0; list-style: none; display: grid; gap: 10px; }
+
+.card {
+  display: block; width: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 18px 20px 16px;
+}
+.card:hover { border-color: #c9d2d9; }
+.c-caution { border-left: 4px solid #d8a86a; }
+.c-unknown { border-left: 4px solid var(--line); }
+
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; min-width: 0; }
+.who-name { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.who-sub { font-size: 12.5px; color: var(--ink-3); }
+.new {
+  font-size: 11px; font-weight: 600; color: var(--good);
+  border: 1px solid #b9d8d0; background: #f0f7f5; border-radius: 5px; padding: 2px 6px;
+}
+.price { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.p-num { font-size: 16px; font-weight: 600; }
+.p-chg { font-size: 14px; font-weight: 600; }
+.p-chg.up { color: var(--up); }
+.p-chg.down { color: var(--down); }
+.p-chg.flat { color: var(--ink-3); }
+.spark polyline { fill: none; stroke-width: 1.5; }
+.s-up { stroke: var(--up); }
+.s-down { stroke: var(--down); }
+
+.card-mid { margin-top: 15px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.verdict { font-size: 15.5px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+.vd-good { color: var(--good); }
+.vd-caution { color: var(--caution); }
+.vd-unknown { color: var(--ink-3); }
+.vd-plain { color: var(--ink-2); }
+
+.meter { flex: 1 1 180px; min-width: 140px; height: 6px; border-radius: 3px; background: var(--line-2); overflow: hidden; }
+.meter-fill { display: block; height: 100%; border-radius: 3px; }
+.m-good { background: var(--good); }
+.m-caution { background: #c98b3c; }
+.m-unknown { background: #c3ccd3; }
+.m-plain { background: var(--plain); }
+
+.card-bot {
+  margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-2);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.div-chip { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.tag-line { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  display: inline-flex; align-items: center; border-radius: 6px;
+  padding: 3px 9px; font-size: 12px; line-height: 1.55; white-space: nowrap; border: 1px solid;
+}
+.t-positive { color: var(--good); border-color: #b9d8d0; background: #f0f7f5; }
+.t-caution { color: var(--caution); border-color: #e3cbad; background: #fbf5ed; }
+.t-neutral { color: var(--ink-2); border-color: var(--line); background: var(--surface); }
+.t-more { color: var(--ink-3); border-color: transparent; padding: 3px 2px; }
+.more { margin-left: auto; font-size: 12.5px; color: var(--ink-3); }
+
+.lead-dim { color: var(--ink-3); min-height: 1.65em; }
+
+.card-sk { display: grid; gap: 14px; pointer-events: none; }
+.sk { display: block; border-radius: 8px; background: var(--line-2); }
+.sk-title { height: 22px; width: 45%; }
+.sk-bar { height: 16px; width: 100%; }
+.sk-chips { height: 20px; width: 62%; }
+
+.err-wrap { max-width: 760px; margin: 0 auto; }
+.errbox {
+  margin-top: 18px; padding: 20px; border-radius: 12px;
+  border: 1px solid #e3cbad; background: #fbf5ed; text-align: center;
+}
+.errbox p { margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: var(--caution); }
+
+.empty { max-width: 760px; margin: 0 auto; padding: 48px 20px; text-align: center; color: var(--ink-2); }
+.empty p { margin: 0 0 10px; font-size: 15px; }
+.linkbtn { border: 0; background: transparent; color: var(--ink); font-size: 14px; text-decoration: underline; text-underline-offset: 4px; }
+
+.foot { max-width: 760px; margin: 22px auto 0; font-size: 12px; line-height: 1.7; color: var(--ink-3); }
+
+@media (max-width: 560px) {
+  .page { padding: 22px 14px 48px; }
+  .head h1 { font-size: 23px; }
+  .card { padding: 16px 16px 14px; }
+  .card-top { flex-direction: column; gap: 8px; }
+  .price { align-self: stretch; }
+  .p-num { font-size: 18px; }
+  .spark { margin-left: auto; }
+}
+`;
