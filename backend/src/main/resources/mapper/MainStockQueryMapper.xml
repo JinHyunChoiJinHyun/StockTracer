@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.main.mapper.MainStockQueryMapper">
+    <resultMap id="mainStockRowMap" type="com.stocktracer.backend.main.mapper.MainStockRow">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="stock_name" javaType="java.lang.String"/>
+            <arg column="market" javaType="java.lang.String"/>
+
+            <arg column="close_price" javaType="java.math.BigDecimal"/>
+            <arg column="price_change" javaType="java.math.BigDecimal"/>
+            <arg column="trading_value" javaType="java.math.BigDecimal"/>
+            <arg column="market_cap" javaType="java.math.BigDecimal"/>
+
+            <arg column="score" javaType="java.math.BigDecimal"/>
+            <arg column="reason" javaType="java.lang.String"/>
+
+            <arg column="sector" javaType="java.lang.String"/>
+            <arg column="per" javaType="java.math.BigDecimal"/>
+            <arg column="pbr" javaType="java.math.BigDecimal"/>
+            <arg column="div_yield" javaType="java.math.BigDecimal"/>
+            <arg column="value_score" javaType="java.math.BigDecimal"/>
+        </constructor>
+    </resultMap>
+
+    <!-- from 절 (추후 flow 테이블도 추가) -->
+    <sql id="fromClause">
+        FROM stock_info si
+        INNER JOIN stock_price sp
+            ON sp.stock_code = si.stock_code
+            AND sp.price_date = #{query.baseDate}
+        LEFT JOIN value_fundamental vf
+            ON vf.stock_code = si.stock_code
+            AND vf.effective_date = #{query.baseDate}
+        LEFT JOIN investor_flow_analysis f
+            ON f.stock_code = si.stock_code
+            AND f.base_date = #{query.baseDate}
+    </sql>
+
+    <!-- 최신 영업일 정보 조회 -->
+    <select id="findLatestBaseDate" resultType="java.time.LocalDate">
+        SELECT MAX(price_date) FROM stock_price
+    </select>
+
+    <!-- 주식 정보 조회 -->
+    <select id="findMainStockRows" resultMap="mainStockRowMap">
+        SELECT
+            si.stock_code,
+            si.stock_name,
+            si.market,
+
+            sp.close_price,
+            sp.price_change,
+            sp.trading_value,
+            sp.market_cap,
+
+            f.score,
+            f.reason,
+
+            vf.sector,
+            vf.per,
+            vf.pbr,
+            vf.div_yield,
+            vf.value_score
+        <include refid="fromClause"/>
+
+        ORDER BY ${query.sort.orderByClause}, si.stock_code ASC
+        LIMIT #{query.limit} OFFSET #{query.offset}
+    </select>
+
+    <!-- 갯수 조회 -->
+    <select id="countMainStockRows" resultType="long">
+        SELECT count(*)
+        <include refid="fromClause"/>
+    </select>
+
+</mapper>

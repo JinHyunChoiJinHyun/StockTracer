@@ -56,4 +56,20 @@ public record ValueFundamental (
             throw new IllegalArgumentException(name + "은 음수가 될 수 없습니다. " + value);
         }
     }
+
+    /* tag 계산 */
+    // 계산 가능한지 확인
+    public boolean isScored(){
+        return scoredScope != null && valueScore != null;
+    }
+
+    // value_trap 확인 (null인 경우 에러 방지)
+    public boolean isValueTrap(){
+        return Boolean.TRUE.equals(valueTrap);
+    }
+
+    // 이익 감소 확인 (성장률이 음수인지 확인)
+    public boolean isEarningShrinking(){
+        return epsGrowth != null && epsGrowth.compareTo(BigDecimal.ZERO) < 0;
+    }
 }

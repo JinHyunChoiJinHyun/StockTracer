@@ -1,24 +1,24 @@
-import React, {useState} from "react"
-import { Routes, Route } from 'react-router-dom';
-import {StockDashboard} from "./components/StockDashboard"
-import { StockDetailPage } from "./components/StockDetailPage";
-import StockMainPage from "./components/StockMainPage";
-import './App.css'
+/**
+ * 화면 주소(라우팅)를 정하는 파일입니다.
+ *
+ *   /                -> 메인 페이지 (종목 목록)
+ *   /stocks/005930   -> 상세 페이지
+ *
+ * react-router-dom 이 필요합니다: npm install react-router-dom
+ */
 
-function App() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCode, setSelectedCode] = useState<string>('005930');
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import MainPage from './pages/MainPage';
+import StockDetailPage from './pages/StockDetailPage';
+// import './index.css'
+
+export default function App() {
   return (
-    <div style={{ backgroundColor: '#11111B', minHeight: '100vh', padding: '40px 20px', textAlign: 'center' }}>
-      
-      {/* 분석 결과 카드 */}
-
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<StockMainPage />} />
-        <Route path="/stock/:id" element={<StockDetailPage />} />
+        <Route path="/" element={<MainPage />} />
+        <Route path="/stocks/:stockCode" element={<StockDetailPage />} />
       </Routes>
-    </div>
+    </BrowserRouter>
   );
 }
-
-export default App

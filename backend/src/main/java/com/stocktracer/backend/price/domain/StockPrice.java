@@ -14,12 +14,12 @@ import java.time.LocalDate;
 @Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
 public class StockPrice {
     private String stockCode;
-    private LocalDate priceDate;
+    private LocalDate priceDate; // 추후 baseDate로 수정 예정
     private BigDecimal openPrice;
     private BigDecimal closePrice;
     private BigDecimal lowPrice;
     private BigDecimal highPrice;
-    private BigDecimal priceChange;
+    private BigDecimal priceChange; // changeAmount로 변경 예정
     private Long volume;
     private BigDecimal tradingValue; // 거래대금
     private BigDecimal marketCap; // 시가총액
