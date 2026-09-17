@@ -3,11 +3,14 @@ package com.stocktracer.backend.value.dto;
 import com.stocktracer.backend.value.domain.EpsHistory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record EpsHistorySaveRequestDto(
         @NotEmpty @Valid List<Item> items
         ) {

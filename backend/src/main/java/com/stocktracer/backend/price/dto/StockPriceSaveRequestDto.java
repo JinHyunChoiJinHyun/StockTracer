@@ -7,12 +7,15 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Builder;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import javax.swing.plaf.synth.SynthToolBarUI;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record StockPriceSaveRequestDto(
         /** 검증 */
         // dto에서 값 검증 후 domin에 입력

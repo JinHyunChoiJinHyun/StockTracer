@@ -4,11 +4,14 @@ import com.stocktracer.backend.value.domain.ScoredScope;
 import com.stocktracer.backend.value.domain.ValueFundamental;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record ValueFundamentalSaveRequestDto(
         @NotEmpty (message = "데이터는 최소 1건 이상이어야 합니다.")
         @Valid
