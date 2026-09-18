@@ -25,6 +25,12 @@ public enum TagCode {
         this.condition = condition;
     }
 
+    // 태그의 condition 충족 여부 반환
+    public boolean matches(TagSnapshot snapshot){
+        // condition에 저장된 람다식 실행 (충족 시 true / 미충족 시 false)
+        return condition.test(snapshot);
+    }
+
     // 헬퍼 메서드
     private static boolean gte(BigDecimal value, double threshold){
         return value != null && value.compareTo(BigDecimal.valueOf(threshold)) >= 0;
