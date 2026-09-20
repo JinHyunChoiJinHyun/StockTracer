@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
 public class StockPrice {
     private String stockCode;
-    private LocalDate priceDate; // 추후 baseDate로 수정 예정
+    private LocalDate baseDate; // 추후 baseDate로 수정 예정
     private BigDecimal openPrice;
     private BigDecimal closePrice;
     private BigDecimal lowPrice;
@@ -41,7 +41,7 @@ public class StockPrice {
         validatePriceConsistency(openPrice,closePrice,lowPrice,highPrice);
         return StockPrice.builder()
                 .stockCode(stockCode)
-                .priceDate(priceDate)
+                .baseDate(priceDate)
                 .openPrice(openPrice)
                 .closePrice(closePrice)
                 .lowPrice(lowPrice)

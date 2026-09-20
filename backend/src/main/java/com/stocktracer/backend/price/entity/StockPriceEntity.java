@@ -66,7 +66,7 @@ public class StockPriceEntity extends BaseEntity {
 
         private StockPriceEntity(StockPrice stockPrice) {
                 this.stockCode = stockPrice.getStockCode();
-                this.priceDate = stockPrice.getPriceDate();
+                this.priceDate = stockPrice.getBaseDate();
                 this.openPrice = stockPrice.getOpenPrice();
                 this.highPrice = stockPrice.getHighPrice();
                 this.lowPrice = stockPrice.getLowPrice();

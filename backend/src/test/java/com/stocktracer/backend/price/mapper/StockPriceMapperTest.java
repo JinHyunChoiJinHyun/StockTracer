@@ -1,10 +1,12 @@
 package com.stocktracer.backend.price.mapper;
 
+import com.stocktracer.backend.annotation.MapperTest;
 import com.stocktracer.backend.price.domain.StockPrice;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
 import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
+import org.apache.ibatis.annotations.Mapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -17,8 +19,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@MybatisTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // 실제 db 연결 시
+@MapperTest
 public class StockPriceMapperTest {
     @Autowired
     private StockPriceMapper stockPriceMapper;
@@ -91,22 +92,22 @@ public class StockPriceMapperTest {
         assertThat(insertedResult1)
                 .singleElement()
                 .satisfies(dto -> {
-                    assertThat(dto.openPrice()).isEqualTo(BigDecimal.valueOf(1100));
-                    assertThat(dto.closePrice()).isEqualTo(BigDecimal.valueOf(2100));
-                    assertThat(dto.lowPrice()).isEqualTo(BigDecimal.valueOf(600));
-                    assertThat(dto.highPrice()).isEqualTo(BigDecimal.valueOf(3100));
-                    assertThat(dto.priceChange()).isEqualTo(BigDecimal.valueOf(200));
+                    assertThat(dto.openPrice()).isEqualByComparingTo(BigDecimal.valueOf(1100));
+                    assertThat(dto.closePrice()).isEqualByComparingTo(BigDecimal.valueOf(2100));
+                    assertThat(dto.lowPrice()).isEqualByComparingTo(BigDecimal.valueOf(600));
+                    assertThat(dto.highPrice()).isEqualByComparingTo(BigDecimal.valueOf(3100));
+                    assertThat(dto.priceChange()).isEqualByComparingTo(BigDecimal.valueOf(200));
                     assertThat(dto.volume()).isEqualTo(50000L);
                 });
         List<StockPriceResponseDto> insertedResult2 = stockPriceMapper.findPricesByCodeAndPeriod("000660", LocalDate.of(2026, 8, 2),LocalDate.of(2026, 8, 2));
         assertThat(insertedResult2)
                 .singleElement()
                 .satisfies(dto -> {
-                    assertThat(dto.openPrice()).isEqualTo(BigDecimal.valueOf(7000));
-                    assertThat(dto.closePrice()).isEqualTo(BigDecimal.valueOf(8000));
-                    assertThat(dto.lowPrice()).isEqualTo(BigDecimal.valueOf(6500));
-                    assertThat(dto.highPrice()).isEqualTo(BigDecimal.valueOf(8500));
-                    assertThat(dto.priceChange()).isEqualTo(BigDecimal.valueOf(500));
+                    assertThat(dto.openPrice()).isEqualByComparingTo(BigDecimal.valueOf(7000));
+                    assertThat(dto.closePrice()).isEqualByComparingTo(BigDecimal.valueOf(8000));
+                    assertThat(dto.lowPrice()).isEqualByComparingTo(BigDecimal.valueOf(6500));
+                    assertThat(dto.highPrice()).isEqualByComparingTo(BigDecimal.valueOf(8500));
+                    assertThat(dto.priceChange()).isEqualByComparingTo(BigDecimal.valueOf(500));
                     assertThat(dto.volume()).isEqualTo(120000L );
                 });
 

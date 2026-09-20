@@ -1,6 +1,7 @@
 package com.stocktracer.backend.tag.service;
 
 import com.stocktracer.backend.tag.domain.StockTag;
+import com.stocktracer.backend.tag.domain.TagCode;
 import com.stocktracer.backend.tag.domain.TagSnapshot;
 import com.stocktracer.backend.tag.repository.interfaces.TagRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,11 +32,26 @@ public class TagGenerationService {
         }
 
         //
+        List<StockTag> tags = evaluate(snapshots);
+        int saved = repository.replaceByBaseDate(baseDate, tags);
+
+        log.info("태그 생성 완료. baseDate={}, 종목={}건, 태그={}건", baseDate, snapshots.size(), saved);
+        return saved;
     }
 
     // 태그 계산 필드 전달
     private List<StockTag> evaluate(List<TagSnapshot> snapshots){
         List<StockTag> tags = new ArrayList<>();
-
+        for (TagSnapshot snapshot : snapshots){
+            // 모든 enum 상수 순회
+            for (TagCode tagCode : TagCode.values()){
+                // snapshot이 각 TagCode의 조건을 충족하는지 검사
+                if (tagCode.matches(snapshot)){
+                    // snapshot의 필드가 조건을 충족하는 태그만 저장
+                    tags.add(new StockTag(snapshot.baseDate(),snapshot.stockCode(), tagCode));
+                }
+            }
+        }
+        return tags;
     }
 }

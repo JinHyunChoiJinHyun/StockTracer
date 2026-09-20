@@ -15,7 +15,7 @@ CREATE TABLE stock_info (
 -- 2. 주가 정보 테이블
 CREATE TABLE stock_price (
      stock_code    VARCHAR(20)  NOT NULL,
-     price_date    DATE         NOT NULL,
+     base_date    DATE         NOT NULL,
      open_price    BIGINT,                -- NUMBER(18) -> BIGINT로 변경
      high_price    BIGINT,
      low_price     BIGINT,
@@ -26,7 +26,7 @@ CREATE TABLE stock_price (
      market_cap    BIGINT,
      created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
      updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-     PRIMARY KEY (stock_code, price_date)
+     PRIMARY KEY (stock_code, base_date)
 );
 
 -- 3. 일별 투자자 수급 테이블
