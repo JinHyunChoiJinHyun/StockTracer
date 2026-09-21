@@ -2,8 +2,22 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stocktracer.backend.price.mapper.StockPriceMapper">
+    <resultMap id="stockPriceMap" type="com.stocktracer.backend.price.domain.StockPrice">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="base_date" javaType="java.time.LocalDate"/>
+            <arg column="open_price" javaType="java.math.BigDecimal"/>
+            <arg column="close_price" javaType="java.math.BigDecimal"/>
+            <arg column="low_price" javaType="java.math.BigDecimal"/>
+            <arg column="high_price" javaType="java.math.BigDecimal"/>
+            <arg column="change_amount" javaType="java.math.BigDecimal"/>
+            <arg column="volume" javaType="java.lang.Long"/>
+            <arg column="trading_value" javaType="java.math.BigDecimal"/>
+            <arg column="market_cap" javaType="java.math.BigDecimal"/>
+        </constructor>
+    </resultMap>
+
     <!-- 1. 특정 종목의 기간별 주가 목록 조회 -->
-    <!-- 매핑을 위해 조회 순서 중요!-->
     <select id="findPricesByCodeAndPeriod" resultType="com.stocktracer.backend.price.dto.StockPriceResponseDto">
         SELECT
             s.stock_code,
@@ -14,7 +28,8 @@
             sp.close_price,
             sp.low_price,
             sp.high_price,
-            sp.price_change,
+            sp.change_amount,
+            ROUND(sp.change_amount / NULLIF(sp.close_price - sp.change_amount, 0) * 100, 2) AS change_rate,
             sp.volume
         FROM
             stock_price as sp
@@ -41,7 +56,7 @@
             sp.close_price,
             sp.low_price,
             sp.high_price,
-            sp.price_change,
+            sp.change_amount,
             sp.volume,
             sp.trading_value,
             sp.market_cap
@@ -75,13 +90,13 @@
 
     <!-- 3. 주가 데이터 대량 저장 -->
     <!-- mysql -->
-    <insert id="bulkUpsert">
+    <insert id="upsertAll">
         INSERT INTO stock_price
         (
          stock_code,
          base_date,
          open_price,
-         close_price,
+         change_amount,
          low_price,
          high_price,
          price_change,
@@ -98,7 +113,7 @@
              #{p.closePrice},
              #{p.lowPrice},
              #{p.highPrice},
-             #{p.priceChange},
+             #{p.changeAmount},
              #{p.volume},
              #{p.tradingValue},
              #{p.marketCap}
@@ -109,7 +124,7 @@
             high_price = new_val.high_price,
             low_price = new_val.low_price,
             close_price = new_val.close_price,
-            price_change = new_val.price_change,
+            change_amount = new_val.change_amount,
             volume = new_val.volume,
             trading_value = new_val.trading_value,
             market_cap = new_val.market_cap

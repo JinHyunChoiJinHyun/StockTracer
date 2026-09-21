@@ -13,12 +13,13 @@ public record StockPriceResponseDto(
     String stockCode,
     String stockName,
     MarketType marketType,
-    LocalDate stockDate,
+    LocalDate baseDate,
     BigDecimal openPrice,
     BigDecimal closePrice,
     BigDecimal lowPrice,
     BigDecimal highPrice,
-    BigDecimal priceChange,
+    BigDecimal changeAmount,
+    BigDecimal changeRate,
     Long volume
 ){
 }

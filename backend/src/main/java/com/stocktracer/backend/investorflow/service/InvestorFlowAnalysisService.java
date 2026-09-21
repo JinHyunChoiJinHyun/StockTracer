@@ -1,5 +1,6 @@
 package com.stocktracer.backend.investorflow.service;
 
+import com.stocktracer.backend.common.validate.Validates;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import com.stocktracer.backend.investorflow.dto.InvestorFlowAnalysisRequestDto;
@@ -23,22 +24,22 @@ public class InvestorFlowAnalysisService {
     private final InvestorFlowDailyRepository dailyRepository;
 
     @Transactional
-    public int save(List<InvestorFlowAnalysisRequestDto> requests){
+    public int save(List<InvestorFlowAnalysisRequestDto> request){
         // 검증
-        if(requests.isEmpty()){
+        if(request.isEmpty()){
             log.info("수급 분석 요청 없음 - 처리 생략");
             return 0;
         }
 
-        validateSingleBaseDate(requests);
-        validateNoDuplicateKey(requests);
+        validateSingleBaseDate(request);
+        Validates.duplicateKeys(request, item -> item.stockCode() + "@" + item.baseDate());
 
-        LocalDate baseDate = requests.get(0).baseDate();
+        LocalDate baseDate = request.get(0).baseDate();
         Map<String, InvestorFlowDaily> dailyMap = loadDaily(baseDate);
-        validateNoMissingDailyData(requests, dailyMap);
+        validateNoMissingDailyData(request, dailyMap);
 
         // 변환
-        List<InvestorFlowAnalysis> flows = requests.stream()
+        List<InvestorFlowAnalysis> flows = request.stream()
                 .map(r -> r.toDomain(dailyMap.get(r.stockCode())))
                 .toList(); // 수정 불가
 
@@ -62,21 +63,6 @@ public class InvestorFlowAnalysisService {
                     "단일 일자만 처리합니다. 입력된 날짜: " + new TreeSet<>(dates)
             );
         }
-    }
-
-    // pk 중복 검증
-    private void validateNoDuplicateKey(List<InvestorFlowAnalysisRequestDto> requests){
-        Set<String> seen = new HashSet<>();
-        List<String> duplicates = requests.stream()
-                .map(InvestorFlowAnalysisRequestDto::stockCode)
-                .filter(code -> !seen.add(code)) // 이미 seen에 존재해서 add에 실패한 값만 필터
-                .distinct()
-                .toList();
-
-        if (!duplicates.isEmpty()){
-            throw new IllegalArgumentException("중복된 종목코드: " + duplicates);
-        }
-
     }
 
     // daily flow 조회

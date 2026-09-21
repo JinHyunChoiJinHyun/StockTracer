@@ -29,7 +29,7 @@ public class StockPriceEntity extends BaseEntity {
 
         @Id
         @Column(name = "price_date")
-        private LocalDate priceDate;
+        private LocalDate baseDate;
 
         // 주가의 경우 2진수 변환 없이 10진수를 그대로 저장하는 big decimal 사용 (오차 보정)
         @Column(name = "open_price", nullable = false, precision = 15, scale = 2)
@@ -47,8 +47,8 @@ public class StockPriceEntity extends BaseEntity {
         @Column(name = "volume", nullable = false)
         private Long volume;
 
-        @Column(name = "price_change", precision = 15, scale = 2)
-        private BigDecimal priceChange;
+        @Column(name = "change_amount", precision = 15, scale = 2)
+        private BigDecimal changeAmount;
 
         @Column(name = "trading_value", nullable = false, precision = 20, scale = 2)
         private BigDecimal tradingValue;
@@ -65,16 +65,16 @@ public class StockPriceEntity extends BaseEntity {
         private StockInfoEntity stock;
 
         private StockPriceEntity(StockPrice stockPrice) {
-                this.stockCode = stockPrice.getStockCode();
-                this.priceDate = stockPrice.getBaseDate();
-                this.openPrice = stockPrice.getOpenPrice();
-                this.highPrice = stockPrice.getHighPrice();
-                this.lowPrice = stockPrice.getLowPrice();
-                this.closePrice = stockPrice.getClosePrice();
-                this.volume = stockPrice.getVolume();
-                this.priceChange = stockPrice.getPriceChange();
-                this.tradingValue = stockPrice.getTradingValue();
-                this.marketCap = stockPrice.getMarketCap();
+                this.stockCode = stockPrice.stockCode();
+                this.baseDate = stockPrice.baseDate();
+                this.openPrice = stockPrice.openPrice();
+                this.highPrice = stockPrice.highPrice();
+                this.lowPrice = stockPrice.lowPrice();
+                this.closePrice = stockPrice.closePrice();
+                this.volume = stockPrice.volume();
+                this.changeAmount = stockPrice.changeAmount();
+                this.tradingValue = stockPrice.tradingValue();
+                this.marketCap = stockPrice.marketCap();
         }
 
         public static StockPriceEntity from(StockPrice stockPrice){
@@ -83,14 +83,14 @@ public class StockPriceEntity extends BaseEntity {
 
         public StockPrice toDomain(){
                 // 프록시 초기화로 인한 N+1 방지를 위해 stock 건드리지 않음 (jpa가 stockCode를 보고 자동으로 매핑)
-                return StockPrice.of(
+                return new StockPrice(
                         stockCode,
-                        priceDate,
+                        baseDate,
                         openPrice,
                         closePrice,
                         lowPrice,
                         highPrice,
-                        priceChange,
+                        changeAmount,
                         volume,
                         tradingValue,
                         marketCap

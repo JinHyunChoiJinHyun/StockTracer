@@ -27,11 +27,11 @@ public class StockPriceRepositoryImpl implements StockPriceRepository {
     }
 
     @Override
-    public void bulkUpsert(List<StockPrice> prices) {
+    public void upsertAll(List<StockPrice> prices) {
         // 1000개씩 배치 처리
         List<List<StockPrice>> batches = ListUtils.partition(prices, 1000);
         for(List<StockPrice> batch : batches){
-            stockPriceMapper.bulkUpsert(batch);
+            stockPriceMapper.upsertAll(batch);
         }
     }
 }

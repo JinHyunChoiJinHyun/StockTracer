@@ -12,5 +12,5 @@ public interface StockPriceService {
     List<StockPriceResponseDto> getPricesByCodeAndPeriod(String stockCode, LocalDate startDate, LocalDate endDate);
 
     // 주가 데이터 저장
-    void bulkSave(StockPriceSaveBulkRequestDto prices);
+    void upsertAll(StockPriceSaveBulkRequestDto prices);
 }

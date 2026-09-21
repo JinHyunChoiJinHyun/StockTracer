@@ -27,7 +27,10 @@ CREATE TABLE stock_price (
      created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
      updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
      PRIMARY KEY (stock_code, base_date)
-);
+) COMMENT='종목 주가 정보'
+  ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 -- 3. 일별 투자자 수급 테이블
 CREATE TABLE investor_flow_daily (

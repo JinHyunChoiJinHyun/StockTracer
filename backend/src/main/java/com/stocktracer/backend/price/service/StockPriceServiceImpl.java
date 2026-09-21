@@ -1,5 +1,6 @@
 package com.stocktracer.backend.price.service;
 
+import com.stocktracer.backend.common.validate.Validates;
 import com.stocktracer.backend.price.domain.StockPrice;
 import com.stocktracer.backend.price.dto.StockPriceSaveBulkRequestDto;
 import com.stocktracer.backend.price.dto.StockPriceResponseDto;
@@ -21,8 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static com.stocktracer.backend.common.validate.Validates.duplicateKeys;
 
 @Slf4j
 @Service
@@ -31,7 +32,6 @@ import java.util.stream.Collectors;
 public class StockPriceServiceImpl implements StockPriceService {
 
     private final StockPriceRepository stockPriceRepository;
-    private final StockInfoRepository stockInfoRepository;
 
     /**
      * 특정 주식 코드의 주가를 조회합니다
@@ -70,25 +70,25 @@ public class StockPriceServiceImpl implements StockPriceService {
 
     /**
      * 주가 데이터를 대량으로 저장합니다
-     * @param bulkDto 대량 주가 데이터
+     * @param request 대량 주가 데이터
      */
     @Transactional
     @Override
-    public void bulkSave(StockPriceSaveBulkRequestDto bulkDto) {
+    public void upsertAll(StockPriceSaveBulkRequestDto request) {
 
         // db 호출 전 중복 발견 시 거부 처리
-        validateNoDuplicationKeys(bulkDto.items());
+        Validates.duplicateKeys(request.items(), item -> item.stockCode() + "@" + item.baseDate()); // static이므로 객체 생성 없이 사용 가능
 
         // 각 dto의 code와 일치하는 StockInfo와 조합해 객체로 변환
-        List<StockPrice> prices = bulkDto.items().stream() // 가독성 좋은 for문
-                .map(dto -> StockPrice.of(dto.stockCode(),dto.priceDate(),dto.openPrice(),dto.closePrice(),dto.lowPrice(),dto.highPrice(),dto.priceChange(),dto.volume(),dto.tradingValue(),dto.marketCap()))
+        List<StockPrice> prices = request.items().stream() // 가독성 좋은 for문
+                .map(dto -> new StockPrice(dto.stockCode(),dto.baseDate(),dto.openPrice(),dto.closePrice(),dto.lowPrice(),dto.highPrice(),dto.changeAmount(),dto.volume(),dto.tradingValue(),dto.marketCap()))
                 .peek(stockPrice -> { // 값 제대로 입력 됐는지 확인
                     System.out.println(
-                            "종목코드: " + stockPrice.getStockCode() +
-                            " | 시가: " + stockPrice.getOpenPrice() +
-                            " | 종가: " + stockPrice.getClosePrice() +
-                            " | 저가: " + stockPrice.getLowPrice() +
-                            " | 고가: " + stockPrice.getHighPrice());
+                            "종목코드: " + stockPrice.stockCode() +
+                            " | 시가: " + stockPrice.openPrice() +
+                            " | 종가: " + stockPrice.closePrice() +
+                            " | 저가: " + stockPrice.lowPrice() +
+                            " | 고가: " + stockPrice.highPrice());
                 })
                 .toList();
 
@@ -97,18 +97,6 @@ public class StockPriceServiceImpl implements StockPriceService {
         // collect => map 사용 여부와 관계없이 map이나 list를 최종 포장할 시 (list는 toList로 대체 사용 가능하나 map은 collect 필수)
 
         // 저장
-        stockPriceRepository.bulkUpsert(prices);
-    }
-
-    // 중복 검증 로직
-    private void validateNoDuplicationKeys(List<StockPriceSaveRequestDto> prices){
-        Set<String> seen = new HashSet<>();
-        for (StockPriceSaveRequestDto price : prices){
-            String key = price.stockCode() + "_" + price.priceDate(); // 복합키
-            if(!seen.add(key)){
-                // 추가가 불가하면 이미 존재하는 키
-                throw new DuplicateStockPriceException(price.stockCode(), price.priceDate());
-            }
-        }
+        stockPriceRepository.upsertAll(prices);
     }
 }

@@ -1,5 +1,6 @@
 package com.stocktracer.backend.investorflow.service;
 
+import com.stocktracer.backend.common.validate.Validates;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import com.stocktracer.backend.investorflow.dto.InvestorFlowDailyRequestDto;
 import com.stocktracer.backend.investorflow.repository.interfaces.InvestorFlowDailyRepository;
@@ -26,16 +27,15 @@ public class InvestorFlowDailyService {
     private final StockInfoRepository stockInfoRepository;
 
     @Transactional
-    public int save(List<InvestorFlowDailyRequestDto> dtos){
+    public int save(List<InvestorFlowDailyRequestDto> request){
         // 1. 입력값 검증
-        if (dtos.isEmpty()) return 0; // 휴장일 빈 리스트 입력 가능성 방지
-        validateSingleBaseDate(dtos);
-        validateNoDuplicateKey(dtos);
-
+        if (request.isEmpty()) return 0; // 휴장일 빈 리스트 입력 가능성 방지
+        validateSingleBaseDate(request);
+        Validates.duplicateKeys(request, item -> item.stockCode() + "@" + item.baseDate());
         // 2. in 쿼리로 stockInfo 일괄 조회
 
         // 1) stockCode 분해
-        List<String> stockCodes = dtos.stream()
+        List<String> stockCodes = request.stream()
                 .map(InvestorFlowDailyRequestDto::stockCode)
                 .distinct()
                 .toList();
@@ -55,7 +55,7 @@ public class InvestorFlowDailyService {
             throw new IllegalStateException("stock_info 미등록 종목: " + missing);
         }
 
-        List<InvestorFlowDaily> flows = dtos.stream()
+        List<InvestorFlowDaily> flows = request.stream()
                 .map(dto -> InvestorFlowDaily.of(dto.stockCode(),dto.baseDate(),dto.foreignNet(),dto.institutionNet(),dto.individualNet(),dto.tradingValue()))
                 .toList();
 
@@ -64,28 +64,15 @@ public class InvestorFlowDailyService {
     }
 
     /** 검증 메서드 */
-    // 하나의 영업일인지 체크
-    private void validateSingleBaseDate(List<InvestorFlowDailyRequestDto> dtos){
-        Set<LocalDate> dates = dtos.stream()
+    // 하나의 영업일인지 체크 >> Validate로 이동 필요
+    private void validateSingleBaseDate(List<InvestorFlowDailyRequestDto> request){
+        Set<LocalDate> dates = request.stream()
                 .map(InvestorFlowDailyRequestDto::baseDate)
                 .collect(Collectors.toSet());
         if (dates.size() > 1){
             throw new IllegalArgumentException((
                     "단일 일자만 처리합니다. 입력된 날짜: " + new TreeSet<>(dates) // 중복을 제거하고 오름차순으로 출력
             ));
-        }
-    }
-
-    // duplicate key update로 인한 데이터 소실 방지를 위해 pk 중복 체크
-    private void validateNoDuplicateKey(List<InvestorFlowDailyRequestDto> dtos){
-        Set<String> seen = new HashSet<>();
-        List<String> duplicates = dtos.stream()
-                .map(dto -> dto.stockCode() + "|" + dto.baseDate())
-                .filter(key -> !seen.add(key)) // 이미 seen에 존재해 add에 실패한 값만 필터
-                .distinct()
-                .toList();
-        if(!duplicates.isEmpty()){
-            throw new IllegalArgumentException(("중복된 (종목코드, 기준일): ") + duplicates);
         }
     }
 

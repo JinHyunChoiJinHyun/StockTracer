@@ -18,7 +18,7 @@ public class InvestorFlowDaily {
     private final long foreignNet; // null 불가
     private final long institutionNet; // null 불가
     private final long individualNet; // null 불가
-    private final Long tradingValue; // null 허용
+    private final Long tradingValue; // sql에서 join
 
     /* 계산 로직 */
     // major 수급 (외국인 + 기관)

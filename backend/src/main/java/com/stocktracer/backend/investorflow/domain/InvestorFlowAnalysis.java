@@ -8,20 +8,17 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Getter
-@Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
-public class InvestorFlowAnalysis {
+public record InvestorFlowAnalysis (
+        LocalDate baseDate,
+        String stockCode,
+        BigDecimal netRatio,
+        BigDecimal flowScore,
+        boolean doubleBuy,
+        boolean cleanBuy,
+        String reason
+){
 
-    private static final BigDecimal RATIO_TOLERANCE = new BigDecimal("0.0001"); // 파이썬 float64 -> DECIMAL(9,6) 변환 허용 오차
-
-    private final String stockCode;
-    private final LocalDate baseDate;
-    private final BigDecimal netRatio;
-    private final BigDecimal score;
-    private final Boolean doubleBuy; // isDoubleBuy getter 생성
-    private final Boolean cleanBuy; // isCleanBuy getter 생성
-    private final String reason;
-
+    private static final BigDecimal RATIO_TOLERANCE = new BigDecimal("0.0001"); // 파이썬 float64 -> DECIMAL(9,6) 변환 허용 오
     /** final로 지정하는 이유 */
     // 조립하는 시점에만 값을 넣고 이후에는 변경 불가하도록 설계
 
@@ -29,31 +26,37 @@ public class InvestorFlowAnalysis {
     // boolean 타입은 getter가 is를 붙여서 생성됨 (이미 is가 붙어 있다면 필드명 그대로 getter 생성)
     // JSON 변환기(Jackson)는 getter 이름(is~)을 보고 변수명에 붙은 is를 제거하고 추론함
     // 따라서 애초에 필드명에서 is를 빼고 작성해야 JSON 키값과 의도한 이름이 일치함
+
+    // 외부 객체의 필드가 검증에 필요없는 경우 기본 생성자 사용 (of도 결국 new를 호출)
+    public InvestorFlowAnalysis {
+        validateFlagLogic(stockCode, doubleBuy, cleanBuy);
+    }
+    // 외부 객체의 필드가 검증에 필요할 시 of 사용
     public static InvestorFlowAnalysis of(
-            String stockCode,
             LocalDate baseDate,
+            String stockCode,
             BigDecimal netRatio,
-            BigDecimal score,
+            BigDecimal flowScore,
             Boolean doubleBuy,
             Boolean cleanBuy,
             String reason,
             InvestorFlowDaily daily
     ){
         validateSameKey(stockCode, baseDate, daily);
-        validateFlagLogic(stockCode, doubleBuy, cleanBuy);
         validateFlagAgainstDaily(stockCode, doubleBuy, cleanBuy, daily);
         validateNetRatio(stockCode, netRatio, daily);
 
-        return InvestorFlowAnalysis.builder()
-                .stockCode(stockCode)
-                .baseDate(baseDate)
-                .netRatio(netRatio)
-                .score(score)
-                .doubleBuy(doubleBuy)
-                .cleanBuy(cleanBuy)
-                .reason(reason)
-                .build();
-    };
+        // 생성자에서 최종 검증
+        return new InvestorFlowAnalysis(
+                baseDate,
+                stockCode,
+                netRatio,
+                flowScore,
+                doubleBuy,
+                cleanBuy,
+                reason
+        );
+    }
 
     /* 도메인 규칙 검증 */
 
