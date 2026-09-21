@@ -8,6 +8,7 @@ CREATE TABLE stock_info (
     stock_code  VARCHAR(20) PRIMARY KEY, -- 종목 코드 (예: 005930)
     stock_name  VARCHAR(50) NOT NULL,    -- 종목 이름 (예: 삼성전자)
     market      VARCHAR(20) NOT NULL,    -- 시장 구분 (예: KOSPI, KOSDAQ)
+    sector VARCHAR(20) NOT NULL, -- 추가됨
     created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -15,12 +16,12 @@ CREATE TABLE stock_info (
 -- 2. 주가 정보 테이블
 CREATE TABLE stock_price (
      stock_code    VARCHAR(20)  NOT NULL,
-     base_date    DATE         NOT NULL,
+     base_date    DATE         NOT NULL, -- 수정됨
      open_price    BIGINT,                -- NUMBER(18) -> BIGINT로 변경
      high_price    BIGINT,
      low_price     BIGINT,
      close_price   BIGINT,
-     price_change  BIGINT,
+     change_amount  BIGINT, -- 수정됨
      volume        BIGINT,                -- NUMBER -> BIGINT로 변경
      trading_value BIGINT,
      market_cap    BIGINT,
@@ -39,7 +40,7 @@ CREATE TABLE investor_flow_daily (
      foreign_net     BIGINT,
      institution_net BIGINT,
      individual_net  BIGINT,
-     trading_value   BIGINT       NULL,
+     trading_value   BIGINT       NULL, -- 사라질 예정
      created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
      updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
      PRIMARY KEY (stock_code, base_date)
@@ -50,7 +51,7 @@ CREATE TABLE investor_flow_analysis (
     base_date      DATE          NOT NULL,
     stock_code     CHAR(6)       NOT NULL,
     net_ratio      DECIMAL(9, 6) NULL     COMMENT '(외국인+기관) / 거래대금, 점수 산출 근거',
-    score          DECIMAL(6, 2) NOT NULL,
+    flow_score          DECIMAL(6, 2) NOT NULL, -- 수정됨
     is_double_buy  TINYINT(1)    NOT NULL COMMENT 'MIN_BUY_AMOUNT 기준 쌍끌이',
     is_clean_buy   TINYINT(1)    NOT NULL COMMENT '쌍끌이 + 개인 순매도',
     reason         VARCHAR(255)  NULL,

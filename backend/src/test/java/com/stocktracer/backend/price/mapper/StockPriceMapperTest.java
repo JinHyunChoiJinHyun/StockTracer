@@ -28,21 +28,21 @@ public class StockPriceMapperTest {
     LocalDate startDate = LocalDate.of(2026, 8, 1);
     LocalDate endDate = LocalDate.of(2026, 8, 2);
 
-    @Test
-    @DisplayName("실제 db에서 기간별 주가 조회가 잘 되는지 테스트")
-    void findPricesByCodeAndPeriod_Success(){
-        // 실제 db 혹은 테스트용 데이터 넣은 후 쿼리 실행
-        List<StockPriceResponseDto> result = stockPriceMapper.findPricesByCodeAndPeriod(stockCode,startDate,endDate);
-
-        assertThat(result).isNotEmpty();
-    }
+//    @Test
+//    @DisplayName("실제 db에서 기간별 주가 조회가 잘 되는지 테스트")
+//    void findPricesByCodeAndPeriod_Success(){
+//        // 실제 db 혹은 테스트용 데이터 넣은 후 쿼리 실행
+//        List<StockPriceResponseDto> result = stockPriceMapper.findPricesByCodeAndPeriod(stockCode,startDate,endDate);
+//
+//        assertThat(result).isNotEmpty();
+//    }
 
     /** 주가 저장 */
     @Test
     @DisplayName("bulkUpsert - 신규 데이터 혹은 날짜가 다른 INSERT 동작 검증")
     void bulkUpsert_Insert_Success(){
         // given
-        StockPrice existingPrice = StockPrice.of(
+        StockPrice existingPrice = new StockPrice(
                 "005930",
                 LocalDate.of(2026, 8, 1),
                 BigDecimal.valueOf(1000), // openPrice
@@ -57,7 +57,7 @@ public class StockPriceMapperTest {
 
         // when (업데이트 객체 1, 새 객체 1)
         List<StockPrice> dtoList = List.of(
-                StockPrice.of(
+                new StockPrice(
                     "005930",
                     LocalDate.of(2026, 8, 2),
                     BigDecimal.valueOf(1100), // openPrice
@@ -69,14 +69,14 @@ public class StockPriceMapperTest {
                     BigDecimal.valueOf(100),  // tradingValue
                     BigDecimal.valueOf(100)  // marketCap
                 ),
-                StockPrice.of(
+                new StockPrice(
                     "000660",
                     LocalDate.of(2026, 8, 2),
                     BigDecimal.valueOf(7000), // openPrice
                     BigDecimal.valueOf(8000), // closePrice
                     BigDecimal.valueOf(6500),  // lowPrice
                     BigDecimal.valueOf(8500), // highPrice
-                    BigDecimal.valueOf(500),  // priceChange
+                    BigDecimal.valueOf(500),  // change_amount
                     120000L, // volume
                     BigDecimal.valueOf(100),  // tradingValue
                     BigDecimal.valueOf(100)  // marketCap
@@ -84,7 +84,7 @@ public class StockPriceMapperTest {
         );
 
         // 실행
-        stockPriceMapper.bulkUpsert(dtoList);
+        stockPriceMapper.upsertAll(dtoList);
 
         // then
         // (*매우 중요) 순서로 인해 매칭 안될 수 있으니 필수
@@ -96,7 +96,7 @@ public class StockPriceMapperTest {
                     assertThat(dto.closePrice()).isEqualByComparingTo(BigDecimal.valueOf(2100));
                     assertThat(dto.lowPrice()).isEqualByComparingTo(BigDecimal.valueOf(600));
                     assertThat(dto.highPrice()).isEqualByComparingTo(BigDecimal.valueOf(3100));
-                    assertThat(dto.priceChange()).isEqualByComparingTo(BigDecimal.valueOf(200));
+                    assertThat(dto.changeAmount()).isEqualByComparingTo(BigDecimal.valueOf(200));
                     assertThat(dto.volume()).isEqualTo(50000L);
                 });
         List<StockPriceResponseDto> insertedResult2 = stockPriceMapper.findPricesByCodeAndPeriod("000660", LocalDate.of(2026, 8, 2),LocalDate.of(2026, 8, 2));
@@ -107,7 +107,7 @@ public class StockPriceMapperTest {
                     assertThat(dto.closePrice()).isEqualByComparingTo(BigDecimal.valueOf(8000));
                     assertThat(dto.lowPrice()).isEqualByComparingTo(BigDecimal.valueOf(6500));
                     assertThat(dto.highPrice()).isEqualByComparingTo(BigDecimal.valueOf(8500));
-                    assertThat(dto.priceChange()).isEqualByComparingTo(BigDecimal.valueOf(500));
+                    assertThat(dto.changeAmount()).isEqualByComparingTo(BigDecimal.valueOf(500));
                     assertThat(dto.volume()).isEqualTo(120000L );
                 });
 

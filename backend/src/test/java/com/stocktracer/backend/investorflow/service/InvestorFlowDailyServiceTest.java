@@ -88,7 +88,7 @@ public class InvestorFlowDailyServiceTest {
             // when & then
             assertThatThrownBy(() -> investorFlowDailyService.save(dtos))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("중복된 (종목코드, 기준일)")
+                    .hasMessageContaining("중복된 key")
                     .hasMessageContaining(SAMSUNG);
 
             verifyNoInteractions(stockInfoRepository, investorFlowDailyRepository);
@@ -207,7 +207,7 @@ public class InvestorFlowDailyServiceTest {
 
     private static StockInfo stockInfo(String stockCode) {
         StockInfo stockInfo = mock(StockInfo.class); // 가짜 객체 생성 (new처럼 생성하나 실제 실행 불가)
-        given(stockInfo.getStockCode()).willReturn(stockCode); // stockCode 호출 시 반환값 지정
+        given(stockInfo.stockCode()).willReturn(stockCode); // stockCode 호출 시 반환값 지정
         return stockInfo;
     }
 

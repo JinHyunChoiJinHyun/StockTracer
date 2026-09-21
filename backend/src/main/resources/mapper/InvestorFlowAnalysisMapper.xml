@@ -31,7 +31,7 @@
             #{f.baseDate},
             #{f.stockCode},
             #{f.netRatio, jdbcType=DECIMAL}, <!-- null인 경우 처리 방법 안내 미작성 시 JdbcType OTHER 예외 발생 -->
-            #{f.flow_score},
+            #{f.flowScore},
             #{f.doubleBuy},
             #{f.cleanBuy},
             #{f.reason, jdbcType=VARCHAR} <!-- null인 경우 처리 방법 안내 -->

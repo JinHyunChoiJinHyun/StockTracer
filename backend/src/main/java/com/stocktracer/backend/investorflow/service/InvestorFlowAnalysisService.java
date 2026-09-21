@@ -76,7 +76,7 @@ public class InvestorFlowAnalysisService {
             ));
         }
 
-        return daily.stream().collect(Collectors.toMap(InvestorFlowDaily::getStockCode, Function.identity()));
+        return daily.stream().collect(Collectors.toMap(InvestorFlowDaily::stockCode, Function.identity()));
     }
 
     // daily 데이터 누락 여부 확인

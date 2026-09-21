@@ -96,10 +96,10 @@
          stock_code,
          base_date,
          open_price,
-         change_amount,
+         close_price,
          low_price,
          high_price,
-         price_change,
+         change_amount,
          volume,
          trading_value,
          market_cap

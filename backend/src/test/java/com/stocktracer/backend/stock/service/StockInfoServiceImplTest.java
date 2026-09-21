@@ -39,8 +39,8 @@ public class StockInfoServiceImplTest {
     void saveOrUpdateStocks_delegatesToRepository(){
         // given
         List<StockInfoDto> dtos = List.of(
-                new StockInfoDto("005930", "삼성전자", "KOSPI"),
-                new StockInfoDto("035720", "카카오", "KOSPI")
+                new StockInfoDto("005930", "삼성전자", "KOSPI", "전자"),
+                new StockInfoDto("035720", "카카오", "KOSPI", "모바일")
         );
 
         // when
@@ -48,39 +48,39 @@ public class StockInfoServiceImplTest {
 
         // then
         ArgumentCaptor<List<StockInfo>> captor = ArgumentCaptor.forClass(List.class);
-        verify(stockInfoRepository).bulkSave(captor.capture());
+        verify(stockInfoRepository).upsertAll(captor.capture());
 
         List<StockInfo> saved = captor.getValue();
         assertThat(saved).hasSize(2);
-        assertThat(saved).extracting((StockInfo::getStockCode))
+        assertThat(saved).extracting((StockInfo::stockCode))
                 .containsExactly("005930","035720");
-        assertThat(saved.get(0).getMarket()).isEqualTo(MarketType.KOSPI);
+        assertThat(saved.get(0).market()).isEqualTo(MarketType.KOSPI);
     }
 
     @Test
     @DisplayName("빈 리스트면 repository를 호출하지 않는다")
     void saveOrUpdateStocks_emptyList(){
         stockInfoServiceImpl.saveOrUpdateStocks(List.of());
-        verify(stockInfoRepository, never()).bulkSave(any());
+        verify(stockInfoRepository, never()).upsertAll(any());
     }
 
     @Test
     @DisplayName("null이면 repository를 호출하지 않는다")
     void saveOrUpdateStocks_null() {
         stockInfoServiceImpl.saveOrUpdateStocks(null);
-        verify(stockInfoRepository, never()).bulkSave(any());
+        verify(stockInfoRepository, never()).upsertAll(any());
     }
 
     @Test
     @DisplayName("종목 코드로 조회한다")
     void findByStockCode_found(){
-        StockInfo stock = StockInfo.create("005930", "삼성전자", MarketType.KOSPI);
+        StockInfo stock = new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자");
         given(stockInfoRepository.findByStockCode("005930"))
                 .willReturn(Optional.of(stock));
 
         StockInfo result = stockInfoServiceImpl.findByStockCode("005930");
 
-        assertThat(result.getStockName()).isEqualTo("삼성전자");
+        assertThat(result.stockName()).isEqualTo("삼성전자");
     }
 
     @Test

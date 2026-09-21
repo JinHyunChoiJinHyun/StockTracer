@@ -22,7 +22,7 @@ public class StockInfoRepositoryImpl implements StockInfoRepository {
     @Override
     public Optional<StockInfo> findByStockCode(String stockCode) {
         return jpaInfoRepository.findById(stockCode)
-                .map(StockInfo::from);
+                .map(StockInfoEntity::toDomain);
     }
 
     @Override
@@ -46,8 +46,8 @@ public class StockInfoRepositoryImpl implements StockInfoRepository {
     }
 
     @Override
-    public void bulkSave(List<StockInfo> stockInfos) {
+    public void upsertAll(List<StockInfo> stockInfos) {
         if(stockInfos.isEmpty()) return;
-        stockInfoMapper.bulkUpsert(stockInfos);
+        stockInfoMapper.upsertAll(stockInfos);
     }
 }

@@ -28,7 +28,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @ActiveProfiles("test")
 public class StockInfoMapperTest {
     @Autowired
-    private StockInfoMapper stockInfoMapper;
+    private StockInfoMapper mapper;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -43,13 +43,13 @@ public class StockInfoMapperTest {
     void bulkUpsert_insert(){
         // given
         List<StockInfo> stocks = List.of(
-                StockInfo.create("005930", "삼성전자", MarketType.KOSPI),
-                StockInfo.create("035720", "카카오", MarketType.KOSPI),
-                StockInfo.create("247540", "에코프로비엠", MarketType.KOSDAQ)
+                new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자"),
+                new StockInfo("035720", "카카오", MarketType.KOSPI, "모바일"),
+                new StockInfo("247540", "에코프로비엠", MarketType.KOSDAQ, "어디")
         );
 
         // when
-        stockInfoMapper.bulkUpsert(stocks);
+        mapper.upsertAll(stocks);
 
         // then
         Integer count = jdbcTemplate.queryForObject(
@@ -67,16 +67,16 @@ public class StockInfoMapperTest {
     @DisplayName("같은 종목 코드면 행이 늘지 않고 값만 갱신된다")
     void bulkUpsert_update(){
         // given
-        stockInfoMapper.bulkUpsert(
+        mapper.upsertAll(
                 List.of(
-                        StockInfo.create("005930", "삼성전자", MarketType.KOSPI)
+                        new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자")
                 )
         );
 
         // when
-        stockInfoMapper.bulkUpsert(
+        mapper.upsertAll(
                 List.of(
-                        StockInfo.create("005930", "삼성전자우", MarketType.KOSDAQ)
+                        new StockInfo("005930", "삼성전자우", MarketType.KOSDAQ, "전자")
                 )
         );
 
@@ -97,14 +97,14 @@ public class StockInfoMapperTest {
     @DisplayName("신규와 기존이 섞여 있어도 한 번에 처리된다")
     void bulkUpsert_mixed(){
         // given
-        stockInfoMapper.bulkUpsert(List.of(
-                StockInfo.create("005930", "삼성전자", MarketType.KOSPI)
+        mapper.upsertAll(List.of(
+                new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자")
         ));
 
         // when
-        stockInfoMapper.bulkUpsert(List.of(
-                StockInfo.create("005930", "삼성전자", MarketType.KOSPI), // 기존
-                StockInfo.create("035720", "카카오", MarketType.KOSPI) // 신규
+        mapper.upsertAll(List.of(
+                new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자"),
+                new StockInfo("035720", "카카오", MarketType.KOSPI, "모바일") // 신규
         ));
 
         // then
@@ -119,13 +119,13 @@ public class StockInfoMapperTest {
     void bulkUpsert_largeBatch(){
         // given
         List<StockInfo> stocks = java.util.stream.IntStream.range(0, 1000) // 단순 데이터 변환 작업이므로 stream 사용
-                .mapToObj(i -> StockInfo.create(
-                        String.format("%06d", i), "종목" + i, MarketType.KOSPI
+                .mapToObj(i -> new StockInfo(
+                        String.format("%06d", i), "종목" + i, MarketType.KOSPI, "전체"
                 ))
                 .toList();
 
         // when
-        stockInfoMapper.bulkUpsert(stocks);
+        mapper.upsertAll(stocks);
 
         // then
         Integer count = jdbcTemplate.queryForObject(

@@ -9,5 +9,5 @@ public interface StockInfoRepository {
     Optional<StockInfo> findByStockCode(String stockCode);
     List<StockInfo> findAllByStockCodeIn(List<String> stockCodes);
     void save(StockInfo stockInfo);
-    void bulkSave(List<StockInfo> stockInfos);
+    void upsertAll(List<StockInfo> stockInfos);
 }

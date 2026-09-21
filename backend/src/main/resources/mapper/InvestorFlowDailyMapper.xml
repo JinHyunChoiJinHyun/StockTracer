@@ -2,6 +2,17 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stocktracer.backend.investorflow.mapper.InvestorFlowDailyMapper">
+    <resultMap id="investorFlowDailyMap" type="com.stocktracer.backend.investorflow.domain.InvestorFlowDaily">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <idArg column="base_date" javaType="java.time.LocalDate"/>
+            <arg column="foreign_net" javaType="_long"/>
+            <arg column="institution_net" javaType="_long"/>
+            <arg column="individual_net" javaType="_long"/>
+            <arg column="trading_value" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
     <!-- 1. 투자자별 순매도액 대량 저장 -->
     <insert id="bulkUpsert">
         INSERT INTO investor_flow_daily (

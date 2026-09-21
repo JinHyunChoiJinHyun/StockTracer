@@ -8,5 +8,5 @@ import java.util.List;
 
 @Mapper
 public interface StockInfoMapper {
-    void bulkUpsert(@Param("infos") List<StockInfo> infos);
+    void upsertAll(@Param("infos") List<StockInfo> infos);
 }

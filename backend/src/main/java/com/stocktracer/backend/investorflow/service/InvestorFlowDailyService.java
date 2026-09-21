@@ -45,7 +45,7 @@ public class InvestorFlowDailyService {
 
         // 3. dto -> InvestorFlowDaily로 변환
         Map<String, StockInfo> stockInfoMap = stockInfos.stream()
-                .collect(Collectors.toMap(StockInfo::getStockCode, Function.identity()));
+                .collect(Collectors.toMap(StockInfo::stockCode, Function.identity()));
 
         // 누락 종목 처리 (해결법 논의 필요)
         List<String> missing = stockCodes.stream()
@@ -56,7 +56,7 @@ public class InvestorFlowDailyService {
         }
 
         List<InvestorFlowDaily> flows = request.stream()
-                .map(dto -> InvestorFlowDaily.of(dto.stockCode(),dto.baseDate(),dto.foreignNet(),dto.institutionNet(),dto.individualNet(),dto.tradingValue()))
+                .map(dto -> new InvestorFlowDaily(dto.stockCode(),dto.baseDate(),dto.foreignNet(),dto.institutionNet(),dto.individualNet(),dto.tradingValue()))
                 .toList();
 
 

@@ -52,8 +52,8 @@ public record InvestorFlowAnalysisRequestDto(
         public InvestorFlowAnalysis toDomain(
                 InvestorFlowDaily daily){
                 return InvestorFlowAnalysis.of(
-                        this.stockCode,
                         this.baseDate,
+                        this.stockCode,
                         this.netRatio,
                         this.score,
                         this.doubleBuy,

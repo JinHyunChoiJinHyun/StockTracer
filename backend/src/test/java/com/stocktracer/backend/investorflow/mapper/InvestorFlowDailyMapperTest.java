@@ -44,7 +44,7 @@ public class InvestorFlowDailyMapperTest {
     void 빈_테이블에_신규_INSERT된다(){
 
         List<InvestorFlowDaily> flows = List.of(
-                InvestorFlowDaily.of(
+                new InvestorFlowDaily(
                         "005930",
                         LocalDate.of(2026, 8, 16),
                         150000000L,
@@ -52,7 +52,7 @@ public class InvestorFlowDailyMapperTest {
                         -100000000L,
                         500000000L),
 
-                InvestorFlowDaily.of(
+                new InvestorFlowDaily(
                         "000660",
                         LocalDate.of(2026, 8, 16),
                         150000000L,
@@ -80,9 +80,9 @@ public class InvestorFlowDailyMapperTest {
                 500000000L
         );
 
-        StockInfo samsungStock = StockInfo.create("005930", "삼성전자", MarketType.KOSPI); // 가정된 생성자
+        StockInfo samsungStock = new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자"); // 가정된 생성자
 
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+        mapper.bulkUpsert(List.of(new InvestorFlowDaily(
                 "005930",
                 LocalDate.of(2026, 8, 16),
                 150000000L,
@@ -91,7 +91,7 @@ public class InvestorFlowDailyMapperTest {
                 500000000L
         )));
 
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+        mapper.bulkUpsert(List.of(new InvestorFlowDaily(
                 "005930",
                 LocalDate.of(2026, 8, 16),
                 250000000L,
@@ -116,7 +116,7 @@ public class InvestorFlowDailyMapperTest {
     @Test
     void tradingValue가_null이어도_저장(){
 
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+        mapper.bulkUpsert(List.of(new InvestorFlowDaily(
                 "005930",
                 LocalDate.of(2026, 8, 16),
                 250000000L,

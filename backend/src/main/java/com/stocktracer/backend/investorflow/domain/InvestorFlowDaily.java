@@ -10,16 +10,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
-@Getter
-@Builder(access = AccessLevel.PRIVATE) // 외부 build 차단
-public class InvestorFlowDaily {
-    private final String stockCode;
-    private final LocalDate baseDate;
-    private final long foreignNet; // null 불가
-    private final long institutionNet; // null 불가
-    private final long individualNet; // null 불가
-    private final Long tradingValue; // sql에서 join
-
+public record InvestorFlowDaily (
+        String stockCode,
+        LocalDate baseDate,
+        long foreignNet,
+        long institutionNet,
+        long individualNet,
+        Long tradingValue // sql join
+){
+    public InvestorFlowDaily {
+        validateAmountScale(stockCode, foreignNet, institutionNet, individualNet, tradingValue);
+    }
     /* 계산 로직 */
     // major 수급 (외국인 + 기관)
     public long majorNet() {
@@ -35,26 +36,6 @@ public class InvestorFlowDaily {
 
         return BigDecimal.valueOf(majorNet())
                 .divide(BigDecimal.valueOf(tradingValue), RATIO_SCALE, RoundingMode.HALF_UP);
-    }
-
-    public static InvestorFlowDaily of(
-            String stockCode,
-            LocalDate baseDate,
-            long foreignNet,
-            long institutionNet,
-            long individualNet,
-            Long tradingValue
-    ){
-        validateAmountScale(stockCode, foreignNet, institutionNet, individualNet, tradingValue);
-
-        return InvestorFlowDaily.builder()
-                .stockCode(stockCode)
-                .baseDate(baseDate)
-                .foreignNet(foreignNet)
-                .institutionNet(institutionNet)
-                .individualNet(individualNet)
-                .tradingValue(tradingValue)
-                .build();
     }
 
     /* 도메인 규칙 검증 */

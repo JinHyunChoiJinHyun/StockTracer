@@ -62,10 +62,10 @@ public record InvestorFlowAnalysis (
 
     // pk 검증
     private static void validateSameKey(String stockCode, LocalDate baseDate, InvestorFlowDaily daily){
-        if(!stockCode.equals(daily.getStockCode()) || !baseDate.equals(daily.getBaseDate())){
+        if(!stockCode.equals(daily.stockCode()) || !baseDate.equals(daily.baseDate())){
             throw new IllegalArgumentException(String.format(
                     "원본 매칭 오류: 분석=(%s, %s), 원본=(%s, %s)",
-                    stockCode, baseDate, daily.getStockCode(), daily.getBaseDate()
+                    stockCode, baseDate, daily.stockCode(), daily.baseDate()
             ));
         }
     }
@@ -81,17 +81,17 @@ public record InvestorFlowAnalysis (
 
     // 플래그와 원본 금액의 모순 검증
     private static void validateFlagAgainstDaily(String stockCode, boolean doubleBuy, boolean cleanBuy, InvestorFlowDaily daily){
-        if (doubleBuy && (daily.getForeignNet() <= 0 || daily.getInstitutionNet() <= 0)){
+        if (doubleBuy && (daily.foreignNet() <= 0 || daily.institutionNet() <= 0)){
             throw new IllegalArgumentException(String.format(
                     "[%s] 쌍끌이인데 순매수가 양수가 아닙니다 (외국인 = %d, 기관 = %d)",
-                    stockCode, daily.getForeignNet(), daily.getInstitutionNet()
+                    stockCode, daily.foreignNet(), daily.institutionNet()
             ));
         }
 
-        if(cleanBuy && daily.getIndividualNet() >= 0){
+        if(cleanBuy && daily.individualNet() >= 0){
             throw new IllegalArgumentException(String.format(
                     "[%s] 손바뀜인데 개인이 순매수(%d)입니다",
-                    stockCode, daily.getIndividualNet()
+                    stockCode, daily.individualNet()
             ));
         }
     }

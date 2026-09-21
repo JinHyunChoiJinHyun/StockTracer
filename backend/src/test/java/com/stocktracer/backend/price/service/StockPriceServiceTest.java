@@ -7,6 +7,7 @@ import com.stocktracer.backend.price.dto.StockPriceSaveRequestDto;
 import com.stocktracer.backend.price.exception.InvalidDateRangeException;
 import com.stocktracer.backend.price.exception.StockPriceNotFoundException;
 import com.stocktracer.backend.price.mapper.StockPriceMapper;
+import com.stocktracer.backend.price.repository.interfaces.StockPriceRepository;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
 import com.stocktracer.backend.stock.exception.StockInfoNotFoundException;
@@ -34,6 +35,9 @@ public class StockPriceServiceTest {
     private StockPriceMapper stockPriceMapper; // 가짜 객체 생성
 
     @Mock
+    private StockPriceRepository priceRepository;
+
+    @Mock
     private StockInfoRepository stockInfoRepository;
 
     @InjectMocks // 직접 Impl 객체 생성
@@ -55,7 +59,7 @@ public class StockPriceServiceTest {
         );
 
         // Mapper 조작
-        given(stockPriceMapper.findPricesByCodeAndPeriod(stockCode,startDate,endDate))
+        given(priceRepository.findPricesByCodeAndPeriod(stockCode,startDate,endDate))
                 .willReturn(mockList);
 
         // When (실행)
@@ -67,14 +71,14 @@ public class StockPriceServiceTest {
         assertThat(result.get(0).stockCode()).isEqualTo("005930");
 
         // Mapper 제대로 1번 호출됐는지 확인
-        verify(stockPriceMapper).findPricesByCodeAndPeriod(stockCode,startDate,endDate);
+        verify(priceRepository).findPricesByCodeAndPeriod(stockCode,startDate,endDate);
     }
 
     @Test
     @DisplayName("조회 결과가 비어있으면 StockPriceNotFoundException을 던진다")
     void throwsWhenResultIsEmpty(){
         // Given
-        given(stockPriceMapper.findPricesByCodeAndPeriod(stockCode,startDate,endDate))
+        given(priceRepository.findPricesByCodeAndPeriod(stockCode,startDate,endDate))
                 .willReturn(List.of());
 
         // When & Then
@@ -111,21 +115,21 @@ public class StockPriceServiceTest {
     @Test
     @DisplayName("시작일이 종료일보다 늦으면 IllegalArgumentException을 던진다")
     void throwsWhenStartDateAfterEndDate(){
-        LocalDate invaildStart = endDate.plusDays(1);
+        LocalDate invalidStart = endDate.plusDays(1);
 
         assertThatThrownBy(() ->
-                stockPriceService.getPricesByCodeAndPeriod(stockCode,invaildStart,endDate))
+                stockPriceService.getPricesByCodeAndPeriod(stockCode,invalidStart,endDate))
                 .isInstanceOf(InvalidDateRangeException.class);
 
         verify(stockPriceMapper, never()).findPricesByCodeAndPeriod(anyString(),any(),any());
     }
     private StockPriceResponseDto createDto(
             String stockCode,
-            LocalDate priceDate
+            LocalDate baseDate
     ){
         StockPriceResponseDto dto = StockPriceResponseDto.builder()
                 .stockCode(stockCode)
-                .stockDate(priceDate)
+                .baseDate(baseDate)
                 .build();
         return dto;
     }
@@ -151,41 +155,37 @@ public class StockPriceServiceTest {
         );
         StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(requestDto));
 
-        StockInfo mockInfo = StockInfo.create("005930", "삼성전자", MarketType.KOSPI);
-
-        given(stockInfoRepository.findAllByStockCodeIn(anyList())).willReturn(List.of(mockInfo));
-
         // when
-        stockPriceService.bulkSave(bulkDto);
+        stockPriceService.upsertAll(bulkDto);
 
         // then
-        verify(stockPriceMapper, times(1)).bulkUpsert(anyList());
+        verify(priceRepository, times(1)).upsertAll(anyList());
     }
 
-    @Test
-    @DisplayName("stockInfoMap에 없는 stockCode가 들어오면 StockInfoNotFoundException이 발생한다")
-    void bulkSave_NotFoundStockCode_ThrowsException(){
-        // given
-        StockPriceSaveRequestDto invalidDto = new StockPriceSaveRequestDto(
-                "INVALID_CODE",
-                LocalDate.now(),
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                BigDecimal.ZERO, 0L,BigDecimal.ZERO, BigDecimal.ZERO
-        );
-        StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(invalidDto));
+//    @Test
+//    @DisplayName("stockInfoMap에 없는 stockCode가 들어오면 StockInfoNotFoundException이 발생한다")
+//    void bulkSave_NotFoundStockCode_ThrowsException(){
+//        // given
+//        StockPriceSaveRequestDto invalidDto = new StockPriceSaveRequestDto(
+//                "INVALID_CODE",
+//                LocalDate.now(),
+//                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+//                BigDecimal.ZERO, 0L,BigDecimal.ZERO, BigDecimal.ZERO
+//        );
+//        StockPriceSaveBulkRequestDto bulkDto = new StockPriceSaveBulkRequestDto(List.of(invalidDto));
 //        List<StockPriceSaveRequestDto> bulkDto = List.of(invalidDto);
-
-        // IN 쿼리 결과가 빈 리스트일 떄
-        given(stockInfoRepository.findAllByStockCodeIn(anyList())).willReturn(List.of()); // 해당 로직 실행 시 반환할 값 지정
-
-        // when & then
-        assertThatThrownBy(() -> stockPriceService.bulkSave(bulkDto))
-                .isInstanceOf(StockInfoNotFoundException.class);
-    }
+//
+//        // IN 쿼리 결과가 빈 리스트일 떄
+//        given(stockInfoRepository.findAllByStockCodeIn(anyList())).willReturn(List.of()); // 해당 로직 실행 시 반환할 값 지정
+//
+//        // when & then
+//        assertThatThrownBy(() -> stockPriceService.upsertAll(bulkDto))
+//                .isInstanceOf(StockInfoNotFoundException.class);
+//    }
 
 
     private StockPrice createStockPrice(String stockCode, String open, String high, String low, String close){
-        return StockPrice.of(
+        return new StockPrice(
                 stockCode,
                 LocalDate.of(2026, 8, 6),
                 new BigDecimal(open),

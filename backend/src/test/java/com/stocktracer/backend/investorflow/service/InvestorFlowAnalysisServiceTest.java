@@ -74,7 +74,7 @@ public class InvestorFlowAnalysisServiceTest {
     }
 
     private InvestorFlowDaily daily(String stockCode){
-        return InvestorFlowDaily.of(
+        return new InvestorFlowDaily(
                 stockCode,
                 BASE_DATE,
                 1_000L,
@@ -125,10 +125,10 @@ public class InvestorFlowAnalysisServiceTest {
             List<InvestorFlowAnalysis> flows = captor.getValue();
             assertThat(flows).hasSize(2);
             assertThat(flows)
-                    .extracting(InvestorFlowAnalysis::getStockCode)
+                    .extracting(InvestorFlowAnalysis::stockCode)
                     .containsExactly(SAMSUNG, HYNIX);
             assertThat(flows)
-                    .extracting(InvestorFlowAnalysis::getBaseDate)
+                    .extracting(InvestorFlowAnalysis::baseDate)
                     .containsOnly(BASE_DATE);
         }
 
@@ -182,7 +182,7 @@ public class InvestorFlowAnalysisServiceTest {
 
             assertThatThrownBy(() -> analysisService.save(requests))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("중복된 종목코드")
+                    .hasMessageContaining("중복된 key")
                     .hasMessageContaining(SAMSUNG);
 
             verifyNoInteractions(dailyRepository, analysisRepository);

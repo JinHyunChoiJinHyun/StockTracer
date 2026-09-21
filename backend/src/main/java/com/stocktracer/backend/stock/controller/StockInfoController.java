@@ -20,9 +20,9 @@ public class StockInfoController {
 
     @PostMapping("/info")
     public ResponseEntity<String> saveOrUpdateStocks(
-            @RequestBody List<StockInfoDto> dtos // json -> 객체로 변환
+            @RequestBody List<StockInfoDto> request // json -> 객체로 변환
     ){
-        stockInfoService.saveOrUpdateStocks(dtos);
+        stockInfoService.saveOrUpdateStocks(request);
         return ResponseEntity.ok("주식 정보가 정상적으로 처리되었습니다.");
     }
 }
