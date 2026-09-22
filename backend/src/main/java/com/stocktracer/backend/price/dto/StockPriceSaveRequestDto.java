@@ -26,7 +26,7 @@ public record StockPriceSaveRequestDto(
     @NotNull @Positive BigDecimal closePrice,
     @NotNull @Positive BigDecimal lowPrice,
     @NotNull @Positive BigDecimal highPrice,
-    BigDecimal changeAmount,
+    BigDecimal changeRate,
     @NotNull @PositiveOrZero Long volume, // 거래정지 시 0일 가능성 있음
     @NotNull @PositiveOrZero BigDecimal tradingValue, // 거래정지 시 0일 가능성 있음
     @NotNull @Positive BigDecimal marketCap

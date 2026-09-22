@@ -15,11 +15,10 @@ public record InvestorFlowDaily (
         LocalDate baseDate,
         long foreignNet,
         long institutionNet,
-        long individualNet,
-        Long tradingValue // sql join
+        long individualNet
 ){
     public InvestorFlowDaily {
-        validateAmountScale(stockCode, foreignNet, institutionNet, individualNet, tradingValue);
+        validateAmountScale(stockCode, foreignNet, institutionNet, individualNet);
     }
     /* 계산 로직 */
     // major 수급 (외국인 + 기관)
@@ -29,14 +28,14 @@ public record InvestorFlowDaily (
 
     // 순매수 비율 (major 수급 / 거래대금)
     private static final int RATIO_SCALE = 6; // final이 붙은 상수는 대문자 + _로 구분
-    public BigDecimal netRatio(){
-        if(tradingValue == null || tradingValue == 0L){
-            return null;
-        }
-
-        return BigDecimal.valueOf(majorNet())
-                .divide(BigDecimal.valueOf(tradingValue), RATIO_SCALE, RoundingMode.HALF_UP);
-    }
+//    public BigDecimal netRatio(){
+//        if(tradingValue == null || tradingValue == 0L){
+//            return null;
+//        }
+//
+//        return BigDecimal.valueOf(majorNet())
+//                .divide(BigDecimal.valueOf(tradingValue), RATIO_SCALE, RoundingMode.HALF_UP);
+//    }
 
     /* 도메인 규칙 검증 */
     private static void validateAmountScale(
@@ -58,6 +57,7 @@ public record InvestorFlowDaily (
 
     // 순매수 절대값이 거래대금을 초과하는지 확인
     // -> 넘는다면 단위 불일치 혹은 코드 조인 오류
+    // -> 파이썬에서 검증
     private static void checkWithinTradingValue(
             String stockCode,
             String label,

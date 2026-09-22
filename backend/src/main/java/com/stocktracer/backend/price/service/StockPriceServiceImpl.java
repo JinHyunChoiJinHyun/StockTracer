@@ -81,7 +81,7 @@ public class StockPriceServiceImpl implements StockPriceService {
 
         // 각 dto의 code와 일치하는 StockInfo와 조합해 객체로 변환
         List<StockPrice> prices = request.items().stream() // 가독성 좋은 for문
-                .map(dto -> new StockPrice(dto.stockCode(),dto.baseDate(),dto.openPrice(),dto.closePrice(),dto.lowPrice(),dto.highPrice(),dto.changeAmount(),dto.volume(),dto.tradingValue(),dto.marketCap()))
+                .map(dto -> new StockPrice(dto.stockCode(),dto.baseDate(),dto.openPrice(),dto.closePrice(),dto.lowPrice(),dto.highPrice(),dto.changeRate(),dto.volume(),dto.tradingValue(),dto.marketCap()))
                 .peek(stockPrice -> { // 값 제대로 입력 됐는지 확인
                     System.out.println(
                             "종목코드: " + stockPrice.stockCode() +

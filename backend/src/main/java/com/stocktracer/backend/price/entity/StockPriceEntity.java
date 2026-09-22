@@ -72,7 +72,7 @@ public class StockPriceEntity extends BaseEntity {
                 this.lowPrice = stockPrice.lowPrice();
                 this.closePrice = stockPrice.closePrice();
                 this.volume = stockPrice.volume();
-                this.changeAmount = stockPrice.changeAmount();
+                this.changeAmount = stockPrice.changeRate();
                 this.tradingValue = stockPrice.tradingValue();
                 this.marketCap = stockPrice.marketCap();
         }

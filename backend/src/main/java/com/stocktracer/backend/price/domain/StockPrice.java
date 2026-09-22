@@ -15,7 +15,7 @@ public record StockPrice (
         BigDecimal closePrice,
         BigDecimal lowPrice,
         BigDecimal highPrice,
-        BigDecimal changeAmount,
+        BigDecimal changeRate,
         Long volume,
         BigDecimal tradingValue, // 거래대금
         BigDecimal marketCap // 시가총액
