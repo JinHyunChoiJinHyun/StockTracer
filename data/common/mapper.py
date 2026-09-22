@@ -23,12 +23,12 @@ def to_stock_payload(df) -> list[dict]:
 def to_price_payload(df) -> list[dict]:
     field_map = {
         "티커": "stock_code",
-        "날짜": "price_date",
+        "날짜": "base_date",
         "시가": "open_price",
         "고가": "high_price",
         "저가": "low_price",
         "종가": "close_price",
-        "등락률": "price_change",
+        "등락률": "change_rate",
         "거래량": "volume",
         "거래대금": "trading_value",
         "시가총액": "market_cap"

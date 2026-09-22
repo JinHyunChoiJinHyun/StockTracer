@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__) 
 
-date = "20260901"
+date = "20260904"
 STOCK_PRICE_ENDPOINT = "/prices/bulk"
 
 def run_price_pipeline(date:str) -> bool:

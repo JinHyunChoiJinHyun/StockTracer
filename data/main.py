@@ -35,7 +35,7 @@ def run_daily_batch() -> bool:
             return False
         
         # 종목은 FK 대상이므로 실패 시 이후 파이프라인 중단
-        if not _run_pipeline("종목", stock_info_pipeline.run_stock_pipeline):
+        if not _run_pipeline("종목", stock_info_pipeline.run_stock_pipeline,date):
             logger.error("배치 중단: 종목 파이프라인 실패")
             return False
 
