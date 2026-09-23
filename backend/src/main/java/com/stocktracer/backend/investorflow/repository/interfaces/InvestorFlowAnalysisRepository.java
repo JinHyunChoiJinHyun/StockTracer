@@ -5,5 +5,5 @@ import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import java.util.List;
 
 public interface InvestorFlowAnalysisRepository {
-    int bulkUpsert(List<InvestorFlowAnalysis> flows);
+    int upsertAll(List<InvestorFlowAnalysis> flows);
 }

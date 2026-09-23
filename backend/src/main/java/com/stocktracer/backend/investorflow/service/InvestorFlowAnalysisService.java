@@ -25,26 +25,25 @@ public class InvestorFlowAnalysisService {
 
     @Transactional
     public int save(List<InvestorFlowAnalysisRequestDto> request){
-        // 검증
+        // 1. 검증
         if(request.isEmpty()){
             log.info("수급 분석 요청 없음 - 처리 생략");
             return 0;
         }
 
-        validateSingleBaseDate(request);
         Validates.duplicateKeys(request, item -> item.stockCode() + "@" + item.baseDate());
 
         LocalDate baseDate = request.get(0).baseDate();
         Map<String, InvestorFlowDaily> dailyMap = loadDaily(baseDate);
         validateNoMissingDailyData(request, dailyMap);
 
-        // 변환
+        // 2. 변환
         List<InvestorFlowAnalysis> flows = request.stream()
                 .map(r -> r.toDomain(dailyMap.get(r.stockCode())))
                 .toList(); // 수정 불가
 
-        // 저장
-        int affected = analysisRepository.bulkUpsert(flows);
+        // 3. 저장
+        int affected = analysisRepository.upsertAll(flows);
         log.info("수급 분석 저장 완료: 기준일={}, 요청={}건, 반영={}",
                 baseDate, flows.size(),affected);
 
@@ -52,19 +51,6 @@ public class InvestorFlowAnalysisService {
     }
 
     /* 서비스 검증 로직 */
-    // 배치 1회당 1 영업일
-    private void validateSingleBaseDate(List<InvestorFlowAnalysisRequestDto> requests){
-        Set<LocalDate> dates = requests.stream()
-                .map(InvestorFlowAnalysisRequestDto::baseDate)
-                .collect(Collectors.toSet());
-
-        if (dates.size() > 1){
-            throw new IllegalArgumentException(
-                    "단일 일자만 처리합니다. 입력된 날짜: " + new TreeSet<>(dates)
-            );
-        }
-    }
-
     // daily flow 조회
     private Map<String, InvestorFlowDaily> loadDaily (LocalDate baseDate){
         List<InvestorFlowDaily> daily = dailyRepository.findByBaseDate(baseDate);

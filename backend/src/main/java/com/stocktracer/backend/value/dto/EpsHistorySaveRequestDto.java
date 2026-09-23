@@ -17,7 +17,7 @@ public record EpsHistorySaveRequestDto(
     public record Item(
             @NotNull (message = "기준일은 필수입니다.")
             @PastOrPresent(message = "기준일은 미래일 수 없습니다.")
-            LocalDate effectiveDate,
+            LocalDate baseDate,
 
             @NotBlank
             @Pattern(regexp = "[A-Za-z0-9]{6}",
@@ -32,7 +32,7 @@ public record EpsHistorySaveRequestDto(
         return items.stream()
                 .map(i -> new EpsHistory(
                         i.stockCode(),
-                        i.effectiveDate(),
+                        i.baseDate(),
                         i.eps())
                 )
                 .toList();

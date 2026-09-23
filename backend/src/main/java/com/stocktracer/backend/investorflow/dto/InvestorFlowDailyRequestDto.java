@@ -1,6 +1,7 @@
 package com.stocktracer.backend.investorflow.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -29,4 +30,13 @@ public record InvestorFlowDailyRequestDto(
         @NotNull(message = "개인 순매수는 필수입니다")
         Long individualNet
 ) {
+        public InvestorFlowDaily toDomain(){
+                return new InvestorFlowDaily(
+                        stockCode,
+                        baseDate,
+                        foreignNet,
+                        institutionNet,
+                        individualNet
+                );
+        }
 }

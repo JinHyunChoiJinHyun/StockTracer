@@ -35,30 +35,14 @@ public class InvestorFlowDailyService {
         }
         Validates.duplicateKeys(request, item -> item.stockCode() + "@" + item.baseDate());
 
-        // 2. 미등록 종목 검증
-
-
+        // 2. 변환
         List<InvestorFlowDaily> flows = request.stream()
-                .map(dto -> new InvestorFlowDaily(dto.stockCode(),dto.baseDate(),dto.foreignNet(),dto.institutionNet(),dto.individualNet()))
+                .map(InvestorFlowDailyRequestDto::toDomain)
                 .toList();
+        // 3. 저장
+        int affected = dailyRepository.upsertAll(flows);
+        log.info("일별 수급 저장 완료: 요청={}건, 반영={}", flows.size(), affected);
 
-
-        return dailyRepository.bulkSave(flows);
+        return affected;
     }
-
-    // stock_info 미등록 종목 검증
-    private void validateStockInfoExists(List<InvestorFlowDailyRequestDto> request){
-        // 1. stockCode 추출
-        List<String> stockCodes = request.stream()
-                .map(InvestorFlowDailyRequestDto::stockCode)
-                .distinct()
-                .toList();
-
-        // 2. 추출한 stockCode로 IN 쿼리 조회
-        Set<String> registered = stockInfoRepository.findAllByStockCodeIn(stockCodes).stream()
-                .map(StockInfo::stockCode)
-                .collect(Collectors.toSet());
-
-    }
-
 }

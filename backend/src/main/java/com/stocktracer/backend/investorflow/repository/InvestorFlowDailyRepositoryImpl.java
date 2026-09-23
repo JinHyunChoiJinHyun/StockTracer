@@ -19,12 +19,12 @@ public class InvestorFlowDailyRepositoryImpl implements InvestorFlowDailyReposit
     private final InvestorFlowDailyMapper investorFlowDailyMapper;
     private final InvestorFlowDailyJpaRepository investorFlowDailyJpaRepository;
     @Override
-    public int bulkSave(List<InvestorFlowDaily> flows) {
+    public int upsertAll(List<InvestorFlowDaily> flows) {
         // 1000개씩 나눠서 배치 처리
         int affected = 0;
         List<List<InvestorFlowDaily>> batches = ListUtils.partition(flows, 1000);
         for(List<InvestorFlowDaily> batch : batches){
-            affected += investorFlowDailyMapper.bulkUpsert(batch);
+            affected += investorFlowDailyMapper.upsertAll(batch);
         }
         return affected;
     }

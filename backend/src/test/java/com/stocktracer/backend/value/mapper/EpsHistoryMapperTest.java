@@ -44,7 +44,7 @@ public class EpsHistoryMapperTest {
             String eps
     ){
         jdbc.update("""
-            INSERT INTO eps_history (stock_code, effective_date, eps)
+            INSERT INTO eps_history (stock_code, base_date, eps)
             VALUES (?, ?, ?)
         """, code, LocalDate.parse(date), new BigDecimal(eps));
     }
@@ -67,7 +67,7 @@ public class EpsHistoryMapperTest {
 
         assertThat(result).hasSize(2);
         assertThat(result.get("005930").eps()).isEqualByComparingTo("6012");
-        assertThat(result.get("005930").effectiveDate()).isEqualTo(LocalDate.of(2026,5,16));
+        assertThat(result.get("005930").baseDate()).isEqualTo(LocalDate.of(2026,5,16));
         assertThat(result.get("000660").eps()).isEqualByComparingTo("12040");
     }
 
@@ -279,9 +279,9 @@ public class EpsHistoryMapperTest {
         );
     }
 
-    private BigDecimal getEps(String stockCode, LocalDate effectiveDate) {
+    private BigDecimal getEps(String stockCode, LocalDate baseDate) {
         return jdbc.queryForObject(
-                "SELECT eps FROM eps_history WHERE stock_code = ? AND effective_date = ?",
-                BigDecimal.class, stockCode, effectiveDate);
+                "SELECT eps FROM eps_history WHERE stock_code = ? AND base_date = ?",
+                BigDecimal.class, stockCode, baseDate);
     }
 }

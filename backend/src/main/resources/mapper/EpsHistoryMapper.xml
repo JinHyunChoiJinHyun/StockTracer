@@ -5,7 +5,7 @@
     <resultMap id="epsPrevMap" type="com.stocktracer.backend.value.domain.EpsHistory">
         <constructor>
             <idArg column="stock_code" javaType="java.lang.String"/>
-            <arg column="effective_date" javaType="java.time.LocalDate"/>
+            <arg column="base_date" javaType="java.time.LocalDate"/>
             <arg column="eps" javaType="java.math.BigDecimal"/>
         </constructor>
     </resultMap>
@@ -15,17 +15,17 @@
         SELECT
             h.stock_code,
             h.eps,
-            h.effective_date
+            h.base_date
         FROM(
             SELECT
                 stock_code,
                 eps,
-                effective_date,
-                ROW_NUMBER() OVER (PARTITION BY stock_code ORDER BY effective_date DESC) AS rn
+                base_date,
+                ROW_NUMBER() OVER (PARTITION BY stock_code ORDER BY base_date DESC) AS rn
             FROM
                 eps_history
             WHERE
-                effective_date &lt; #{baseDate} <!-- 금일 날짜 제외 -->
+                base_date &lt; #{baseDate} <!-- 금일 날짜 제외 -->
             ) h
         WHERE h.rn = 1 <!-- 직전 행만 반환 -->
     </select>
@@ -35,14 +35,14 @@
         INSERT INTO eps_history
             (
              stock_code,
-             effective_date,
+             base_date,
              eps
             )
         VALUES
         <foreach collection="eps" item="e" separator=",">
             (
              #{e.stockCode},
-             #{e.effectiveDate},
+             #{e.baseDate},
              #{e.eps}
             )
         </foreach>

@@ -61,7 +61,7 @@ public class InvestorFlowDailyMapperTest {
                         )
         );
 
-        mapper.bulkUpsert(flows);
+        mapper.upsertAll(flows);
 
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM investor_flow_daily", Integer.class
@@ -81,7 +81,7 @@ public class InvestorFlowDailyMapperTest {
 
         StockInfo samsungStock = new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자"); // 가정된 생성자
 
-        mapper.bulkUpsert(List.of(new InvestorFlowDaily(
+        mapper.upsertAll(List.of(new InvestorFlowDaily(
                 "005930",
                 LocalDate.of(2026, 8, 16),
                 150000000L,
@@ -89,7 +89,7 @@ public class InvestorFlowDailyMapperTest {
                 -100000000L
         )));
 
-        mapper.bulkUpsert(List.of(new InvestorFlowDaily(
+        mapper.upsertAll(List.of(new InvestorFlowDaily(
                 "005930",
                 LocalDate.of(2026, 8, 16),
                 250000000L,

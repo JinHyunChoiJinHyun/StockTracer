@@ -118,7 +118,7 @@ public class InvestorFlowDailyServiceTest {
                     .hasMessageContaining("stock_info 미등록 종목")
                     .hasMessageContaining(Sk);
 
-            verify(investorFlowDailyRepository, never()).bulkSave(anyList());
+            verify(investorFlowDailyRepository, never()).upsertAll(anyList());
         }
 
         @Test
@@ -133,7 +133,7 @@ public class InvestorFlowDailyServiceTest {
             given(stockInfoRepository.findAllByStockCodeIn(anyList()))
                     .willReturn(List.of(samsung, sk));
 
-            given(investorFlowDailyRepository.bulkSave(anyList())).willReturn(2);
+            given(investorFlowDailyRepository.upsertAll(anyList())).willReturn(2);
 
             // when
             investorFlowDailyService.save(dtos);
@@ -163,7 +163,7 @@ public class InvestorFlowDailyServiceTest {
             given(stockInfoRepository.findAllByStockCodeIn((anyList())))
                     .willReturn(List.of(samsung, sk)); // 뭐가 들어가던 samsung, sk 반환
 
-            given(investorFlowDailyRepository.bulkSave(anyList())).willReturn(2);
+            given(investorFlowDailyRepository.upsertAll(anyList())).willReturn(2);
 
             // when
             int result = investorFlowDailyService.save(dtos);
@@ -172,7 +172,7 @@ public class InvestorFlowDailyServiceTest {
             assertThat(result).isEqualTo(2);
 
             ArgumentCaptor<List<InvestorFlowDaily>> captor = ArgumentCaptor.forClass(List.class);
-            verify(investorFlowDailyRepository).bulkSave(captor.capture()); // 전달된 파라미터 캡쳐
+            verify(investorFlowDailyRepository).upsertAll(captor.capture()); // 전달된 파라미터 캡쳐
             assertThat(captor.getValue()).hasSize(2);
         }
 
@@ -183,7 +183,7 @@ public class InvestorFlowDailyServiceTest {
             List<InvestorFlowDailyRequestDto> dtos = List.of(dto(SAMSUNG, BASE_DATE));
             given(stockInfoRepository.findAllByStockCodeIn(anyList()))
                     .willReturn(List.of(samsung));
-            given(investorFlowDailyRepository.bulkSave(anyList())).willReturn(1);
+            given(investorFlowDailyRepository.upsertAll(anyList())).willReturn(1);
 
             // when
             int result = investorFlowDailyService.save(dtos);

@@ -8,7 +8,7 @@ import java.util.List;
 
 @Mapper
 public interface InvestorFlowDailyMapper {
-    int bulkUpsert(
+    int upsertAll(
             @Param("flows") List<InvestorFlowDaily> flows
     );
 }

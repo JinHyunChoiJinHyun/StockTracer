@@ -13,7 +13,7 @@
     </resultMap>
 
     <!-- 1. 투자자별 순매도액 대량 저장 -->
-    <insert id="bulkUpsert">
+    <insert id="upsertAll">
         INSERT INTO investor_flow_daily (
             stock_code,
             base_date,
