@@ -295,7 +295,7 @@ def build_value_fundamental(date:str) -> pd.DataFrame:
 
     df = df.join(prev_eps_df, how="left")
 
-    df["effective_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
 
     # 티커 필드명 변환
     df.index.name = "stock_code"

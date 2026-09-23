@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 date = "20260904"
 
-STOCK_INVESTOR_FLOW_ENDPOINT = "/investor-flows/save"
+STOCK_INVESTOR_FLOW_ENDPOINT = "/investor-flow/save"
 STOCK_INVESTOR_FLOW_DAILY_ENDPOINT = "/investor-flows/daily"
 STOCK_INVESTOR_FLOW_RANK_ENDPOINT = "/investor-flows/analysis"
 

@@ -62,5 +62,26 @@ def to_analysis_flow_payload(df:pd.DataFrame) -> list[dict]:
 
     return df.replace({np.nan: None}).to_dict(orient="records")
 
+def to_value_fundamental_payload(df:pd.DataFrame) -> list[dict]:
+    # 필요한 컬럼만 변환
+    df = df[[
+        "base_date", 
+        "stock_code", 
+        "per", 
+        "pbr",
+        "eps", 
+        "bps", 
+        "div_yield",
+        "shares_outstanding",
+        "per_pct",
+        "pbr_pct",
+        "value_score",
+        "scored_scope",
+        "eps_growth",
+        "value_trap"
+    ]]
+
+    return df.replace({np.nan: None}).to_dict(orient="records")
+
 def to_payload(df:pd.DataFrame) -> list[dict]:
     return df.replace({np.nan: None}).to_dict(orient="records")
