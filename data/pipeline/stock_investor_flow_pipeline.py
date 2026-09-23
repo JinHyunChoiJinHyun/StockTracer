@@ -2,7 +2,7 @@ from common.fetcher import fetch_prices, fetch_investor_flow
 from common.analyzer import build_investor_flow, analyze_investor_flow
 from common.mapper import to_payload
 from common.api_client import post_to_backend
-from common.util import validate_df
+from common.validator import validate_df, filter_within_trading_value
 import logging
 
 logger = logging.getLogger(__name__) 
@@ -21,9 +21,16 @@ def run_investor_flow(date:str) -> bool:
 
         daily_df = build_investor_flow(df,price_df)
         validate_df(daily_df,"투자자별 순매수 거래 조회")
+
+        # 순매수 검증
+        daily_df = filter_within_trading_value(daily_df)
+        
         daily_payload = {"items": to_payload(daily_df)}
 
         success_daily = post_to_backend(STOCK_INVESTOR_FLOW_DAILY_ENDPOINT,daily_payload) # nan은 json이 인식하지 못하므로 none으로 치환
+
+        if not success_daily:
+            return False
 
         analysis_df = analyze_investor_flow(daily_df)
         validate_df(analysis_df,"투자자별 순매수 거래 분석")    

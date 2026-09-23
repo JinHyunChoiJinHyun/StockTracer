@@ -122,24 +122,14 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
     df["net_ratio"] = df["net_ratio"].round(6)
 
     # 점수화
-    df["score"] = _calculate_score(df)
+    df["flow_score"] = _calculate_score(df)
 
     # 근거 입력
     df["reason"] = df.apply(_build_reason, axis=1) # df에 값이 있으면 apply로 한줄씩 함수에 입력 / 행이 하나라도 있으면 오류 반환 x
 
     logger.info("%s 수급 분석 완료", df["base_date"].iloc[0])
 
-    PAYLOAD_COLS = [
-        "stock_code", 
-        "base_date", 
-        "net_ratio", 
-        "score",
-        "is_double_buy", 
-        "is_clean_buy", 
-        "reason"
-        ]
-
-    return df[PAYLOAD_COLS]
+    return df
 
 
 # 순매수 점수 계산

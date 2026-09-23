@@ -36,5 +36,31 @@ def to_price_payload(df) -> list[dict]:
 
     return map_payload(df, field_map)
 
+def to_daily_flow_payload(df:pd.DataFrame) -> list[dict]:
+    # 필요한 컬럼만 변환
+    df = df[[
+        "stock_code",
+        "base_date",
+        "foreign_net",
+        "institution_net",
+        "individual_net"
+    ]]
+
+    return df.replace({np.nan: None}).to_dict(orient="records")
+
+def to_analysis_flow_payload(df:pd.DataFrame) -> list[dict]:
+    # 필요한 컬럼만 변환
+    df = df[[
+        "stock_code", 
+        "base_date", 
+        "net_ratio", 
+        "flow_score",
+        "is_double_buy", 
+        "is_clean_buy", 
+        "reason"
+    ]]
+
+    return df.replace({np.nan: None}).to_dict(orient="records")
+
 def to_payload(df:pd.DataFrame) -> list[dict]:
     return df.replace({np.nan: None}).to_dict(orient="records")
