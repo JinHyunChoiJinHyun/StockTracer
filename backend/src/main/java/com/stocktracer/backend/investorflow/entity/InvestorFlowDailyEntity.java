@@ -35,17 +35,13 @@ public class InvestorFlowDailyEntity extends BaseEntity {
     @Column(name = "individual_net", nullable = false)
     private long individualNet;
 
-    @Column(name = "trading_value")
-    private Long tradingValue;
-
     public InvestorFlowDaily toDomain(){
         return new InvestorFlowDaily ( // 검증을 위해 builder가 아닌 of 사용
                 stockCode,
                 baseDate,
                 foreignNet,
                 institutionNet,
-                individualNet,
-                tradingValue
+                individualNet
         );
     }
 

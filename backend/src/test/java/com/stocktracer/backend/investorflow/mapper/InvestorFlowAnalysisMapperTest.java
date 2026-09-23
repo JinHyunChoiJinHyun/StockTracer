@@ -46,16 +46,14 @@ public class InvestorFlowAnalysisMapperTest {
             LocalDate baseDate,
             long foreignNet,
             long institutionNet,
-            long individualNet,
-            Long tradingValue
+            long individualNet
     ){
         return new InvestorFlowDaily(
                 stockCode,
                 baseDate,
                 foreignNet,
                 institutionNet,
-                individualNet,
-                tradingValue
+                individualNet
         );
     }
 
@@ -84,7 +82,7 @@ public class InvestorFlowAnalysisMapperTest {
 
     // daily 기본값
     private InvestorFlowDaily defaultDaily(String stockCode) {
-        return daily(stockCode, BASE_DATE, 1_000L, 2_000L, -3_000L, 500_000L);
+        return daily(stockCode, BASE_DATE, 1_000L, 2_000L, -3_000L);
     }
 
     @Test

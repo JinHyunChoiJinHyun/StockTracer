@@ -79,8 +79,7 @@ public class InvestorFlowAnalysisServiceTest {
                 BASE_DATE,
                 1_000L,
                 2_000L,
-                -3_000L,
-                500_000L
+                -3_000L
         );
     }
 

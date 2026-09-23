@@ -34,7 +34,7 @@ public record InvestorFlowAnalysisRequestDto(
         @NotNull(message = "점수는 필수입니다")
         @PositiveOrZero(message = "점수는 0 이상이어야 합니다")
         @Digits(integer = 4, fraction = 2, message = "점수 정밀도가 DECIMAL(6,2)를 초과합니다") // 반올림 방지
-        BigDecimal score,
+        BigDecimal flowScore,
 
         /* boolean -> Boolean으로 변경한 이유 */
         // boolean으로 작성할 시 null이 들어와도 false로 저장되므로 Valid 불가
@@ -55,7 +55,7 @@ public record InvestorFlowAnalysisRequestDto(
                         this.baseDate,
                         this.stockCode,
                         this.netRatio,
-                        this.score,
+                        this.flowScore,
                         this.doubleBuy,
                         this.cleanBuy,
                         this.reason,

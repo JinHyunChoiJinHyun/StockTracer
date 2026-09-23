@@ -40,7 +40,6 @@ CREATE TABLE investor_flow_daily (
      foreign_net     BIGINT,
      institution_net BIGINT,
      individual_net  BIGINT,
-     trading_value   BIGINT       NULL, -- 사라질 예정
      created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
      updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
      PRIMARY KEY (stock_code, base_date)

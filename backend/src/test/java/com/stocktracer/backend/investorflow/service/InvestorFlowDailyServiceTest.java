@@ -200,8 +200,7 @@ public class InvestorFlowDailyServiceTest {
                 baseDate,
                 1_000_000L,
                 -600_000L,
-                -400_000L,
-                4_000_000L
+                -400_000L
         );
     }
 

@@ -44,7 +44,6 @@ public record InvestorFlowAnalysis (
     ){
         validateSameKey(stockCode, baseDate, daily);
         validateFlagAgainstDaily(stockCode, doubleBuy, cleanBuy, daily);
-        validateNetRatio(stockCode, netRatio, daily);
 
         // 생성자에서 최종 검증
         return new InvestorFlowAnalysis(
@@ -94,29 +93,5 @@ public record InvestorFlowAnalysis (
                     stockCode, daily.individualNet()
             ));
         }
-    }
-
-    // 순매수 비율 계산 검증
-    private static void validateNetRatio(String stockCode, BigDecimal netRatio, InvestorFlowDaily daily){
-        BigDecimal expected = daily.netRatio();
-
-        if (netRatio == null && expected == null){
-            return;
-        }
-
-        if (netRatio == null || expected == null){
-            throw new IllegalArgumentException(String.format(
-                    "[%s] 순매수 비율 존재 여부 불일치: 수신=%s, 검증=%s",
-                    stockCode, netRatio, expected
-            ));
-        }
-
-        if (expected.subtract(netRatio).abs().compareTo(RATIO_TOLERANCE) > 0){
-            throw new IllegalArgumentException(String.format(
-                    "[%s] 순매수 비율 존재 여부 불일치: 수신=%s, 검증=%s",
-                    stockCode, netRatio, expected
-            ));
-        }
-
     }
 }
