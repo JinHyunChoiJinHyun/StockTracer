@@ -1,4 +1,4 @@
-from pipeline import stock_info_pipeline, stock_price_pipeline, stock_investor_flow_pipeline, stock_value_pipeline
+from pipeline import stock_info_pipeline, stock_price_pipeline, stock_investor_flow_pipeline, stock_value_pipeline, stock_tag_pipeline
 from common.fetcher import is_business_days
 
 import logging, time, sys
@@ -29,13 +29,13 @@ def run_daily_batch() -> bool:
     try:
         # 거래일 목록에 오늘 날짜가 포함되면 파이프라인 실행 아니면 중단
         # date = datetime.now().strftime("%Y%m%d")
-        date = "20260904"
+        date = "20260911"
         if not is_business_days(date):
             logger.info("[%s] 비영업일이므로 종료합니다", date)
             return False
         
         # 종목은 FK 대상이므로 실패 시 이후 파이프라인 중단
-        if not _run_pipeline("종목", stock_info_pipeline.run_stock_pipeline,date):
+        if not _run_pipeline("종목", partial(stock_info_pipeline.run_stock_pipeline,date)):
             logger.error("배치 중단: 종목 파이프라인 실패")
             return False
 
@@ -52,6 +52,8 @@ def run_daily_batch() -> bool:
         failed = [name for name, ok in results.items() if not ok]
         if failed:
             logger.error("실패한 파이프라인: %s", ", ".join(failed)) # ,로 엮어서 배열 출력
+        else:
+            stock_tag_pipeline.generate_tags(date)
 
         return not failed
     except Exception as e:

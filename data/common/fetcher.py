@@ -133,7 +133,6 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
 
             # 컬럼 추가
             raw_df["investor_type"] = investor
-            # raw_df["base_date"] = date
             raw_df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
             
             df_list.append(raw_df)
