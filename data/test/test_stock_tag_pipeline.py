@@ -6,7 +6,7 @@ from datetime import date,datetime
 logger = logging.getLogger(__name__)
 
 STOCK_TAG_ENDPOINT = "/tags/"
-base_date = "20260910"
+base_date = "20260908"
 # 태그 생성
 def generate_tags(date_str:str) -> None:
     def task():

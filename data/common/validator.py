@@ -30,7 +30,8 @@ def filter_within_trading_value(df: pd.DataFrame) -> pd.DataFrame:
         over_net = valid_trading_value & (df[col].abs() > trading_value)
         if over_net.any():
                 for code, net, value in zip(
-                    df.loc[over_net, "code"], df.loc[over_net, col], trading_value[over_net] # 불리언 인덱싱
+                    df.loc[over_net, "stock_code"], df.loc[over_net, col], trading_value[over_net] # 불리언 인덱싱
+                    # "code" -> "stock_code 수정"
                 ):
                     logger.warning(
                             "[%s] %s 순매수(%d)가 거래대금(%d)을 초과합니다. ",
@@ -39,7 +40,7 @@ def filter_within_trading_value(df: pd.DataFrame) -> pd.DataFrame:
         invalid_net |= over_net # 둘 중 하나라도 True일 시 True로 누적
 
         if invalid_net.any():
-                logger.warning("거래대금 초과로 %d개 종목 제외", invalid_net.sum())
+                logger.warning("거래대금 초과로 %d개 종목 제외", invalid_net.sum()) # 문제 발생 시 위치 수정
 
     return df[~invalid_net].copy()
  

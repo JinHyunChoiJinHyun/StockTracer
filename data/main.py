@@ -49,12 +49,19 @@ def run_daily_batch() -> bool:
             ]
         }
 
+        # 태그 생성을 제외한 파이프라인 실패 여부 확인
         failed = [name for name, ok in results.items() if not ok]
+
+        # 기존 파이프라인 성공 시 태그 생성 실행
+        if not failed:
+            if not stock_tag_pipeline.generate_tags(date):
+                failed.append("태그 생성") # 실패 시 추가
+
+        # 태그 생성 여부까지 확인 후 최종 실패 로그 생성
         if failed:
             logger.error("실패한 파이프라인: %s", ", ".join(failed)) # ,로 엮어서 배열 출력
-        else:
-            stock_tag_pipeline.generate_tags(date)
 
+        # 모든 파이프라인 성공 여부 반환
         return not failed
     except Exception as e:
         logger.exception("일일 배치 실행 중 예외 발생")
