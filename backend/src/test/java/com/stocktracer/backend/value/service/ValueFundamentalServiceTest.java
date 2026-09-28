@@ -122,10 +122,10 @@ public class ValueFundamentalServiceTest {
 
     /* 헬퍼 */
     // item 생성
-    private ValueFundamentalSaveRequestDto.Item item(String stockCode, LocalDate effectiveDate){
+    private ValueFundamentalSaveRequestDto.Item item(String stockCode, LocalDate baseDate){
         return new ValueFundamentalSaveRequestDto.Item(
+                baseDate,
                 stockCode,
-                effectiveDate,
                 new BigDecimal("12.3456"),
                 new BigDecimal("1.2500"),
                 new BigDecimal("5000.0000"),

@@ -21,7 +21,7 @@ CREATE TABLE stock_price (
      high_price    BIGINT,
      low_price     BIGINT,
      close_price   BIGINT,
-     change_amount  BIGINT, -- 수정됨
+     change_rate  BIGINT, -- 수정됨
      volume        BIGINT,                -- NUMBER -> BIGINT로 변경
      trading_value BIGINT,
      market_cap    BIGINT,
@@ -86,4 +86,11 @@ CREATE TABLE value_fundamental (
     eps_growth         DECIMAL(12, 6) NULL,
     value_trap         BOOLEAN       NULL,
     PRIMARY KEY (base_date, stock_code)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE stock_tag (
+    base_date  DATE        NOT NULL,
+    stock_code CHAR(6)     NOT NULL,
+    tag_code   VARCHAR(32) NOT NULL,
+    PRIMARY KEY (base_date, stock_code, tag_code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
