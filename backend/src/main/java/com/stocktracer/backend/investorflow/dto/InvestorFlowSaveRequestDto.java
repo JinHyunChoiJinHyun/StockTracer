@@ -1,14 +1,16 @@
 package com.stocktracer.backend.investorflow.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.List;
 
 public record InvestorFlowSaveRequestDto(
+        @NotNull
+        @Valid
         List<InvestorFlowDailyRequestDto> daily,
+
+        @NotNull
+        @Valid
         List<InvestorFlowAnalysisRequestDto> analysis
-) {
-    public InvestorFlowSaveRequestDto{
-        // null인 경우 빈 리스트 반환
-        daily = daily == null ? List.of() : daily;
-        analysis = analysis == null ? List.of() : analysis;
-    }
-}
+) {}

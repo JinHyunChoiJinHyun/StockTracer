@@ -129,8 +129,8 @@ public class FundamentalFacadeTest {
             BigDecimal eps
     ){
         return new ValueFundamentalSaveRequestDto.Item(
-                stockCode,
                 baseDate,
+                stockCode,
                 new BigDecimal("12.3456"),
                 new BigDecimal("1.2500"),
                 eps,

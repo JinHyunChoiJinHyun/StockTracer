@@ -3,6 +3,7 @@ package com.stocktracer.backend.investorflow.controller;
 import com.stocktracer.backend.investorflow.dto.InvestorFlowResponseDto;
 import com.stocktracer.backend.investorflow.dto.InvestorFlowSaveRequestDto;
 import com.stocktracer.backend.investorflow.facade.InvestorFlowFacade;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,7 +20,7 @@ public class InvestorFlowController {
 
     @PostMapping("/save")
     public ResponseEntity<InvestorFlowResponseDto> save(
-            @RequestBody InvestorFlowSaveRequestDto request
+            @Valid @RequestBody InvestorFlowSaveRequestDto request
             ){
         return ResponseEntity.ok(facade.save(request));
     }
