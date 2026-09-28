@@ -1,6 +1,7 @@
 # fetcher => 수집 및 전처리
 
 import logging, dotenv
+dotenv.load_dotenv()  # pykrx import 전에 로드
 from datetime import datetime
 
 import pandas as pd
@@ -25,23 +26,47 @@ def is_business_days(date:str) -> bool:
     return ts in days
 
 # 상위 종목 원본 데이터 수집
-def fetch_stocks() -> pd.DataFrame:
+def fetch_stocks(date:str) -> pd.DataFrame:
     logger.info("KRX 시장 데이터 수집 시작...")
-    dotenv.load_dotenv()
+    # sector 조회
+    sector_df = fetch_market_sector(date)
 
-    rows = []
-   
-    for market in ["KOSPI", "KOSDAQ", "KONEX"]:
-        tickers = stock.get_market_ticker_list(market=market)
+    # 종목 조회
+    frames = []
 
-        for ticker in tickers:
-            rows.append({
-                "Code": ticker,
-                "Name": stock.get_market_ticker_name(ticker),
-                "Market": market
-            })
+    for market in ["KOSPI", "KOSDAQ"]:
+        df = stock.get_market_price_change(date, date, market=market)
+        df = df[["종목명"]].reset_index() # 종목명만 남기고 index를 일반 컬럼으로 변환
+        df.columns = ["stock_code", "stock_name"]
+        df["market"] = market
+        frames.append(df)
 
-    return pd.DataFrame(rows)
+    stock_df = pd.concat(frames, ignore_index=True)
+
+    # index가 서로 다르므로 merge 사용 (index가 같으면 join)
+    stock_df = stock_df.merge(
+        sector_df,
+        left_on="stock_code",
+        right_index=True,
+        how="left"
+    )
+
+    # KONEX 추가
+    konex = stock.get_market_ticker_list(date, market="KONEX")
+
+    konex_df = pd.DataFrame({
+        "stock_code": konex,
+        "stock_name": [stock.get_market_ticker_name(ticker) for ticker in konex],
+        "market": "KONEX",
+        "sector": None
+    })
+
+    df = pd.concat(
+            [stock_df, konex_df],
+            ignore_index=True
+        )
+
+    return df
 
 # 상위 종목 일봉 데이터 수집
 def fetch_prices(date: str) -> pd.DataFrame:
@@ -108,7 +133,6 @@ def fetch_investor_flow(date:str, market="ALL") -> pd.DataFrame:
 
             # 컬럼 추가
             raw_df["investor_type"] = investor
-            # raw_df["base_date"] = date
             raw_df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
             
             df_list.append(raw_df)
@@ -270,7 +294,7 @@ def build_value_fundamental(date:str) -> pd.DataFrame:
 
     df = df.join(prev_eps_df, how="left")
 
-    df["effective_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    df["base_date"] = f"{date[:4]}-{date[4:6]}-{date[6:]}"
 
     # 티커 필드명 변환
     df.index.name = "stock_code"

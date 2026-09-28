@@ -30,22 +30,37 @@ public class StockInfoEntity extends BaseEntity {
     @Column(name = "market", nullable = false, length = 20)
     private MarketType market;
 
+    @Column(name = "sector")
+    private String sector;
+
     /** 매핑 및 변환 메서드 */
-    private StockInfoEntity(StockInfo stockInfo) {
-        this.stockCode = stockInfo.getStockCode();
-        this.stockName = stockInfo.getStockName();
-        this.market = stockInfo.getMarket();
+    private StockInfoEntity(
+            String stockCode,
+            String stockName,
+            MarketType market,
+            String sector
+    ) {
+        this.stockCode = stockCode;
+        this.stockName = stockName;
+        this.market = market;
+        this.sector = sector;
     }
 
     public static StockInfoEntity from(StockInfo stockInfo){
-        return new StockInfoEntity(stockInfo);
+        return new StockInfoEntity(
+                stockInfo.stockCode(),
+                stockInfo.stockName(),
+                stockInfo.market(),
+                stockInfo.sector()
+        );
     }
 
     public StockInfo toDomain(){
-        return StockInfo.create(
-                this.stockCode,
-                this.stockName,
-                this.market
+        return new StockInfo(
+                stockCode,
+                stockName,
+                market,
+                sector
         );
     }
 }

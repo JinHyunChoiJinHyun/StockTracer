@@ -16,7 +16,7 @@ public class InvestorFlowAnalysisRepositoryImpl implements InvestorFlowAnalysisR
     private final InvestorFlowAnalysisMapper investorFlowAnalysisMapper;
 
     @Override
-    public int bulkUpsert(List<InvestorFlowAnalysis> flows) {
+    public int upsertAll(List<InvestorFlowAnalysis> flows) {
         int affected = 0;
         List<List<InvestorFlowAnalysis>> batches = ListUtils.partition(flows, 1000);
         for(List<InvestorFlowAnalysis> batch : batches){

@@ -44,24 +44,24 @@ public class InvestorFlowDailyMapperTest {
     void 빈_테이블에_신규_INSERT된다(){
 
         List<InvestorFlowDaily> flows = List.of(
-                InvestorFlowDaily.of(
+                new InvestorFlowDaily(
                         "005930",
                         LocalDate.of(2026, 8, 16),
                         150000000L,
                         -50000000L,
-                        -100000000L,
-                        500000000L),
+                        -100000000L
+                        ),
 
-                InvestorFlowDaily.of(
+                new InvestorFlowDaily(
                         "000660",
                         LocalDate.of(2026, 8, 16),
                         150000000L,
                         -50000000L,
-                        -100000000L,
-                        500000000L)
+                        -100000000L
+                        )
         );
 
-        mapper.bulkUpsert(flows);
+        mapper.upsertAll(flows);
 
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM investor_flow_daily", Integer.class
@@ -76,28 +76,25 @@ public class InvestorFlowDailyMapperTest {
                 LocalDate.of(2026, 8, 16),
                 150000000L,
                 -50000000L,
-                -100000000L,
-                500000000L
+                -100000000L
         );
 
-        StockInfo samsungStock = StockInfo.create("005930", "삼성전자", MarketType.KOSPI); // 가정된 생성자
+        StockInfo samsungStock = new StockInfo("005930", "삼성전자", MarketType.KOSPI, "전자"); // 가정된 생성자
 
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+        mapper.upsertAll(List.of(new InvestorFlowDaily(
                 "005930",
                 LocalDate.of(2026, 8, 16),
                 150000000L,
                 -50000000L,
-                -100000000L,
-                500000000L
+                -100000000L
         )));
 
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
+        mapper.upsertAll(List.of(new InvestorFlowDaily(
                 "005930",
                 LocalDate.of(2026, 8, 16),
                 250000000L,
                 -50000000L,
-                -100000000L,
-                500000000L
+                -100000000L
         )));
 
         Integer count = jdbc.queryForObject(
@@ -111,24 +108,5 @@ public class InvestorFlowDailyMapperTest {
 
         assertThat(count).isEqualTo(1);
         assertThat(foriegnNet).isEqualTo(250000000L);
-    }
-
-    @Test
-    void tradingValue가_null이어도_저장(){
-
-        mapper.bulkUpsert(List.of(InvestorFlowDaily.of(
-                "005930",
-                LocalDate.of(2026, 8, 16),
-                250000000L,
-                -50000000L,
-                -100000000L,
-                null
-        )));
-
-        Long value = jdbc.queryForObject(
-                "SELECT trading_value FROM investor_flow_daily WHERE stock_code = '005930'",
-                Long.class
-                );
-        assertThat(value).isNull();
     }
 }

@@ -14,5 +14,5 @@ public interface StockPriceRepository {
             LocalDate priceDate,
             String sortBy
     );
-    void bulkUpsert(List<StockPrice> prices);
+    void upsertAll(List<StockPrice> prices);
 }

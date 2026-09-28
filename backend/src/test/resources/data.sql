@@ -1,9 +1,9 @@
 -- stock 기본 정보 1건
-INSERT INTO stock_info (stock_code, stock_name, market)
-VALUES ('005930', '삼성전자', 'KOSPI');
+INSERT INTO stock_info (stock_code, stock_name, market, sector)
+VALUES ('005930', '삼성전자', 'KOSPI',"전자");
 
-INSERT INTO stock_info (stock_code, stock_name, market)
-VALUES ('000660', 'sk하이닉스', 'KOSPI');
+INSERT INTO stock_info (stock_code, stock_name, market, sector)
+VALUES ('000660', 'sk하이닉스', 'KOSPI', "반도체");
 
 -- -- stock_price 일자별 주가 정보 2건
 -- INSERT INTO stock_price (stock_code, stock_date, open_price, close_price, high_price, low_price, volume)

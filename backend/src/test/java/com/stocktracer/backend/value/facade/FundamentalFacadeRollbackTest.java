@@ -67,21 +67,18 @@ public class FundamentalFacadeRollbackTest {
     /* 객체 생성 */
     private ValueFundamentalSaveRequestDto.Item item(
             String stockCode,
-            LocalDate effectiveDate,
+            LocalDate baseDate,
             BigDecimal eps
     ){
         return new ValueFundamentalSaveRequestDto.Item(
                 stockCode,
-                effectiveDate,
-                "전기전자",
+                baseDate,
                 new BigDecimal("12.3456"),
                 new BigDecimal("1.2500"),
                 eps,
                 new BigDecimal("52000.0000"),
                 new BigDecimal("1.8000"),
                 400_000_000_000L,
-                5_969_782_550L,
-                1_234_567_890_123L,
                 new BigDecimal("0.3200"),
                 new BigDecimal("0.4100"),
                 new BigDecimal("0.3650"),

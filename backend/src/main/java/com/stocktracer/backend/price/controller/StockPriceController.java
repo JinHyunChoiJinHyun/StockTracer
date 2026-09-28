@@ -32,8 +32,8 @@ public class StockPriceController {
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<Void> bulkSave(@Valid @RequestBody StockPriceSaveBulkRequestDto bulkDto){
-        stockPriceService.bulkSave(bulkDto); // dto는 서비스에서 분해
+    public ResponseEntity<Void> bulkSave(@Valid @RequestBody StockPriceSaveBulkRequestDto request){
+        stockPriceService.upsertAll(request); // dto는 서비스에서 분해
         return ResponseEntity.ok().build();
     }
 }

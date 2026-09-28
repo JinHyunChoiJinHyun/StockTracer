@@ -46,16 +46,14 @@ public class InvestorFlowAnalysisMapperTest {
             LocalDate baseDate,
             long foreignNet,
             long institutionNet,
-            long individualNet,
-            Long tradingValue
+            long individualNet
     ){
-        return InvestorFlowDaily.of(
+        return new InvestorFlowDaily(
                 stockCode,
                 baseDate,
                 foreignNet,
                 institutionNet,
-                individualNet,
-                tradingValue
+                individualNet
         );
     }
 
@@ -71,8 +69,8 @@ public class InvestorFlowAnalysisMapperTest {
             InvestorFlowDaily daily
     ){
         return InvestorFlowAnalysis.of(
-                stockCode,
                 baseDate,
+                stockCode,
                 netRatio,
                 score,
                 doubleBuy,
@@ -84,7 +82,7 @@ public class InvestorFlowAnalysisMapperTest {
 
     // daily 기본값
     private InvestorFlowDaily defaultDaily(String stockCode) {
-        return daily(stockCode, BASE_DATE, 1_000L, 2_000L, -3_000L, 500_000L);
+        return daily(stockCode, BASE_DATE, 1_000L, 2_000L, -3_000L);
     }
 
     @Test
@@ -115,7 +113,7 @@ public class InvestorFlowAnalysisMapperTest {
 
         Map<String, Object> row = findByStockCode(SAMSUNG);
         assertThat((BigDecimal) row.get("net_ratio")).isEqualByComparingTo("0.006000");
-        assertThat((BigDecimal) row.get("score")).isEqualByComparingTo("82.5000");
+        assertThat((BigDecimal) row.get("flow_score")).isEqualByComparingTo("82.5000");
         assertThat(row.get("is_double_buy")).isEqualTo(true);
         assertThat(row.get("is_clean_buy")).isEqualTo(true);
         assertThat(row.get("reason")).isEqualTo("외국인/기관 동반 순매수");
@@ -153,7 +151,7 @@ public class InvestorFlowAnalysisMapperTest {
         assertThat(countAll()).isEqualTo(1);
 
         Map<String, Object> row = findByStockCode(SAMSUNG);
-        assertThat((BigDecimal) row.get("score")).isEqualByComparingTo("95.0000");
+        assertThat((BigDecimal) row.get("flow_score")).isEqualByComparingTo("95.0000");
         assertThat(row.get("is_double_buy")).isEqualTo(false);
         assertThat(row.get("is_clean_buy")).isEqualTo(false);
         assertThat(row.get("reason")).isEqualTo("재계산 결과");
@@ -199,9 +197,9 @@ public class InvestorFlowAnalysisMapperTest {
         ));
 
         assertThat(countAll()).isEqualTo(2);
-        assertThat((BigDecimal) findByStockCode(SAMSUNG).get("score"))
+        assertThat((BigDecimal) findByStockCode(SAMSUNG).get("flow_score"))
                 .isEqualByComparingTo("70.5000");
-        assertThat((BigDecimal) findByStockCode(HYNIX).get("score"))
+        assertThat((BigDecimal) findByStockCode(HYNIX).get("flow_score"))
                 .isEqualByComparingTo("31.0000");
 
     }
@@ -233,7 +231,7 @@ public class InvestorFlowAnalysisMapperTest {
         ));
 
         assertThat(countAll()).isEqualTo(1);
-        assertThat((BigDecimal) findByStockCode(SAMSUNG).get("score"))
+        assertThat((BigDecimal) findByStockCode(SAMSUNG).get("flow_score"))
                 .isEqualByComparingTo("10.5000");
     }
 

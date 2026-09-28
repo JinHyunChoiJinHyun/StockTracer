@@ -88,7 +88,7 @@ public class InvestorFlowDailyServiceTest {
             // when & then
             assertThatThrownBy(() -> investorFlowDailyService.save(dtos))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("중복된 (종목코드, 기준일)")
+                    .hasMessageContaining("중복된 key")
                     .hasMessageContaining(SAMSUNG);
 
             verifyNoInteractions(stockInfoRepository, investorFlowDailyRepository);
@@ -118,7 +118,7 @@ public class InvestorFlowDailyServiceTest {
                     .hasMessageContaining("stock_info 미등록 종목")
                     .hasMessageContaining(Sk);
 
-            verify(investorFlowDailyRepository, never()).bulkSave(anyList());
+            verify(investorFlowDailyRepository, never()).upsertAll(anyList());
         }
 
         @Test
@@ -133,7 +133,7 @@ public class InvestorFlowDailyServiceTest {
             given(stockInfoRepository.findAllByStockCodeIn(anyList()))
                     .willReturn(List.of(samsung, sk));
 
-            given(investorFlowDailyRepository.bulkSave(anyList())).willReturn(2);
+            given(investorFlowDailyRepository.upsertAll(anyList())).willReturn(2);
 
             // when
             investorFlowDailyService.save(dtos);
@@ -163,7 +163,7 @@ public class InvestorFlowDailyServiceTest {
             given(stockInfoRepository.findAllByStockCodeIn((anyList())))
                     .willReturn(List.of(samsung, sk)); // 뭐가 들어가던 samsung, sk 반환
 
-            given(investorFlowDailyRepository.bulkSave(anyList())).willReturn(2);
+            given(investorFlowDailyRepository.upsertAll(anyList())).willReturn(2);
 
             // when
             int result = investorFlowDailyService.save(dtos);
@@ -172,7 +172,7 @@ public class InvestorFlowDailyServiceTest {
             assertThat(result).isEqualTo(2);
 
             ArgumentCaptor<List<InvestorFlowDaily>> captor = ArgumentCaptor.forClass(List.class);
-            verify(investorFlowDailyRepository).bulkSave(captor.capture()); // 전달된 파라미터 캡쳐
+            verify(investorFlowDailyRepository).upsertAll(captor.capture()); // 전달된 파라미터 캡쳐
             assertThat(captor.getValue()).hasSize(2);
         }
 
@@ -183,7 +183,7 @@ public class InvestorFlowDailyServiceTest {
             List<InvestorFlowDailyRequestDto> dtos = List.of(dto(SAMSUNG, BASE_DATE));
             given(stockInfoRepository.findAllByStockCodeIn(anyList()))
                     .willReturn(List.of(samsung));
-            given(investorFlowDailyRepository.bulkSave(anyList())).willReturn(1);
+            given(investorFlowDailyRepository.upsertAll(anyList())).willReturn(1);
 
             // when
             int result = investorFlowDailyService.save(dtos);
@@ -200,14 +200,13 @@ public class InvestorFlowDailyServiceTest {
                 baseDate,
                 1_000_000L,
                 -600_000L,
-                -400_000L,
-                4_000_000L
+                -400_000L
         );
     }
 
     private static StockInfo stockInfo(String stockCode) {
         StockInfo stockInfo = mock(StockInfo.class); // 가짜 객체 생성 (new처럼 생성하나 실제 실행 불가)
-        given(stockInfo.getStockCode()).willReturn(stockCode); // stockCode 호출 시 반환값 지정
+        given(stockInfo.stockCode()).willReturn(stockCode); // stockCode 호출 시 반환값 지정
         return stockInfo;
     }
 

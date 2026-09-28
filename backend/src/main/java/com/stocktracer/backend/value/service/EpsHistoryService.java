@@ -43,7 +43,7 @@ public class EpsHistoryService {
     @Transactional
     public int save(EpsHistorySaveRequestDto request){
         // 검증
-        duplicateKeys(request.items(), item -> item.stockCode() + "@" + item.effectiveDate());
+        duplicateKeys(request.items(), item -> item.stockCode() + "@" + item.baseDate());
 
         // 도메인 변환
         List<EpsHistory> eps = request.toDomain();

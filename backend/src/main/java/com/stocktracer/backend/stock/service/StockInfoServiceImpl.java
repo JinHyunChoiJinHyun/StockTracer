@@ -27,18 +27,18 @@ public class StockInfoServiceImpl implements StockInfoService {
     // 주식 정보 upsert
     @Transactional
     @Override
-    public void saveOrUpdateStocks(List<StockInfoDto> dtos){
+    public void saveOrUpdateStocks(List<StockInfoDto> request){
         // null 체크
-        if (dtos == null || dtos.isEmpty()){
+        if (request == null || request.isEmpty()){
             log.info("저장할 종목 정보 없음");
             return;
         }
 
         // 각 dto domain으로 변환
-        List<StockInfo> stocks = dtos.stream().map(StockInfoDto::toDomain).toList();
+        List<StockInfo> stocks = request.stream().map(StockInfoDto::toDomain).toList();
 
         // 일괄 저장
-        stockInfoRepository.bulkSave(stocks);
+        stockInfoRepository.upsertAll(stocks);
         log.info("종목 정보 upsert 완료 - {}건", stocks.size());
     }
 

@@ -1,5 +1,6 @@
 package com.stocktracer.backend.investorflow.service;
 
+import com.stocktracer.backend.common.validate.Validates;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import com.stocktracer.backend.investorflow.dto.InvestorFlowAnalysisRequestDto;
@@ -23,27 +24,26 @@ public class InvestorFlowAnalysisService {
     private final InvestorFlowDailyRepository dailyRepository;
 
     @Transactional
-    public int save(List<InvestorFlowAnalysisRequestDto> requests){
-        // 검증
-        if(requests.isEmpty()){
+    public int save(List<InvestorFlowAnalysisRequestDto> request){
+        // 1. 검증
+        if(request.isEmpty()){
             log.info("수급 분석 요청 없음 - 처리 생략");
             return 0;
         }
 
-        validateSingleBaseDate(requests);
-        validateNoDuplicateKey(requests);
+        Validates.duplicateKeys(request, item -> item.stockCode() + "@" + item.baseDate());
 
-        LocalDate baseDate = requests.get(0).baseDate();
+        LocalDate baseDate = request.get(0).baseDate();
         Map<String, InvestorFlowDaily> dailyMap = loadDaily(baseDate);
-        validateNoMissingDailyData(requests, dailyMap);
+        validateNoMissingDailyData(request, dailyMap);
 
-        // 변환
-        List<InvestorFlowAnalysis> flows = requests.stream()
+        // 2. 변환
+        List<InvestorFlowAnalysis> flows = request.stream()
                 .map(r -> r.toDomain(dailyMap.get(r.stockCode())))
                 .toList(); // 수정 불가
 
-        // 저장
-        int affected = analysisRepository.bulkUpsert(flows);
+        // 3. 저장
+        int affected = analysisRepository.upsertAll(flows);
         log.info("수급 분석 저장 완료: 기준일={}, 요청={}건, 반영={}",
                 baseDate, flows.size(),affected);
 
@@ -51,34 +51,6 @@ public class InvestorFlowAnalysisService {
     }
 
     /* 서비스 검증 로직 */
-    // 배치 1회당 1 영업일
-    private void validateSingleBaseDate(List<InvestorFlowAnalysisRequestDto> requests){
-        Set<LocalDate> dates = requests.stream()
-                .map(InvestorFlowAnalysisRequestDto::baseDate)
-                .collect(Collectors.toSet());
-
-        if (dates.size() > 1){
-            throw new IllegalArgumentException(
-                    "단일 일자만 처리합니다. 입력된 날짜: " + new TreeSet<>(dates)
-            );
-        }
-    }
-
-    // pk 중복 검증
-    private void validateNoDuplicateKey(List<InvestorFlowAnalysisRequestDto> requests){
-        Set<String> seen = new HashSet<>();
-        List<String> duplicates = requests.stream()
-                .map(InvestorFlowAnalysisRequestDto::stockCode)
-                .filter(code -> !seen.add(code)) // 이미 seen에 존재해서 add에 실패한 값만 필터
-                .distinct()
-                .toList();
-
-        if (!duplicates.isEmpty()){
-            throw new IllegalArgumentException("중복된 종목코드: " + duplicates);
-        }
-
-    }
-
     // daily flow 조회
     private Map<String, InvestorFlowDaily> loadDaily (LocalDate baseDate){
         List<InvestorFlowDaily> daily = dailyRepository.findByBaseDate(baseDate);
@@ -90,7 +62,7 @@ public class InvestorFlowAnalysisService {
             ));
         }
 
-        return daily.stream().collect(Collectors.toMap(InvestorFlowDaily::getStockCode, Function.identity()));
+        return daily.stream().collect(Collectors.toMap(InvestorFlowDaily::stockCode, Function.identity()));
     }
 
     // daily 데이터 누락 여부 확인
