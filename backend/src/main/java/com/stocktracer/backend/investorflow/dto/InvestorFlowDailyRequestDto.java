@@ -1,12 +1,16 @@
 package com.stocktracer.backend.investorflow.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import java.time.LocalDate;
 
 @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record InvestorFlowDailyRequestDto(
         @NotBlank(message = "종목 코드는 필수입니다")
         @Pattern(regexp = "^[0-9A-Z]{6}$", message = "종목코드는 6자리 영숫자여야 합니다")
@@ -24,9 +28,15 @@ public record InvestorFlowDailyRequestDto(
         Long institutionNet,
 
         @NotNull(message = "개인 순매수는 필수입니다")
-        Long individualNet,
-
-        @PositiveOrZero(message = "거래대금은 0 이상이어야 합니다")
-        Long tradingValue  // 시세 매칭 실패 시 null 허용
+        Long individualNet
 ) {
+        public InvestorFlowDaily toDomain(){
+                return new InvestorFlowDaily(
+                        stockCode,
+                        baseDate,
+                        foreignNet,
+                        institutionNet,
+                        individualNet
+                );
+        }
 }

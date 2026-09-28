@@ -43,15 +43,12 @@ public class ValueFundamentalMapperTest {
         return new ValueFundamental(
                 effectiveDate,
                 stockCode,
-                sector,
                 per,
                 pbr,
                 new BigDecimal("100.00"),       // eps
                 new BigDecimal("80000.00"),     // bps
                 new BigDecimal("2.50"),         // divYield
-                100_000_000_000L,               // marketCap
                 10_000_000L,                    // sharesOutstanding
-                500_000_000L,                   // tradingValue
                 new BigDecimal("0.25"),         // perPct
                 new BigDecimal("0.30"),         // pbrPct
                 new BigDecimal("72.50"),        // valueScore
@@ -61,17 +58,14 @@ public class ValueFundamentalMapperTest {
         );
     }
     private ValueFundamental valueFundamental(
-            LocalDate effectiveDate,
+            LocalDate baseDate,
             String stockCode,
-            String sector,
             BigDecimal per,
             BigDecimal pbr,
             BigDecimal eps,
             BigDecimal bps,
             BigDecimal divYield,
-            Long marketCap,
             Long sharesOutstanding,
-            Long tradingValue,
             BigDecimal perPct,
             BigDecimal pbrPct,
             BigDecimal valueScore,
@@ -80,17 +74,14 @@ public class ValueFundamentalMapperTest {
             Boolean valueTrap
     ) {
         return new ValueFundamental(
-                effectiveDate,
+                baseDate,
                 stockCode,
-                sector,
                 per,
                 pbr,
                 eps,
                 bps,
                 divYield,
-                marketCap,
                 sharesOutstanding,
-                tradingValue,
                 perPct,
                 pbrPct,
                 valueScore,
@@ -120,8 +111,6 @@ public class ValueFundamentalMapperTest {
 
         assertThat(result.get("stock_code"))
                 .isEqualTo("005930");
-        assertThat(result.get("sector"))
-                .isEqualTo("반도체");
         assertThat((BigDecimal) result.get("per"))
                 .isEqualByComparingTo(new BigDecimal("10.5"));
         assertThat((BigDecimal) result.get("pbr"))
@@ -178,15 +167,12 @@ public class ValueFundamentalMapperTest {
         ValueFundamental value = valueFundamental(
                 BASE,
                 "005930",
-                "반도체",
                 new BigDecimal("10.5"),
                 new BigDecimal("1.2"),
                 new BigDecimal("100.00"),       // eps
                 new BigDecimal("80000.00"),     // bps
                 new BigDecimal("2.50"),         // divYield
-                100_000_000_000L,               // marketCap
                 10_000_000L,                    // sharesOutstanding
-                500_000_000L,                   // tradingValue
                 new BigDecimal("0.25"),         // perPct
                 new BigDecimal("0.30"),         // pbrPct
                 new BigDecimal("72.50"),        // valueScore
@@ -200,15 +186,12 @@ public class ValueFundamentalMapperTest {
         ValueFundamental updatedValue = valueFundamental(
                 BASE,
                 "005930",
-                "반도체/통신기기",
                 new BigDecimal("20.5"),
                 new BigDecimal("8.2"),
                 new BigDecimal("80.00"),       // eps
                 new BigDecimal("70000.00"),     // bps
                 new BigDecimal("10.50"),         // divYield
-                200_000_000_000L,               // marketCap
                 20_000_000L,                    // sharesOutstanding
-                700_000_000L,                   // tradingValue
                 new BigDecimal("1.25"),         // perPct
                 new BigDecimal("1.30"),         // pbrPct
                 new BigDecimal("82.50"),        // valueScore
@@ -221,15 +204,12 @@ public class ValueFundamentalMapperTest {
         // then
         Map<String, Object> result = createQueryMap(value);
 
-        assertThat(result.get("sector")).isEqualTo("반도체/통신기기");
         assertThat((BigDecimal) result.get("per")).isEqualByComparingTo("20.5");
         assertThat((BigDecimal) result.get("pbr")).isEqualByComparingTo("8.2");
         assertThat((BigDecimal) result.get("eps")).isEqualByComparingTo("80.00");
         assertThat((BigDecimal) result.get("bps")).isEqualByComparingTo("70000.00");
         assertThat((BigDecimal) result.get("div_yield")).isEqualByComparingTo("10.50");
-        assertThat(result.get("market_cap")).isEqualTo(200_000_000_000L);
         assertThat(result.get("shares_outstanding")).isEqualTo(20_000_000L);
-        assertThat(result.get("trading_value")).isEqualTo(700_000_000L);
         assertThat((BigDecimal) result.get("per_pct")).isEqualByComparingTo("1.25");
         assertThat((BigDecimal) result.get("pbr_pct")).isEqualByComparingTo("1.30");
         assertThat((BigDecimal) result.get("value_score")).isEqualByComparingTo("82.50");
@@ -296,15 +276,12 @@ public class ValueFundamentalMapperTest {
         ValueFundamental value = valueFundamental(
                 BASE,
                 "005930",
-                "반도체/통신기기",
                 null,
                 null,
                 null,
                 null,
                 null,
-                100_000_000_000L,
                 10_000_000L,
-                500_000_000L,
                 null,
                 null,
                 null,
@@ -336,15 +313,13 @@ public class ValueFundamentalMapperTest {
     void decimal_scale_and_bigint_range_preserved(){
         // given
         ValueFundamental extream = valueFundamental(
-                BASE, "005930", "전기전자",
+                BASE, "005930",
                 new BigDecimal("12.3456"),
                 new BigDecimal("0.0001"),
                 new BigDecimal("5000.0000"),
                 new BigDecimal("12345678.9012"),
                 new BigDecimal("1.8000"),
-                9_223_372_036_854L,
                 5_969_782_550L,
-                1_234_567_890_123L,
                 new BigDecimal("0.3200"),
                 new BigDecimal("0.4100"),
                 new BigDecimal("0.3650"),
@@ -363,8 +338,6 @@ public class ValueFundamentalMapperTest {
         assertThat((BigDecimal) result.get("pbr")).isEqualByComparingTo("0.0001");
         assertThat((BigDecimal) result.get("bps")).isEqualByComparingTo("12345678.9012");
         assertThat((BigDecimal) result.get("eps_growth")).isEqualByComparingTo("-0.123457");
-        assertThat(result.get("market_cap")).isEqualTo(9_223_372_036_854L);
-        assertThat(result.get("trading_value")).isEqualTo(1_234_567_890_123L);
     }
 
     @Test
@@ -372,15 +345,13 @@ public class ValueFundamentalMapperTest {
     void zero_and_negative_eps_preserved(){
         // given
         ValueFundamental zero = valueFundamental(
-                BASE, "005930", "전기전자",
+                BASE, "005930",
                 new BigDecimal("12.3456"),
                 new BigDecimal("0.0001"),
                 BigDecimal.ZERO,
                 new BigDecimal("12345678.9012"),
                 new BigDecimal("1.8000"),
-                9_223_372_036_854L,
                 5_969_782_550L,
-                1_234_567_890_123L,
                 new BigDecimal("0.3200"),
                 new BigDecimal("0.4100"),
                 new BigDecimal("0.3650"),
@@ -390,15 +361,13 @@ public class ValueFundamentalMapperTest {
         );
 
         ValueFundamental negative = valueFundamental(
-                BASE, "000660", "전기전자",
+                BASE, "000660",
                 new BigDecimal("12.3456"),
                 new BigDecimal("0.0001"),
                 new BigDecimal("-1234.5678"),
                 new BigDecimal("12345678.9012"),
                 new BigDecimal("1.8000"),
-                9_223_372_036_854L,
                 5_969_782_550L,
-                1_234_567_890_123L,
                 new BigDecimal("0.3200"),
                 new BigDecimal("0.4100"),
                 new BigDecimal("0.3650"),
@@ -445,7 +414,6 @@ public class ValueFundamentalMapperTest {
         // then
         Map<String, Object> result = createQueryMap(updatedValues.get(0));
         assertThat(count()).isEqualTo(500);
-        assertThat(result.get("sector")).isEqualTo("변경된업종");
         assertThat((BigDecimal) result.get("per")).isEqualByComparingTo("2");
         assertThat((BigDecimal) result.get("pbr")).isEqualByComparingTo("2");
     }
@@ -457,15 +425,12 @@ public class ValueFundamentalMapperTest {
                 """
                         SELECT
                             stock_code,
-                            sector,
                             per,
                             pbr,
                             eps,
                             bps,
                             div_yield,
-                            market_cap,
                             shares_outstanding,
-                            trading_value,
                             per_pct,
                             pbr_pct,
                             value_score,
@@ -474,11 +439,11 @@ public class ValueFundamentalMapperTest {
                             value_trap
                         FROM value_fundamental
                         WHERE
-                            effective_date = ?
+                            base_date = ?
                         AND
                             stock_code = ?
                         """,
-                value.effectiveDate(),
+                value.baseDate(),
                 value.stockCode()
         );
     }

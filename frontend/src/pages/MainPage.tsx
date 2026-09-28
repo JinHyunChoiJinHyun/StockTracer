@@ -12,7 +12,7 @@ import Pagination from '../components/Pagination';
 import SearchBar from '../components/SearchBar';
 import SortSelect from '../components/SortSelect';
 import StockList from '../components/StockList';
-import { useStockList } from '../hooks/UseStockList';
+import { useStockList } from '../hooks/useStockList';
 
 export default function MainPage() {
   const {

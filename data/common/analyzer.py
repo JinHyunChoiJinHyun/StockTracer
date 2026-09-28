@@ -111,7 +111,7 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
     # 손바뀜: 쌍끌이 + 개인 순매도 (개인 물량이 저항으로 남지 않는 구간)
     df["is_clean_buy"] = df["is_double_buy"] & (df["individual_net"] < 0)
 
-    # 순매수 강도 - 거래대금을 %로 변환해 절대금액의 대형주 편향 제거
+    # 순매수 강도 - 거래대금을 변환해 절대금액의 대형주 편향 제거
     df["net_ratio"] = np.where( # 조건문 
         df["trading_value"] > 0, # 거래대금이 0보다 클 시
         df["major_net"] / df["trading_value"], # true일 시 거래대금 %로 변환
@@ -122,24 +122,14 @@ def analyze_investor_flow(flow_df:pd.DataFrame) -> pd.DataFrame:
     df["net_ratio"] = df["net_ratio"].round(6)
 
     # 점수화
-    df["score"] = _calculate_score(df)
+    df["flow_score"] = _calculate_score(df)
 
     # 근거 입력
     df["reason"] = df.apply(_build_reason, axis=1) # df에 값이 있으면 apply로 한줄씩 함수에 입력 / 행이 하나라도 있으면 오류 반환 x
 
     logger.info("%s 수급 분석 완료", df["base_date"].iloc[0])
 
-    PAYLOAD_COLS = [
-        "stock_code", 
-        "base_date", 
-        "net_ratio", 
-        "score",
-        "is_double_buy", 
-        "is_clean_buy", 
-        "reason"
-        ]
-
-    return df[PAYLOAD_COLS]
+    return df
 
 
 # 순매수 점수 계산
@@ -309,8 +299,8 @@ def flag_value_trap(df:pd.DataFrame) -> pd.DataFrame:
 def analyze_fundamental(raw: pd.DataFrame, cfg:ValueConfig = ValueConfig()) -> pd.DataFrame:
     # 컬럼명 지정
     OUTPUT_COLUMNS = [
-        "effective_date", "stock_code", "sector",
-        "per", "pbr", "eps", "bps", "div_yield", "market_cap", "trading_value", "shares_outstanding",
+        "base_date", "stock_code", 
+        "per", "pbr", "eps", "bps", "div_yield", "shares_outstanding",
         "per_pct", "pbr_pct", "value_score", "scored_scope",
         "eps_growth", "value_trap",
     ]

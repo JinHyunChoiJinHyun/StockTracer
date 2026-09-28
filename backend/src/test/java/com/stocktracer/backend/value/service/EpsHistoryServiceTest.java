@@ -55,8 +55,8 @@ public class EpsHistoryServiceTest {
         @DisplayName("조회 결과를 응답 DTO로 변환한다")
         void mapsToResponse(){
             List<EpsHistory> items = List.of(
-                    epsHistory("005930", "6012", "2026-05-15"),
-                    epsHistory("000660", "12040", "2026-05-15")
+                    epsHistory("005930", "2026-05-15","6012"),
+                    epsHistory("000660", "2026-05-15","12040" )
             );
 
             given(repository.findPrevEps(BASE_DATE)).willReturn(items);
@@ -231,8 +231,8 @@ public class EpsHistoryServiceTest {
     }
 
     /* 객체 생성 */
-    private EpsHistory epsHistory(String stockCode, String effectiveDate, String eps ){
-        return new EpsHistory(stockCode, LocalDate.parse(effectiveDate), new BigDecimal(eps));
+    private EpsHistory epsHistory(String stockCode, String baseDate, String eps ){
+        return new EpsHistory(stockCode, LocalDate.parse(baseDate), new BigDecimal(eps));
     }
 
     private static EpsHistorySaveRequestDto createDto(List<EpsHistorySaveRequestDto.Item> items){

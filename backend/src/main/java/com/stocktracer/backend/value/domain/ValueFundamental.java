@@ -5,17 +5,14 @@ import java.time.LocalDate;
 
 // 불변의 값이 담기므로 record로 작성
 public record ValueFundamental (
-        LocalDate effectiveDate,
+        LocalDate baseDate,
         String stockCode,
-        String sector,
         BigDecimal per,
         BigDecimal pbr,
         BigDecimal eps,
         BigDecimal bps,
         BigDecimal divYield,
-        Long marketCap,
         Long sharesOutstanding,
-        Long tradingValue,
         BigDecimal perPct,
         BigDecimal pbrPct,
         BigDecimal valueScore,
@@ -31,14 +28,12 @@ public record ValueFundamental (
 
     public ValueFundamental {
         /* 생성 규칙 검증 */
-        if (effectiveDate == null) throw new IllegalArgumentException(("날짜는 필수입니다."));
+        if (baseDate == null) throw new IllegalArgumentException(("날짜는 필수입니다."));
         if (stockCode == null || !stockCode.matches("[A-Za-z0-9]{6}"))
             throw new IllegalArgumentException("invalid stockCode: " + stockCode);
         validatePctInRange("perPct", perPct);
         validatePctInRange("pbrPct", pbrPct);
-        validateNoNegative("marketCap", marketCap);
         validateNoNegative("sharesOutstanding", sharesOutstanding);
-        validateNoNegative("tradingValue", tradingValue);
     }
 
     /* 검증 */

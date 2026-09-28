@@ -1,29 +1,23 @@
 from common.fetcher import fetch_stocks
-from common.mapper import to_stock_payload
-from common.api_client import post_to_backend
-from common.util import validate_df
+from common.mapper import to_payload
+from common.api_client import post
+from common.util import validate_df, _run_task
 import logging
 
 logger = logging.getLogger(__name__) 
 
 STOCK_INFO_ENDPOINT = "/info"
-
+date = "20260908"
 def run_stock_pipeline() -> bool:
-    logger.info("=== 종목 파이프라인 시작 ===")
-    try:
-
-        df = fetch_stocks()
+    def task():
+        df = fetch_stocks(date)
         validate_df(df,"종목 목록 조회")
 
-        payload = to_stock_payload(df)
+        payload = to_payload(df)
 
-        success = post_to_backend(STOCK_INFO_ENDPOINT, payload)
-        logger.info("=== 종목 파이프라인 종료 (성공: %s) ===", success)
+        post(STOCK_INFO_ENDPOINT, payload)
 
-        return success
-    except Exception as e:
-        logger.exception("파이프라인 실행 중 예기치 않은 오류 발생: %s", e)
-        return False
+    return _run_task("종목", task)
 
 if __name__ == "__main__":
     run_stock_pipeline()

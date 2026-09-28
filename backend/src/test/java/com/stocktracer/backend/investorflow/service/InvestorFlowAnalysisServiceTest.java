@@ -74,13 +74,12 @@ public class InvestorFlowAnalysisServiceTest {
     }
 
     private InvestorFlowDaily daily(String stockCode){
-        return InvestorFlowDaily.of(
+        return new InvestorFlowDaily(
                 stockCode,
                 BASE_DATE,
                 1_000L,
                 2_000L,
-                -3_000L,
-                500_000L
+                -3_000L
         );
     }
 
@@ -93,13 +92,13 @@ public class InvestorFlowAnalysisServiceTest {
         void save_returnsAffectedRows(){
             given(dailyRepository.findByBaseDate(BASE_DATE))
                     .willReturn(List.of(daily(SAMSUNG), daily(HYNIX)));
-            given(analysisRepository.bulkUpsert(anyList())).willReturn(2);
+            given(analysisRepository.upsertAll(anyList())).willReturn(2);
 
             int affected = analysisService.save(List.of(request(SAMSUNG), request(HYNIX)));
 
             assertThat(affected).isEqualTo(2);
             verify(dailyRepository).findByBaseDate(BASE_DATE);
-            verify(analysisRepository).bulkUpsert(anyList());
+            verify(analysisRepository).upsertAll(anyList());
 
         }
 
@@ -112,7 +111,7 @@ public class InvestorFlowAnalysisServiceTest {
                             daily(HYNIX)
                     ));
 
-            given(analysisRepository.bulkUpsert(anyList())).willReturn(2);
+            given(analysisRepository.upsertAll(anyList())).willReturn(2);
 
             analysisService.save(List.of(
                     request(SAMSUNG),
@@ -120,15 +119,15 @@ public class InvestorFlowAnalysisServiceTest {
             ));
 
             ArgumentCaptor<List<InvestorFlowAnalysis>> captor = ArgumentCaptor.forClass(List.class);
-            verify(analysisRepository).bulkUpsert(captor.capture());
+            verify(analysisRepository).upsertAll(captor.capture());
 
             List<InvestorFlowAnalysis> flows = captor.getValue();
             assertThat(flows).hasSize(2);
             assertThat(flows)
-                    .extracting(InvestorFlowAnalysis::getStockCode)
+                    .extracting(InvestorFlowAnalysis::stockCode)
                     .containsExactly(SAMSUNG, HYNIX);
             assertThat(flows)
-                    .extracting(InvestorFlowAnalysis::getBaseDate)
+                    .extracting(InvestorFlowAnalysis::baseDate)
                     .containsOnly(BASE_DATE);
         }
 
@@ -141,12 +140,12 @@ public class InvestorFlowAnalysisServiceTest {
                             daily(HYNIX),
                             daily("035420")
                     ));
-            given(analysisRepository.bulkUpsert(anyList())).willReturn(1);
+            given(analysisRepository.upsertAll(anyList())).willReturn(1);
 
             analysisService.save(List.of(request(SAMSUNG)));
 
             ArgumentCaptor<List<InvestorFlowAnalysis>> captor = ArgumentCaptor.forClass(List.class      );
-            verify(analysisRepository).bulkUpsert(captor.capture());
+            verify(analysisRepository).upsertAll(captor.capture());
             assertThat(captor.getValue()).hasSize(1);
         }
 
@@ -182,7 +181,7 @@ public class InvestorFlowAnalysisServiceTest {
 
             assertThatThrownBy(() -> analysisService.save(requests))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("중복된 종목코드")
+                    .hasMessageContaining("중복된 key")
                     .hasMessageContaining(SAMSUNG);
 
             verifyNoInteractions(dailyRepository, analysisRepository);
@@ -240,7 +239,7 @@ public class InvestorFlowAnalysisServiceTest {
             @DisplayName("단건 요청도 정상 처리한다")
             void save_handleSingleRequest(){
                 given(dailyRepository.findByBaseDate(BASE_DATE)).willReturn(List.of(daily(SAMSUNG)));
-                given(analysisRepository.bulkUpsert(anyList())).willReturn(1);
+                given(analysisRepository.upsertAll(anyList())).willReturn(1);
 
                 assertThat(analysisService.save(List.of(request(SAMSUNG)))).isEqualTo(1);
             }

@@ -23,12 +23,12 @@ public interface StockPriceMapper {
     // 2. 여러 종목 동시 조회
     List<StockPriceResponseDto> findPricesByCodes(
             @Param("stockCodes") String stockCodes,
-            @Param("priceDate") LocalDate priceDate,
+            @Param("baseDate") LocalDate baseDate,
             @Param("sortBy") String sortBy
     );
 
     // 3. 주가 데이터 대량 저장
-    void bulkUpsert(
+    void upsertAll(
             @Param("prices") List<StockPrice> prices
     );
 }

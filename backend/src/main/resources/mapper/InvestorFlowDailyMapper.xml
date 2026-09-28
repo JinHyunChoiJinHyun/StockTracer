@@ -2,15 +2,24 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stocktracer.backend.investorflow.mapper.InvestorFlowDailyMapper">
+    <resultMap id="investorFlowDailyMap" type="com.stocktracer.backend.investorflow.domain.InvestorFlowDaily">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <idArg column="base_date" javaType="java.time.LocalDate"/>
+            <arg column="foreign_net" javaType="_long"/>
+            <arg column="institution_net" javaType="_long"/>
+            <arg column="individual_net" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
     <!-- 1. 투자자별 순매도액 대량 저장 -->
-    <insert id="bulkUpsert">
+    <insert id="upsertAll">
         INSERT INTO investor_flow_daily (
             stock_code,
             base_date,
             foreign_net,
             institution_net,
-            individual_net,
-            trading_value
+            individual_net
         )
         VALUES
         <foreach collection="flows" item="f" separator=",">
@@ -19,14 +28,12 @@
                 #{f.baseDate},
                 #{f.foreignNet},
                 #{f.institutionNet},
-                #{f.individualNet},
-                #{f.tradingValue, jdbcType=BIGINT} <!-- jdbcType=BIGINT 타입을 알려주고 null 입력 될 시 null 처리 -->
+                #{f.individualNet}
             )
         </foreach> AS new
         ON DUPLICATE KEY UPDATE
             foreign_net = new.foreign_net,
             institution_net = new.institution_net,
-            individual_net = new.individual_net ,
-            trading_value = new.trading_value
+            individual_net = new.individual_net
     </insert>
 </mapper>

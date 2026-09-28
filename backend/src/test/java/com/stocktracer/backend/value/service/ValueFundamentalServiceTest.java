@@ -122,19 +122,16 @@ public class ValueFundamentalServiceTest {
 
     /* 헬퍼 */
     // item 생성
-    private ValueFundamentalSaveRequestDto.Item item(String stockCode, LocalDate effectiveDate){
+    private ValueFundamentalSaveRequestDto.Item item(String stockCode, LocalDate baseDate){
         return new ValueFundamentalSaveRequestDto.Item(
+                baseDate,
                 stockCode,
-                effectiveDate,
-                "전기전자",
                 new BigDecimal("12.3456"),
                 new BigDecimal("1.2500"),
                 new BigDecimal("5000.0000"),
                 new BigDecimal("52000.0000"),
                 new BigDecimal("1.8000"),
-                400_000_000_000L,
                 5_969_782_550L,
-                1_234_567_890_123L,
                 new BigDecimal("0.3200"),
                 new BigDecimal("0.4100"),
                 new BigDecimal("0.3650"),

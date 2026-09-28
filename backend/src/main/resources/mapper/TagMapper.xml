@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stocktracer.backend.tag.mapper.TagMapper">
+    <resultMap id="tagSnapshotResult" type="com.stocktracer.backend.tag.domain.TagSnapshot">
+        <constructor>
+            <idArg column="base_date" javaType="java.time.LocalDate"/>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="flow_score" javaType="java.math.BigDecimal"/>
+            <arg column="value_score" javaType="java.math.BigDecimal"/>
+            <arg column="div_yield" javaType="java.math.BigDecimal"/>
+            <arg column="value_trap" javaType="java.lang.Boolean"/>
+        </constructor>
+    </resultMap>
+
+    <!-- 중복 제거를 위해 UNION 사용 -->
+    <!-- 태그 계산 필드 조회 -->
+    <select id="selectSnapshots" resultMap="tagSnapshotResult">
+        WITH stock_keys AS (
+            SELECT stock_code, base_date FROM investor_flow_analysis WHERE base_date = #{baseDate}
+            UNION
+            SELECT stock_code, base_date FROM value_fundamental WHERE base_date = #{baseDate}
+        )
+        SELECT
+            k.base_date,
+            k.stock_code,
+            a.flow_score,
+            v.value_score,
+            v.div_yield,
+            v.value_trap
+        FROM
+            stock_keys k
+        LEFT JOIN
+            investor_flow_analysis a
+        ON
+            a.stock_code = k.stock_code
+        AND
+            a.base_date = k.base_date
+        LEFT JOIN
+            value_fundamental v
+        ON
+            v.stock_code = k.stock_code
+        AND
+            v.base_date = k.base_date
+    </select>
+
+    <!-- 태그 제거 -->
+    <delete id="deleteByBaseDate">
+        DELETE FROM stock_tag WHERE base_date = #{baseDate}
+    </delete>
+
+    <!-- 태그 저장 -->
+    <insert id="insertAll">
+        INSERT INTO stock_tag(
+            base_date,
+            stock_code,
+            tag_code
+        ) VALUES
+        <foreach collection="tags" item="t" separator=",">
+            (
+                #{t.baseDate},
+                #{t.stockCode},
+                #{t.tagCode}
+            )
+        </foreach>
+    </insert>
+</mapper>

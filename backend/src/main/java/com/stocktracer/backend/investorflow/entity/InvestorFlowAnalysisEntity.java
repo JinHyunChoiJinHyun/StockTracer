@@ -19,18 +19,18 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class InvestorFlowAnalysisEntity extends BaseEntity {
     @Id
-    @Column(name = "stock_code", length = 6, nullable = false)
-    private String stockCode;
-
-    @Id
     @Column(name = "base_date", nullable = false)
     private LocalDate baseDate;
+
+    @Id
+    @Column(name = "stock_code", length = 6, nullable = false)
+    private String stockCode;
 
     @Column(name = "net_ratio", precision = 9, scale = 6)
     private BigDecimal netRatio;
 
-    @Column(name = "score", precision = 6, scale = 2, nullable = false)
-    private BigDecimal score;
+    @Column(name = "flow_score", precision = 6, scale = 2, nullable = false)
+    private BigDecimal flowScore;
 
     @Column(name = "is_double_buy", nullable = false)
     private boolean doubleBuy;
@@ -44,8 +44,8 @@ public class InvestorFlowAnalysisEntity extends BaseEntity {
     // fk
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "stock_code", referencedColumnName = "stock_code", insertable = false, updatable = false),
-            @JoinColumn(name = "base_date", referencedColumnName = "base_date", insertable = false, updatable = false)
+            @JoinColumn(name = "base_date", referencedColumnName = "base_date", insertable = false, updatable = false),
+            @JoinColumn(name = "stock_code", referencedColumnName = "stock_code", insertable = false, updatable = false)
     })
     private InvestorFlowDailyEntity daily;
 }

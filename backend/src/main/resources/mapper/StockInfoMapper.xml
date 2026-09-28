@@ -2,23 +2,34 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.stocktracer.backend.stock.mapper.StockInfoMapper">
+    <resultMap id="stockInfoMap" type="com.stocktracer.backend.stock.domain.StockInfo">
+        <constructor>
+            <idArg column="stock_code" javaType="java.lang.String"/>
+            <arg column="stock_name" javaType="java.lang.String"/>
+            <arg column="market" javaType="com.stocktracer.backend.stock.domain.MarketType"/>
+            <arg column="sector" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
     <!-- 1. 투자자별 순매도액 대량 저장 -->
-    <insert id="bulkUpsert">
+    <insert id="upsertAll">
         INSERT INTO stock_info (
         stock_code,
         stock_name,
-        market
+        market,
+        sector
         )
         VALUES
         <foreach collection="infos" item="i" separator=",">
             (
             #{i.stockCode},
             #{i.stockName},
-            #{i.market}
+            #{i.market},
+            #{i.sector}
             )
         </foreach> AS new
         ON DUPLICATE KEY UPDATE
             stock_name = new.stock_name,
-            market = new.market
+            market = new.market,
+            sector = new.sector
     </insert>
 </mapper>

@@ -51,7 +51,7 @@ public class FundamentalFacade {
         List<EpsHistorySaveRequestDto.Item> items = request.items().stream()
                 .filter(i -> i.eps() != null) // eps가 null이 아닌 dto만 필터링
                 .map(i -> new EpsHistorySaveRequestDto.Item(
-                        i.effectiveDate(),
+                        i.baseDate(),
                         i.stockCode(),
                         i.eps()
                 ))

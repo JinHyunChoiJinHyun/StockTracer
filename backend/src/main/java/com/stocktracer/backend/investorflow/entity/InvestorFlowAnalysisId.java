@@ -9,6 +9,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @EqualsAndHashCode
 public class InvestorFlowAnalysisId implements Serializable {
-    private String stockCode;
     private LocalDate baseDate;
+    private String stockCode;
 }
