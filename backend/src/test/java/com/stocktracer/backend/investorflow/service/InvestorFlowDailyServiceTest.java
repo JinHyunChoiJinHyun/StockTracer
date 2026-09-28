@@ -99,6 +99,7 @@ public class InvestorFlowDailyServiceTest {
     @Nested
     @DisplayName("StockInfo 조회 및 매핑")
     class StockInfoMapping{
+        // 추후 facade 테스트 추가 예정
         @Test
         @DisplayName("stock_info 에 없는 종목이 섞여 있으면 IllegalStateException 이고 저장은 하지 않는다")
         void save_missingStockInfo_throwsAndDoesNotSave(){
