@@ -17,22 +17,25 @@ public record MainStockRow (
     String stockCode,
     String stockName,
     String market,
+    String sector,
 
     // stock_price
     BigDecimal closePrice,
-    BigDecimal priceChange,
+    BigDecimal changeRate,
     BigDecimal tradingValue,
     BigDecimal marketCap,
 
     // investor_flow_analysis
-    BigDecimal score,
+    BigDecimal flowScore,
     String reason,
 
     // value_fundamental
-    String sector,
     BigDecimal per,
     BigDecimal pbr,
     BigDecimal divYield,
-    BigDecimal valueScore
+    BigDecimal valueScore,
+
+    // tags
+    String tags
 ){
 }

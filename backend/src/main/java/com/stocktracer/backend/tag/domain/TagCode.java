@@ -15,7 +15,14 @@ public enum TagCode {
     HIGH_DIVIDEND("고배당", s -> gte(s.divYield(), 4)),
 
     // 경고
-    VALUE_TRAP("실적악화", s -> isTrue(s.valueTrap()));
+    VALUE_TRAP("실적악화", s -> isTrue(s.valueTrap())),
+
+    // 종합
+    RECOMMENDED("권장",s -> TagCode.FLOW_STRONG.matches(s)
+            && TagCode.UNDERVALUED.matches(s)
+            && !TagCode.VALUE_TRAP.matches(s)),
+    RISK("위험", s -> TagCode.VALUE_TRAP.matches(s)
+            || (lte(s.flowScore(), 40) && lte(s.valueScore(), 40)));
 
     private final String displayName;
     private final Predicate<TagSnapshot> condition;
@@ -36,6 +43,9 @@ public enum TagCode {
         return value != null && value.compareTo(BigDecimal.valueOf(threshold)) >= 0;
     }
 
+    private static boolean lte(BigDecimal value, double threshold){
+        return value != null && value.compareTo(BigDecimal.valueOf(threshold)) <= 0;
+    }
     private static boolean isTrue(Boolean value) {
         return Boolean.TRUE.equals(value);
     }

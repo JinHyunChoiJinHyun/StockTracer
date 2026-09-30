@@ -18,40 +18,49 @@ public record MainStockResponseDto(
         String stockCode,
         String stockName,
         String market,
+        String sector,
 
         BigDecimal closePrice,
-        BigDecimal priceChange,
+        BigDecimal changeRate,
         BigDecimal marketCap,
         BigDecimal tradingValue,
 
-        BigDecimal supplyScore,
+        BigDecimal flowScore,
         String reason,
 
-        String sector,
         BigDecimal per,
         BigDecimal pbr,
         BigDecimal divYield,
-        BigDecimal valueScore
+        BigDecimal valueScore,
+
+        List<String> tags
 ) {
     public static MainStockResponseDto from (MainStockRow row){
         return new MainStockResponseDto(
                 row.stockCode(),
                 row.stockName(),
                 row.market(),
+                row.sector(),
 
                 row.closePrice(),
-                row.priceChange(),
+                row.changeRate(),
                 row.marketCap(),
                 row.tradingValue(),
 
-                row.score(),
+                row.flowScore(),
                 row.reason(),
 
-                row.sector(),
                 row.per(),
                 row.pbr(),
                 row.divYield(),
-                row.valueScore()
+                row.valueScore(),
+
+                splitTags(row.tags())
         );
+    }
+
+    // 태그 분리
+    private static List<String> splitTags(String tags){
+        return (tags == null || tags.isBlank()) ? List.of() : List.of(tags.split(","));
     }
 }
