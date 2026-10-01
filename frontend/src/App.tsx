@@ -1,25 +1,19 @@
-import { Navigate, Outlet, ScrollRestoration, createBrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router";
 import MainPage from "./pages/MainPage";
 import StockDetailPage from "./pages/StockDetailPage";
-import "./App.css";
 
-function RootLayout() {
+// 페이지 구성
+//   /                    → Main Page (종목 목록)
+//   /stocks/:stockCode   → Stock Detail Page (예: /stocks/005930)
+function App() {
   return (
-    <>
-      <Outlet />
-      {/* 상세 진입 시 맨 위로, 뒤로 가기 시 이전 스크롤 위치로 */}
-      <ScrollRestoration />
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/stocks/:stockCode" element={<StockDetailPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
-export const router = createBrowserRouter([
-  {
-    element: <RootLayout />,
-    children: [
-      { path: "/", element: <MainPage /> },
-      { path: "/stocks/:stockCode", element: <StockDetailPage /> },
-      { path: "*", element: <Navigate to="/" replace /> },
-    ],
-  },
-]);
+export default App;

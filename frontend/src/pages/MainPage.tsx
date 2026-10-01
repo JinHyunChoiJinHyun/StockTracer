@@ -1,114 +1,150 @@
-import { useMemo } from "react";
-import Header from "../components/Header";
+import { useEffect, useMemo, useState } from "react";
+import type { StockSummary, StockTag, SortKey} from "../types/stock";
+import { getMainStocks } from "../api/stockApi";
+import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
 import TagFilterBar from "../components/TagFilterBar";
 import StockCard from "../components/StockCard";
-import { useMainStocks } from "../hooks/useStocks";
-import { useStockFilters } from "../hooks/useStockFilters";
-import { SORT_OPTIONS, isSortKey, type Stock } from "../types/stock";
-import { getVisibleStocks } from "../utils/stock";
 
-const EMPTY: Stock[] = [];
 
-export default function MainPage() {
-  const { state, reload } = useMainStocks();
-  const {
-    query,
-    selectedTags,
-    sortKey,
-    setQuery,
-    toggleTag,
-    clearTags,
-    setSortKey,
-    resetFilters,
-  } = useStockFilters();
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "MARKET_CAP", label: "시가총액 순" },
+  { value: "flowScore", label: "수급점수 높은 순" },
+  { value: "valueScore", label: "저평가점수 높은 순" },
+  { value: "changeRate", label: "등락률 높은 순" },
+];
 
-  const stocks = state.status === "success" ? state.data.stocks : EMPTY;
-  const baseDate = state.status === "success" ? state.data.baseDate : null;
+function MainPage() {
+  // 요청 파라미터
+  const [searchText, setSearchText] = useState(""); // 검색창 입력값
+  const [selectedTags, setSelectedTags] = useState<StockTag[]>([]); // 선택된 태그들 (빈 배열 = 전체)
+  const [sortKey, setSortKey] = useState<SortKey>("MARKET_CAP"); // 현재 정렬 기준
+  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 (1부터 시작)
 
-  // 검색 → 태그(AND) → 정렬
-  const visibleStocks = useMemo(
-    () => getVisibleStocks(stocks, query, selectedTags, sortKey),
-    [stocks, query, selectedTags, sortKey],
-  );
+  // 응답
+  const [baseDate, setBaseDate] = useState("") // 분석 기준일
+  const [stocks, setStocks] = useState<StockSummary[]>([]);  // 현재 페이지 종목
+  const [totalElements, setTotalElements] = useState(0); // 조건에 맞는 전체 종목 수
+  const [totalPages, setTotalPages] = useState(0); // 전체 페이지 수
+  const [isLoading, setIsLoading] = useState(true); // 데이터 불러오는 중인지
 
-  const isFiltered = query.trim() !== "" || selectedTags.length > 0;
+ 
+  // ----- 처음 화면이 열릴 때 종목 목록 불러오기 -----
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadStocks() {
+      const res = await getMainStocks({
+        tags: selectedTags,
+        sort: sortKey,
+        page: currentPage - 1,
+        size: 20
+      });
+
+      if (ignore) {
+        return;
+      }
+      
+      setBaseDate(res.baseDate);
+      setStocks(res.stocks);
+      setTotalElements(res.totalElements);
+      setTotalPages(res.totalPages);
+      setIsLoading(false);
+    }
+    loadStocks();
+
+    // 응답 중 새로운 요청이 있는 경우 마지막 요청의 응답만 화면에 반영
+    return () => {
+      ignore = true;
+    };
+  }, [searchText, selectedTags, sortKey, currentPage]);
+ 
+  // 검색·필터·정렬 재 실행 시 1페이지로 이동
+  function handleSearchTextChange(text: string) {
+    setSearchText(text);
+    setCurrentPage(1);
+  }
+ 
+  function handleSelectedTagsChange(tags: StockTag[]) {
+    setSelectedTags(tags);
+    setCurrentPage(1);
+  }
+ 
+  function handleSortKeyChange(nextSortKey: SortKey) {
+    setSortKey(nextSortKey);
+    setCurrentPage(1);
+  }
+ 
+  // 페이지 버튼을 누르면 페이지를 바꾸고 화면 맨 위로 올림
+  function handlePageChange(page: number) {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  }
+
+  // 필터를 처음 상태로 되돌리기 (결과가 없을 때 사용)
+  function resetFilters() {
+    setSearchText("");
+    setSelectedTags([]);
+  }
 
   return (
-    <>
-      <Header baseDate={baseDate} />
-
-      <main className="container main">
-        <SearchBar value={query} onChange={setQuery} />
-        <TagFilterBar selectedTags={selectedTags} onToggle={toggleTag} onClear={clearTags} />
-
-        <div className="toolbar">
-          <p className="toolbar__count" aria-live="polite">
-            {state.status === "success" && (
-              <>
-                <strong>{visibleStocks.length}</strong>개 종목
-                {selectedTags.length > 1 && (
-                  <span className="toolbar__hint"> · 선택한 태그를 모두 가진 종목</span>
-                )}
-              </>
-            )}
-          </p>
+    <div className="page">
+      <header className="page-header">
+        <h1 className="page-title">오늘의 종목 판단</h1>
+        <p className="page-subtitle">
+          종합점수와 태그로 오늘 확인할 종목을 골라보세요.
+          {baseDate !== "" && <span className="base-date">기준일 {baseDate}</span>}
+        </p>
+      </header>
+ 
+      <section className="toolbar">
+        <SearchBar searchText={searchText} onSearchTextChange={handleSearchTextChange} />
+        <TagFilterBar
+          selectedTags={selectedTags}
+          onSelectedTagsChange={handleSelectedTagsChange}
+        />
+ 
+        <div className="toolbar-bottom">
+          <span className="result-count">
+            {isLoading ? "불러오는 중" : `${totalElements}개 종목`}
+          </span>
           <select
             className="sort-select"
-            aria-label="정렬 기준"
             value={sortKey}
-            onChange={(e) => isSortKey(e.target.value) && setSortKey(e.target.value)}
+            onChange={(event) => handleSortKeyChange(event.target.value as SortKey)}
+            aria-label="정렬 기준"
           >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
         </div>
-
-        {state.status === "loading" && (
-          <div className="stock-list" aria-busy="true">
-            {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="card card--skeleton" />
-            ))}
-          </div>
-        )}
-
-        {state.status === "error" && (
-          <div className="state-box">
-            <p className="state-box__title">종목 목록을 불러오지 못했습니다</p>
-            <p className="state-box__desc">{state.error.message}</p>
-            <button type="button" className="outline-button" onClick={reload}>
-              다시 불러오기
+      </section>
+ 
+      <section className="stock-list">
+        {stocks.map((stock) => (
+          <StockCard key={stock.stockCode} stock={stock} />
+        ))}
+ 
+        {!isLoading && totalElements === 0 && (
+          <div className="empty-box">
+            <p>조건에 맞는 종목이 없습니다. 검색어를 바꾸거나 태그 선택을 줄여보세요.</p>
+            <button type="button" className="text-button" onClick={resetFilters}>
+              검색·필터 초기화
             </button>
           </div>
         )}
-
-        {state.status === "success" && visibleStocks.length === 0 && (
-          <div className="state-box">
-            <p className="state-box__title">조건에 맞는 종목이 없습니다</p>
-            <p className="state-box__desc">
-              {isFiltered
-                ? "검색어를 바꾸거나 선택한 태그를 줄여 보세요."
-                : "오늘 분석된 종목이 아직 없습니다."}
-            </p>
-            {isFiltered && (
-              <button type="button" className="outline-button" onClick={resetFilters}>
-                필터 초기화
-              </button>
-            )}
-          </div>
-        )}
-
-        {state.status === "success" && visibleStocks.length > 0 && (
-          <div className="stock-list">
-            {visibleStocks.map((stock) => (
-              <StockCard key={stock.stockCode} stock={stock} />
-            ))}
-          </div>
-        )}
-      </main>
-    </>
+      </section>
+ 
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+    </div>
   );
 }
+
+export default MainPage;

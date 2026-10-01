@@ -1,73 +1,105 @@
-import type { MainStocksResponse, StockDetail } from "../types/stock";
-import { mockMainStocksResponse, mockTagReasons } from "../mock/stocks";
-import { TAG_DESCRIPTIONS } from "../utils/stock";
+// ===============================================
+// 데이터를 가져오는 함수 모음
+// ===============================================
+// 화면(페이지)은 mock 데이터를 직접 import 하지 않고
+// 항상 이 파일의 함수만 호출한다.
+//
+// 그래서 나중에 백엔드가 준비되면 이 파일의 함수 "안쪽"만
+// fetch 로 바꾸면 되고, 페이지 코드는 거의 수정할 필요가 없다.
+//
+// 지금은 Mock 데이터를 Promise로 감싸서 돌려준다.
+// (실제 API처럼 async 함수로 만들어 두면 나중에 교체하기 쉽다)
+// ===============================================
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== "false";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
-const MOCK_DELAY_MS = 300;
-const MAIN_CACHE_TTL_MS = 5 * 60 * 1000;
+import { mockStocks } from "../mock/stocks";
+import type {
+  MainStockQuery,
+  StockDetail,
+  PriceHistory,
+  FlowHistory,
+  MainPageResponse,
+} from "../types/stock";
 
-export class NotFoundError extends Error {}
+const API_BASE_URL = "http://localhost:8080";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, { signal });
-  if (res.status === 404) throw new NotFoundError("요청한 종목을 찾을 수 없습니다.");
-  if (!res.ok) throw new Error(`데이터를 불러오지 못했습니다. (HTTP ${res.status})`);
-  return (await res.json()) as T;
-}
-
-/* ---------- 메인 목록 ---------- */
-
-// 상세 → 뒤로 가기 시 로딩 없이 목록을 바로 그려 스크롤 위치를 유지하기 위한 캐시
-let mainCache: { data: MainStocksResponse; at: number } | null = null;
-
-export function getCachedMainStocks(): MainStocksResponse | null {
-  if (mainCache && Date.now() - mainCache.at < MAIN_CACHE_TTL_MS) return mainCache.data;
-  return null;
-}
-
-export async function fetchMainStocks(
-  signal?: AbortSignal,
-  options: { force?: boolean } = {},
-): Promise<MainStocksResponse> {
-  const cached = options.force ? null : getCachedMainStocks();
-  if (cached) return cached;
-
-  let data: MainStocksResponse;
-  if (USE_MOCK) {
-    await delay(MOCK_DELAY_MS);
-    data = mockMainStocksResponse;
-  } else {
-    data = await getJson<MainStocksResponse>("/api/v1/main/stocks", signal);
+// -----------------------------------------------
+// Main Page 종목 목록
+// 나중에: GET /api/v1/main/stocks
+// -----------------------------------------------
+export async function getMainStocks(
+  query: MainStockQuery
+): Promise<MainPageResponse> {
+  const params = new URLSearchParams();
+  // params.append("keyword", query.keyword);
+  for (const tag of query.tags) {
+    params.append("tags", tag);
   }
-  mainCache = { data, at: Date.now() };
+  params.append("sort", query.sort);
+  params.append("page", String(query.page));
+  params.append("size", String(query.size));
+  
+  const response = await fetch(`${API_BASE_URL}/api/v1/main/stocks?${params.toString()}`);
+  const data: MainPageResponse = await response.json();
   return data;
+
+  // return mockStocks;
 }
 
-/* ---------- 종목 상세 ---------- */
+// -----------------------------------------------
+// 종목 상세 정보
+// 나중에: GET /api/v1/stocks/{stockCode}
+// 종목이 없으면 null 을 돌려준다.
+// -----------------------------------------------
+export async function getStockDetail(
+  stockCode: string
+): Promise<StockDetail | null> {
+  // [실제 API로 바꿀 때]
+  // const response = await fetch(`${API_BASE_URL}/api/v1/stocks/${stockCode}`);
+  // if (response.status === 404) return null;
+  // const data: StockDetail = await response.json();
+  // return data;
 
-export async function fetchStockDetail(
-  stockCode: string,
-  signal?: AbortSignal,
-): Promise<StockDetail> {
-  if (!USE_MOCK) {
-    return getJson<StockDetail>(`/api/v1/stocks/${encodeURIComponent(stockCode)}`, signal);
+  const foundStock = mockStocks.find((stock) => stock.stockCode === stockCode);
+  if (foundStock === undefined) {
+    return null;
   }
+  return foundStock;
+}
 
-  await delay(MOCK_DELAY_MS);
-  const { baseDate, stocks } = mockMainStocksResponse;
-  const stock = stocks.find((s) => s.stockCode === stockCode);
-  if (!stock) throw new NotFoundError("요청한 종목을 찾을 수 없습니다.");
+// -----------------------------------------------
+// 종가 이력 (라인 그래프용)
+// 나중에: GET /api/v1/stocks/{stockCode}/prices
+// -----------------------------------------------
+export async function getPriceHistory(
+  stockCode: string
+): Promise<PriceHistory[]> {
+  // [실제 API로 바꿀 때]
+  // const response = await fetch(`${API_BASE_URL}/api/v1/stocks/${stockCode}/prices`);
+  // const data: PriceHistory[] = await response.json();
+  // return data;
 
-  const reasons = mockTagReasons[stockCode] ?? {};
-  return {
-    ...stock,
-    baseDate,
-    tagReasons: stock.tags.map((tag) => ({
-      tag,
-      reason: reasons[tag] ?? TAG_DESCRIPTIONS[tag],
-    })),
-  };
+  const foundStock = mockStocks.find((stock) => stock.stockCode === stockCode);
+  if (foundStock === undefined) {
+    return [];
+  }
+  return foundStock.priceHistory;
+}
+
+// -----------------------------------------------
+// 투자자별 수급 이력 (라인 그래프용)
+// 나중에: GET /api/v1/stocks/{stockCode}/flow
+// -----------------------------------------------
+export async function getFlowHistory(
+  stockCode: string
+): Promise<FlowHistory[]> {
+  // [실제 API로 바꿀 때]
+  // const response = await fetch(`${API_BASE_URL}/api/v1/stocks/${stockCode}/flow`);
+  // const data: FlowHistory[] = await response.json();
+  // return data;
+
+  const foundStock = mockStocks.find((stock) => stock.stockCode === stockCode);
+  if (foundStock === undefined) {
+    return [];
+  }
+  return foundStock.flowHistory;
 }

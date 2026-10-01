@@ -1,72 +1,114 @@
-/** 태그 목록 — 배열 하나로 관리하고 타입은 여기서 파생 (필터 칩 순서도 이 순서) */
+// ===============================================
+// StockTracer에서 사용하는 타입 모음
+// ===============================================
+
+// 종목에 붙는 태그 (union type)
+// 새 태그가 생기면 여기와 아래 ALL_TAGS 두 곳에 추가하면 된다.
+
 export const STOCK_TAG_LABELS = {
-  FLOW_STRONG: "큰손 매수",
+  FLOW_STRONG: "천군만마",
   UNDERVALUED: "진흙 속 진주",
   HIGH_DIVIDEND: "황금알 거위",
   VALUE_TRAP: "싼 게 비지떡",
-  RECOMMENDED: "권장",
-  RISK: "위험",
-}
-export const STOCK_TAGS = [
-  "저평가",
-  "저PER",
-  "저PBR",
-  "고배당",
-  "쌍끌이",
-  "클린 매수",
-  "가치 함정",
-] as const;
-export type StockTag = (typeof STOCK_TAGS)[number];
+  RECOMMENDED: "금상첨화",
+  RISK: "살얼음판",
+} as const;
 
-export const isStockTag = (value: string): value is StockTag =>
-  (STOCK_TAGS as readonly string[]).includes(value);
+export type StockTag = keyof typeof STOCK_TAG_LABELS;
+
+export const isStockTag = (value:string): value is StockTag =>
+  value in STOCK_TAG_LABELS;
+
+// 태그 필터 버튼을 그릴 때 사용하는 전체 태그 목록 (버튼 순서 = 배열 순서)
+export const ALL_TAGS: StockTag[] = [
+  "FLOW_STRONG",
+  "UNDERVALUED",
+  "HIGH_DIVIDEND",
+  "VALUE_TRAP",
+  "RECOMMENDED",
+  "RISK",
+];
 
 export type Market = "KOSPI" | "KOSDAQ";
 
-export interface Stock {
+// -----------------------------------------------
+// 1) Main Page 목록용 데이터
+//    GET /api/v1/main/stocks 응답의 한 항목에 해당
+// -----------------------------------------------
+export interface StockSummary {
   stockCode: string;
   stockName: string;
   market: Market;
   sector: string;
-  closePrice: number;
-  /** 전일 대비 등락률(%) — 예: -1.25 */
-  changeRate: number;
-  /** 배당수익률(%) — 무배당이면 0 */
-  divYield: number;
-  flowScore: number;
-  valueScore: number;
+  closePrice: number; // 현재가 (원)
+  changeRate: number; // 등락률 (%) 예: 1.13 → +1.13%
+  flowScore: number; // 수급 점수 (0~100) - 목록에서는 정렬에만 사용
+  valueScore: number; // 저평가 점수 (0~100) - 목록에서는 정렬에만 사용
   tags: StockTag[];
 }
 
-/** GET /api/v1/main/stocks 응답 */
-export interface MainStocksResponse {
-  /** 분석 기준일 (YYYY-MM-DD) */
-  baseDate: string;
-  stocks: Stock[];
+// 정렬 기준
+export type SortKey = "MARKET_CAP" | "flowScore" | "valueScore" | "changeRate";
+
+export interface MainStockQuery{
+  tags: StockTag[],
+  sort: SortKey,
+  page: number,
+  size: number
 }
 
-/** 태그가 붙은 근거 */
-export interface TagReason {
-  tag: StockTag;
-  reason: string;
+export interface MainPageResponse{
+  baseDate: string,
+  page: number,
+  size: number,
+  stocks: StockSummary[],
+  totalElements: number,
+  totalPages: number,
 }
 
-/** GET /api/v1/stocks/{stockCode} 응답 */
-export interface StockDetail extends Stock {
-  baseDate: string;
-  tagReasons: TagReason[];
+// -----------------------------------------------
+// 2) Stock Detail Page 데이터
+//    GET /api/v1/stocks/{stockCode} 응답에 해당
+//    StockSummary의 모든 필드 + 상세 지표
+// -----------------------------------------------
+export interface StockDetail extends StockSummary {
+  per: number;
+  pbr: number;
+  eps: number; // 주당순이익 (원)
+  bps: number; // 주당순자산 (원)
+  dividendYield: number; // 배당수익률 (%)
+  // 태그별 분석 이유. 모든 태그에 이유가 있는 건 아니므로 Partial 사용
+  tagReasons: Partial<Record<StockTag, string>>;
 }
 
-export const SORT_OPTIONS = [
-  { value: "totalScore", label: "종합점수 높은 순" },
-  { value: "flowScore", label: "수급점수 높은 순" },
-  { value: "valueScore", label: "저평가점수 높은 순" },
-  { value: "changeRate", label: "등락률 높은 순" },
-] as const;
-export type SortKey = (typeof SORT_OPTIONS)[number]["value"];
-export const DEFAULT_SORT: SortKey = "totalScore";
+// -----------------------------------------------
+// 3) 그래프용 데이터
+// -----------------------------------------------
 
-export const isSortKey = (value: string): value is SortKey =>
-  SORT_OPTIONS.some((o) => o.value === value);
+// 종가 한 건 (GET /api/v1/stocks/{stockCode}/prices 배열의 한 항목)
+export interface PriceHistory {
+  date: string; // "2026-09-01"
+  close: number; // 종가 (원)
+}
 
-export type Judgment = "매수 관심" | "관심" | "중립" | "주의";
+// 투자자별 순매수 한 건 (GET /api/v1/stocks/{stockCode}/flow 배열의 한 항목)
+// 양수 = 순매수, 음수 = 순매도 (단위: 원)
+export interface FlowHistory {
+  date: string;
+  institution: number; // 기관
+  foreign: number; // 외국인
+  individual: number; // 개인
+}
+
+// -----------------------------------------------
+// 4) Mock 데이터 전용 타입
+//    Mock 파일 하나에 모든 정보를 모아두기 위한 타입.
+//    실제 API에서는 위의 1)~3)이 각각 다른 엔드포인트로 나뉘어 온다.
+// -----------------------------------------------
+export interface Stock extends StockDetail {
+  priceHistory: PriceHistory[];
+  flowHistory: FlowHistory[];
+}
+
+// 매수 관심 신호
+export type BuySignal = "관심" | "관찰" | "중립";

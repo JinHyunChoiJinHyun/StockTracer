@@ -1,43 +1,22 @@
-import type { FormEvent } from "react";
+// 검색 입력창
+// 입력값(searchText)은 부모(MainPage)가 state로 가지고 있고,
+// 여기서는 값을 보여주고 바뀔 때 부모에게 알려주기만 한다.
 
 interface SearchBarProps {
-  value: string;
-  onChange: (value: string) => void;
+  searchText: string;
+  onSearchTextChange: (text: string) => void;
 }
 
-/** 입력 즉시 필터링. 검색 버튼/Enter는 모바일 키보드를 닫는 용도 */
-export default function SearchBar({ value, onChange }: SearchBarProps) {
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    (document.activeElement as HTMLElement | null)?.blur();
-  };
-
+function SearchBar({ searchText, onSearchTextChange }: SearchBarProps) {
   return (
-    <form className="search" role="search" onSubmit={handleSubmit}>
-      <div className="search__field">
-        <input
-          className="search__input"
-          type="search"
-          inputMode="search"
-          placeholder="종목명 또는 종목코드 검색"
-          aria-label="종목명 또는 종목코드 검색"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        {value && (
-          <button
-            type="button"
-            className="search__clear"
-            aria-label="검색어 지우기"
-            onClick={() => onChange("")}
-          >
-            ×
-          </button>
-        )}
-      </div>
-      <button type="submit" className="search__button">
-        검색
-      </button>
-    </form>
+    <input
+      className="search-input"
+      type="search"
+      placeholder="종목명 또는 종목코드로 검색 (예: 삼성, 005930)"
+      value={searchText}
+      onChange={(event) => onSearchTextChange(event.target.value)}
+    />
   );
 }
+
+export default SearchBar;

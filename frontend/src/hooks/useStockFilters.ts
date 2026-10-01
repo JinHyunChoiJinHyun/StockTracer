@@ -2,14 +2,6 @@ import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DEFAULT_SORT, isSortKey, isStockTag, type SortKey, type StockTag } from "../types/stock";
 
-/**
- * 검색어 / 선택 태그(배열) / 정렬 상태.
- *
- * useState 대신 URL 쿼리(?q=&tag=&tag=&sort=)에 저장한다.
- * → 상세 페이지에서 뒤로 가기·새로고침해도 필터가 그대로 복원된다.
- * → 파라미터가 없으면 초기 상태(전체 / 검색어 없음 / 종합점수 순).
- * replace: true 로 갱신해서 입력할 때마다 히스토리가 쌓이지 않게 한다.
- */
 export function useStockFilters() {
   const [params, setParams] = useSearchParams();
 

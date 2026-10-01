@@ -1,41 +1,54 @@
-import { STOCK_TAGS, type StockTag } from "../types/stock";
+import { ALL_TAGS } from "../types/stock";
+import type { StockTag } from "../types/stock";
+
+// 태그 필터 버튼 줄
+// - selectedTags가 빈 배열이면 [전체]가 선택된 상태
+// - 태그는 여러 개 선택 가능 (실제 필터링은 MainPage에서 AND 조건으로 처리)
 
 interface TagFilterBarProps {
   selectedTags: StockTag[];
-  onToggle: (tag: StockTag) => void;
-  /** [전체] 클릭 — 선택된 태그 모두 해제 */
-  onClear: () => void;
+  onSelectedTagsChange: (tags: StockTag[]) => void;
 }
 
-export default function TagFilterBar({ selectedTags, onToggle, onClear }: TagFilterBarProps) {
-  const isAll = selectedTags.length === 0;
+function TagFilterBar({ selectedTags, onSelectedTagsChange }: TagFilterBarProps) {
+  const isAllSelected = selectedTags.length === 0;
+
+  // [전체] 클릭 → 선택된 태그를 모두 해제
+  function handleAllClick() {
+    onSelectedTagsChange([]);
+  }
+
+  // 태그 클릭 → 이미 선택돼 있으면 빼고, 아니면 추가
+  function handleTagClick(tag: StockTag) {
+    if (selectedTags.includes(tag)) {
+      const nextTags = selectedTags.filter((selectedTag) => selectedTag !== tag);
+      onSelectedTagsChange(nextTags);
+    } else {
+      onSelectedTagsChange([...selectedTags, tag]);
+    }
+  }
 
   return (
-    <div className="tag-filter" role="group" aria-label="태그 필터 (여러 개 선택 시 모두 포함)">
+    <div className="tag-filter-bar">
       <button
         type="button"
-        className={`chip${isAll ? " chip--active" : ""}`}
-        aria-pressed={isAll}
-        onClick={onClear}
+        className={isAllSelected ? "filter-chip is-selected" : "filter-chip"}
+        aria-pressed={isAllSelected}
+        onClick={handleAllClick}
       >
         전체
       </button>
 
-      {STOCK_TAGS.map((tag) => {
-        const active = selectedTags.includes(tag);
+      {ALL_TAGS.map((tag) => {
+        const isSelected = selectedTags.includes(tag);
         return (
           <button
             key={tag}
             type="button"
-            className={`chip${active ? " chip--active" : ""}`}
-            aria-pressed={active}
-            onClick={() => onToggle(tag)}
+            className={isSelected ? "filter-chip is-selected" : "filter-chip"}
+            aria-pressed={isSelected}
+            onClick={() => handleTagClick(tag)}
           >
-            {active && (
-              <span className="chip__check" aria-hidden="true">
-                ✓
-              </span>
-            )}
             {tag}
           </button>
         );
@@ -43,3 +56,5 @@ export default function TagFilterBar({ selectedTags, onToggle, onClear }: TagFil
     </div>
   );
 }
+
+export default TagFilterBar;
