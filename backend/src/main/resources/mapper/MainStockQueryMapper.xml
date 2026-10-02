@@ -49,6 +49,34 @@
             ON st.stock_code = si.stock_code
     </sql>
 
+    <sql id="whereClause">
+        WHERE sp.base_date = #{query.baseDate}
+        <!-- 1. 검색 -->
+        <if test="query.keyword != null and query.keyword != ''">
+            AND(
+                si.stock_name LIKE CONCAT('%', #{query.keyword}, '%')
+                OR
+                si.stock_code LIKE CONCAT('%', #{query.keyword}, '%')
+            )
+        </if>
+        <!-- 2. 태그 필터 -->
+        <!-- having절에서 총 태그 수를 계산하여 필터된 태그 수와 같은 필드 반환 -->
+        <if test="query.tags != null and query.tags.size() > 0">
+            AND st.stock_code IN (
+                SELECT t.stock_code
+                FROM stock_tag t
+                WHERE t.base_date = #{query.baseDate}
+                AND t.tag_code IN (
+                    <foreach collection="query.tags" item="tag" separator=",">
+                        #{tag}
+                    </foreach>
+                )
+                GROUP BY t.stock_code
+                <!-- 조회된 종목 중 필터 체크된 태그 수와 같은 태그 수의 종목만 반환 -->
+                HAVING COUNT(DISTINCT t.tag_code) = #{query.tags.size()}
+        </if>
+    </sql>
+
     <!-- 최신 영업일 정보 조회 -->
     <select id="findLatestBaseDate" resultType="java.time.LocalDate">
         SELECT MAX(base_date) FROM stock_price
@@ -77,6 +105,7 @@
 
             st.tags
         <include refid="fromClause"/>
+        <include refid="whereClause"/>
 
         ORDER BY ${query.sort.orderByClause}, si.stock_code ASC
         LIMIT #{query.limit} OFFSET #{query.offset}

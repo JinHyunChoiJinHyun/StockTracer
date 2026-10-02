@@ -1,7 +1,9 @@
 package com.stocktracer.backend.main.controller;
 
 import com.stocktracer.backend.main.dto.MainStockPageResponseDto;
+import com.stocktracer.backend.main.dto.MainStockQuery;
 import com.stocktracer.backend.main.service.MainStockQueryService;
+import com.stocktracer.backend.tag.domain.TagCode;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Validated
 @RestController
@@ -22,10 +26,12 @@ public class MainStockController {
 
     @GetMapping
     public ResponseEntity<MainStockPageResponseDto> getMainStocks(
-            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) List<TagCode> tags,
+            @RequestParam(defaultValue = "MARKET_CAP") MainStockQuery.MainStockSort sort,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(MAX_PAGE_SIZE) int size
     ){
-        return ResponseEntity.ok(service.getMainStocks(sort, page, size));
+        return ResponseEntity.ok(service.getMainStocks(keyword, tags, sort, page, size));
     }
 }
