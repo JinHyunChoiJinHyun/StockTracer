@@ -8,17 +8,18 @@ import StockCard from "../components/StockCard";
 
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "MARKET_CAP", label: "시가총액 순" },
-  { value: "flowScore", label: "수급점수 높은 순" },
-  { value: "valueScore", label: "저평가점수 높은 순" },
+  { value: "marketCap", label: "시가총액 높은 순" },
+  { value: "divYield", label: "배당 높은 순" },
   { value: "changeRate", label: "등락률 높은 순" },
+  { value: "stockName", label: "이름 순" },
+  { value: "stockCode", label: "종목코드 순" },
 ];
 
 function MainPage() {
   // 요청 파라미터
   const [searchText, setSearchText] = useState(""); // 검색창 입력값
   const [selectedTags, setSelectedTags] = useState<StockTag[]>([]); // 선택된 태그들 (빈 배열 = 전체)
-  const [sortKey, setSortKey] = useState<SortKey>("MARKET_CAP"); // 현재 정렬 기준
+  const [sortKey, setSortKey] = useState<SortKey>("marketCap"); // 현재 정렬 기준
   const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 (1부터 시작)
 
   // 응답
@@ -35,6 +36,7 @@ function MainPage() {
 
     async function loadStocks() {
       const res = await getMainStocks({
+        keyword: searchText,
         tags: selectedTags,
         sort: sortKey,
         page: currentPage - 1,
