@@ -25,7 +25,6 @@ public class MainStockQueryService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "거래일 데이터가 없습니다."
                 ));
-
         // 2. 쿼리 생성
         String trimmedKeyword = keyword.trim();
         MainStockQuery query = MainStockQuery.of(baseDate, trimmedKeyword, tags, sort, page, size);

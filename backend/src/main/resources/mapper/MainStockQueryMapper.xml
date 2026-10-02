@@ -62,7 +62,7 @@
         <!-- 2. 태그 필터 -->
         <!-- having절에서 총 태그 수를 계산하여 필터된 태그 수와 같은 필드 반환 -->
         <if test="query.tags != null and query.tags.size() > 0">
-            AND st.stock_code IN (
+            AND si.stock_code IN (
                 SELECT t.stock_code
                 FROM stock_tag t
                 WHERE t.base_date = #{query.baseDate}
@@ -73,7 +73,8 @@
                 )
                 GROUP BY t.stock_code
                 <!-- 조회된 종목 중 필터 체크된 태그 수와 같은 태그 수의 종목만 반환 -->
-                HAVING COUNT(DISTINCT t.tag_code) = #{query.tags.size()}
+                HAVING COUNT(DISTINCT t.tag_code) = #{query.tagCount}
+            )
         </if>
     </sql>
 

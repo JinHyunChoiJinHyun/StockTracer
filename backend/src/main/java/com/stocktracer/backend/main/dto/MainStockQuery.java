@@ -11,6 +11,7 @@ public record MainStockQuery(
         LocalDate baseDate,
         String keyword,
         List<TagCode> tags,
+        int tagCount,
         MainStockSort sort,
         long offset,
         int limit
@@ -56,6 +57,7 @@ public record MainStockQuery(
                 baseDate,
                 keyword,
                 tags,
+                tags.size(),
                 sort,
                 (long) page * size,
                 size
