@@ -48,7 +48,7 @@ export interface StockSummary {
 }
 
 // 정렬 기준
-export type SortKey = "marketCap" | "divYield" | "changeRate" | "stockName" | "stockCode";
+export type SortKey = "MARKET_CAP" | "DIV_YIELD" | "CHANGE_RATE" | "STOCK_NAME" | "STOCK_CODE";
 
 export interface MainStockQuery{
   keyword: string,
