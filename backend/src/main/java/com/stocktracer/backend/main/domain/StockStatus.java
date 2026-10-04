@@ -21,15 +21,15 @@ public enum StockStatus {
     NEUTRAL("중립", t -> true);
 
     private final String label;
-    private final Predicate<Set<String>> condition;
+    private final Predicate<Set<TagCode>> condition;
 
-    StockStatus(String label, Predicate<Set<String>> condition){
+    StockStatus(String label, Predicate<Set<TagCode>> condition){
         this.label = label;
         this.condition = condition;
     }
 
     // status 결정 메서드
-    public static StockStatus resolve(Set<String> tags){
+    public static StockStatus resolve(Set<TagCode> tags){
         // ENUM의 필드를 순회하여 조건 검사 & true인 조건 중 첫번쨰 조건 반환
         return Arrays.stream(values())
                 .filter(status -> status.condition.test(tags))

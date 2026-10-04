@@ -36,10 +36,10 @@ public record MainStockResponseDto(
         BigDecimal divYield,
         BigDecimal valueScore,
 
-        Set<String> tags,
+        Set<TagCode> tags,
         StockStatus status
 ) {
-    public static MainStockResponseDto of (MainStockRow row, Set<String> tags , StockStatus status){
+    public static MainStockResponseDto of (MainStockRow row, Set<TagCode> tags , StockStatus status){
         return new MainStockResponseDto(
                 row.stockCode(),
                 row.stockName(),

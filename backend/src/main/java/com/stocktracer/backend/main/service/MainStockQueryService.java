@@ -47,7 +47,7 @@ public class MainStockQueryService {
 
     // dto 변환 메서드
     private MainStockResponseDto toResponse(MainStockRow row){
-        Set<String> tags = TagCode.splitTags(row.tags());
+        Set<TagCode> tags = TagCode.splitTags(row.tags());
         StockStatus status = StockStatus.resolve(tags);
         return MainStockResponseDto.of(row, tags, status);
     }

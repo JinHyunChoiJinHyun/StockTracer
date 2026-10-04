@@ -3,9 +3,12 @@ package com.stocktracer.backend.tag.domain;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.stocktracer.backend.common.util.BIgDecimalUtils.gte;
 import static com.stocktracer.backend.common.util.BIgDecimalUtils.lte;
@@ -44,7 +47,15 @@ public enum TagCode {
     }
 
     // 태그 분리
-    public static Set<String> splitTags(String tags){
-        return (tags == null || tags.isBlank()) ? Set.of() : Set.of(tags.split(","));
+    public static Set<TagCode> splitTags(String tags){
+        if (tags == null || tags.isBlank()){
+            return EnumSet.noneOf(TagCode.class);
+        }
+        // string을 공백 처리한 후 빈 EnumSet에 결과 저장
+        return Arrays.stream(tags.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(TagCode::valueOf)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(TagCode.class)));
     }
 }
