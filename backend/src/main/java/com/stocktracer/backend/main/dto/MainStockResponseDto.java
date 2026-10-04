@@ -2,15 +2,18 @@ package com.stocktracer.backend.main.dto;
 
 import com.stocktracer.backend.investorflow.domain.InvestorFlowAnalysis;
 import com.stocktracer.backend.investorflow.domain.InvestorFlowDaily;
+import com.stocktracer.backend.main.domain.StockStatus;
 import com.stocktracer.backend.main.mapper.MainStockRow;
 import com.stocktracer.backend.price.domain.StockPrice;
 import com.stocktracer.backend.stock.domain.MarketType;
 import com.stocktracer.backend.stock.domain.StockInfo;
+import com.stocktracer.backend.tag.domain.TagCode;
 import com.stocktracer.backend.value.domain.ValueFundamental;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.awt.SystemColor.info;
 
@@ -33,9 +36,10 @@ public record MainStockResponseDto(
         BigDecimal divYield,
         BigDecimal valueScore,
 
-        List<String> tags
+        Set<String> tags,
+        StockStatus status
 ) {
-    public static MainStockResponseDto from (MainStockRow row){
+    public static MainStockResponseDto of (MainStockRow row, Set<String> tags , StockStatus status){
         return new MainStockResponseDto(
                 row.stockCode(),
                 row.stockName(),
@@ -55,12 +59,10 @@ public record MainStockResponseDto(
                 row.divYield(),
                 row.valueScore(),
 
-                splitTags(row.tags())
+                tags,
+                status
         );
     }
 
-    // 태그 분리
-    private static List<String> splitTags(String tags){
-        return (tags == null || tags.isBlank()) ? List.of() : List.of(tags.split(","));
-    }
+
 }

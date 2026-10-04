@@ -57,7 +57,7 @@ public record MainStockQuery(
                 baseDate,
                 keyword,
                 tags,
-                tags.size(),
+                tags == null ? 0 : tags.size(),
                 sort,
                 (long) page * size,
                 size

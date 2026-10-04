@@ -1,5 +1,6 @@
 package com.stocktracer.backend.main.service;
 
+import com.stocktracer.backend.main.domain.StockStatus;
 import com.stocktracer.backend.main.dto.MainStockPageResponseDto;
 import com.stocktracer.backend.main.dto.MainStockQuery;
 import com.stocktracer.backend.main.dto.MainStockResponseDto;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -34,12 +36,19 @@ public class MainStockQueryService {
 
         // 조회한 정보 객체로 변환
         List<MainStockResponseDto> stocks = rows.stream()
-                .map(MainStockResponseDto::from)
+                .map(this::toResponse)
                 .toList();
 
         // 전체 데이터 갯수 조회
         long totalElements = repository.countRows(query);
 
         return MainStockPageResponseDto.of(baseDate, stocks, page, size, totalElements);
+    }
+
+    // dto 변환 메서드
+    private MainStockResponseDto toResponse(MainStockRow row){
+        Set<String> tags = TagCode.splitTags(row.tags());
+        StockStatus status = StockStatus.resolve(tags);
+        return MainStockResponseDto.of(row, tags, status);
     }
 }
