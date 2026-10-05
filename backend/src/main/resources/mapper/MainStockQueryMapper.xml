@@ -116,6 +116,7 @@
     <select id="countMainStockRows" resultType="long">
         SELECT count(*)
         <include refid="fromClause"/>
+        <include refid="whereClause"/>
     </select>
 
 </mapper>
