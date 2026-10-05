@@ -30,6 +30,7 @@ export async function getMainStocks(
   
   const response = await fetch(`${API_BASE_URL}/api/v1/main/stocks?${params.toString()}`);
   const data: MainPageResponse = await response.json();
+  console.log(data)
   return data;
 }
 

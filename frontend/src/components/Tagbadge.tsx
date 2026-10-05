@@ -1,4 +1,4 @@
-import { STOCK_TAG_LABELS } from "../types/stock";
+import { STOCK_TAG_LABELS, STOCK_TAG_TONES} from "../types/stock";
 import type { StockTag } from "../types/stock";
 
 interface TagBadgeProps {
@@ -7,16 +7,9 @@ interface TagBadgeProps {
 
 function TagBadge({ tag }: TagBadgeProps) {
   const label = STOCK_TAG_LABELS[tag];
-
-  if (tag === "RECOMMENDED") {
-    return <span className="tag tag-recommend">{label}</span>;
-  }
-
-  if (tag === "RISK") {
-    return <span className="tag tag-risk">{label}</span>;
-  }
-
-  return <span className="tag">{label}</span>;
+  const tone = STOCK_TAG_TONES[tag];
+  
+  return <span className={`tag-chip tag-chip--${tone}`}>{label}</span>;
 }
 
 export default TagBadge;

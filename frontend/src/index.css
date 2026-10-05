@@ -123,7 +123,7 @@ select {
   gap: 6px;
 }
 
-.filter-chip {
+.filter-tag {
   padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -132,11 +132,11 @@ select {
   cursor: pointer;
 }
 
-.filter-chip:hover {
+.filter-tag:hover {
   border-color: var(--border-strong);
 }
 
-.filter-chip.is-selected {
+.filter-tag.is-selected {
   background: var(--selected);
   border-color: var(--selected);
   color: #ffffff;
@@ -178,11 +178,7 @@ select {
   text-decoration: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-
-.stock-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.06);
-}
+.stock-card:hover { transform: translateY(-2px); }
 
 .stock-card-top {
   display: flex;
@@ -201,6 +197,32 @@ select {
   color: var(--muted);
   font-size: 14px;
 }
+
+/* 상태 */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* 앞에 작은 점 */
+.status-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-badge--recommended { background: #ecfdf3; color: #15803d; }
+.status-badge--caution     { background: #fefce8; color: #a16207; }
+.status-badge--risk        { background: #fef2f2; color: #b91c1c; }
 
 .stock-meta {
   color: var(--muted);
@@ -285,7 +307,7 @@ select {
 }
 
 /* 필터 버튼 안의 점은 글자와 살짝 띄움 */
-.filter-chip .tag-dot {
+.filter-tag .tag-dot {
   width: 8px;
   height: 8px;
   margin-right: 6px;
@@ -293,7 +315,7 @@ select {
 }
 
 /* 선택된(짙은 배경) 필터 버튼에서도 점이 잘 보이도록 흰 테두리 */
-.filter-chip.is-selected .tag-dot {
+.filter-tag.is-selected .tag-dot {
   box-shadow: 0 0 0 1.5px #ffffff;
 }
 
@@ -340,17 +362,40 @@ select {
   margin-top: 0;
 }
 
-/* 태그 분석에서 쓰는 권장 / 위험 칩 */
-.tag.tag-recommend {
-  background: #dcf5e3;
-  color: #15803d;
-  font-weight: 600;
+
+
+/* 태그 */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
-.tag.tag-risk {
-  background: #fde4e4;
+.tag-chip--positive {
+  background: #ecfdf3;
+  border-color: #a6e9c3;
+  color: #157f3c;
+}
+
+.tag-chip--negative {
+  background: #fef2f2;
+  border-color: #fbc5c5;
   color: #b42318;
-  font-weight: 600;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .empty-box {

@@ -1,6 +1,5 @@
 import { Link } from "react-router";
-import type { StockSummary } from "../types/stock";
-import { getTagStatus, getTagStatusClassName, getChipTags } from "../utils/tagStatus";
+import { STOCK_STATUS_CLASS, STOCK_STATUS_LABELS, type StockSummary } from "../types/stock";
 import { formatPrice, formatChangeRate, getChangeClassName } from "../utils/format";
 import TagBadge from "./Tagbadge";
 
@@ -14,12 +13,8 @@ interface StockCardProps {
 function StockCard({ stock }: StockCardProps) {
   const changeClassName = getChangeClassName(stock.changeRate);
 
-  // status 태그 분리 (추후 api에서 분리 예정)
-  const tagStatus = getTagStatus(stock.tags)
-  const cardClassName = "stock-card" + getTagStatusClassName(tagStatus)
-
-  // 일반 태그
-  const tags = getChipTags(stock.tags)
+  const statusLabel = stock.status ? STOCK_STATUS_LABELS[stock.status] : "";
+  const statusClass = stock.status ? STOCK_STATUS_CLASS[stock.status] : "";
 
   return (
     <Link to={`/stocks/${stock.stockCode}`} className="stock-card">
@@ -29,10 +24,10 @@ function StockCard({ stock }: StockCardProps) {
           <span className="stock-name">{stock.stockName}</span>
           <span className="stock-code">{stock.stockCode}</span>
         </div>
-        {/* <div className="total-score">
-          <span className="total-score-label">종합점수</span>
-          <span className="total-score-value">{stock.totalScore}</span>
-        </div> */}
+        <div className="stock-status">
+          {/* <span className="status-title">상태</span> */}
+          <span className={`status-badge ${statusClass}`}>{statusLabel}</span>
+        </div>
       </div>
 
       {/* 2줄: 시장 / 업종 */}
@@ -48,18 +43,13 @@ function StockCard({ stock }: StockCardProps) {
         </span>
       </div>
 
-      {/* 4줄: 태그 (태그가 없으면 이 줄을 그리지 않음) */}
-      {tags.length > 0 && (
+      {/* 4줄: 태그 */}
+      {stock.tags.length > 0 && (
         <div className="tag-list">
-          {tags.map((tag) => (
+          {stock.tags.map((tag) => (
             <TagBadge key={tag} tag={tag} />
           ))}
         </div>
-      )}
-
-      {/* 위험 종목이면 카드 맨 아래에 경고 문구 */}
-      {tagStatus === "risk" && (
-        <div className="risk-warning">⚠ 매수 주의 · 위험 신호가 있는 종목입니다</div>
       )}
     </Link>
   );

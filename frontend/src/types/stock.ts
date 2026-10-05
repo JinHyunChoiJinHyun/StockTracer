@@ -1,17 +1,11 @@
-// ===============================================
-// StockTracer에서 사용하는 타입 모음
-// ===============================================
-
-// 종목에 붙는 태그 (union type)
-// 새 태그가 생기면 여기와 아래 ALL_TAGS 두 곳에 추가하면 된다.
-
+// 태그
 export const STOCK_TAG_LABELS = {
   FLOW_STRONG: "천군만마",
   UNDERVALUED: "진흙 속 진주",
   HIGH_DIVIDEND: "황금알 거위",
   VALUE_TRAP: "싼 게 비지떡",
-  RECOMMENDED: "금상첨화",
-  RISK: "살얼음판",
+  FLOW_WEAK: "수급 약세",
+  VALUE_WEAK: "가치 하락",
 } as const;
 
 export type StockTag = keyof typeof STOCK_TAG_LABELS;
@@ -19,22 +13,36 @@ export type StockTag = keyof typeof STOCK_TAG_LABELS;
 export const isStockTag = (value:string): value is StockTag =>
   value in STOCK_TAG_LABELS;
 
-// 태그 필터 버튼을 그릴 때 사용하는 전체 태그 목록 (버튼 순서 = 배열 순서)
-export const ALL_TAGS: StockTag[] = [
-  "FLOW_STRONG",
-  "UNDERVALUED",
-  "HIGH_DIVIDEND",
-  "VALUE_TRAP",
-  "RECOMMENDED",
-  "RISK",
-];
+// 태그 성격 지정
+export type StockTagTone = "positive" | "negative";
 
+export const STOCK_TAG_TONES: Record<StockTag, StockTagTone> = {
+  FLOW_STRONG: "positive",
+  UNDERVALUED: "positive",
+  HIGH_DIVIDEND: "positive",
+  VALUE_TRAP: "negative",
+  FLOW_WEAK: "negative",
+  VALUE_WEAK: "negative",
+}
+
+// 상태
+export type StockStatus = "RECOMMENDED" | "NEUTRAL" | "RISK";
+
+export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
+  RECOMMENDED: "권장",
+  NEUTRAL: "주의",
+  RISK: "위험",
+}
+
+export const STOCK_STATUS_CLASS: Record<StockStatus, string> = {
+  RECOMMENDED: "status-badge--recommended",
+  NEUTRAL: "status-badge--caution",
+  RISK: "status-badge--risk",
+}
+
+// 시장
 export type Market = "KOSPI" | "KOSDAQ";
 
-// -----------------------------------------------
-// 1) Main Page 목록용 데이터
-//    GET /api/v1/main/stocks 응답의 한 항목에 해당
-// -----------------------------------------------
 export interface StockSummary {
   stockCode: string;
   stockName: string;
@@ -45,6 +53,7 @@ export interface StockSummary {
   flowScore: number; // 수급 점수 (0~100) - 목록에서는 정렬에만 사용
   valueScore: number; // 저평가 점수 (0~100) - 목록에서는 정렬에만 사용
   tags: StockTag[];
+  status:StockStatus;
 }
 
 // 정렬 기준
