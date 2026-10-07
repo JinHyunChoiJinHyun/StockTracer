@@ -17,6 +17,7 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 
 function MainPage() {
   // 요청 파라미터
+  const [reloadKey, setReloadKey] = useState(0);
   const [searchText, setSearchText] = useState(""); // 검색창 입력값
   const [selectedTags, setSelectedTags] = useState<StockTag[]>([]); // 선택된 태그들 (빈 배열 = 전체)
   const [sortKey, setSortKey] = useState<SortKey>("MARKET_CAP"); // 현재 정렬 기준
@@ -37,7 +38,7 @@ function MainPage() {
 
     async function loadStocks() {
       setIsLoading(true);
-
+      setError(null) // 재시도 시 이전 에러 삭제
       try{
         const res = await getMainStocks({
           keyword: searchText,
@@ -46,17 +47,23 @@ function MainPage() {
           page: currentPage - 1,
           size: 20
         });
+        
+        // 이전 effect의 ignore가 true이면 응답을 무시 현재 effect의 응답만 반영
+        if (ignore) {
+          return;
+        }
+
         setBaseDate(res.baseDate);
         setStocks(res.stocks);
         setTotalElements(res.totalElements);
         setTotalPages(res.totalPages);
-        setIsLoading(false);
+
       } catch(error){
         // 에러가 발생하더라도 ignore 상태면 무시
         if (ignore) {
           return;
         }
-        setError("주섹 데이터를 불러오지 못했습니다.")
+        setError("주식 데이터를 불러오지 못했습니다.")
       } finally{
         if(!ignore) {
           setIsLoading(false);
@@ -69,7 +76,10 @@ function MainPage() {
     return () => {
       ignore = true;
     };
-  }, [searchText, selectedTags, sortKey, currentPage]);
+  }, [searchText, selectedTags, sortKey, currentPage, reloadKey]);
+
+  // 재시도 버튼 클릭 시 재호출
+  const retry = () => setReloadKey((k) => k + 1); 
  
   // 검색·필터·정렬 재 실행 시 1페이지로 이동
   function handleSearchTextChange(text: string) {
@@ -139,7 +149,18 @@ function MainPage() {
         {stocks.map((stock) => (
           <StockCard key={stock.stockCode} stock={stock} />
         ))}
- 
+
+        {/* 응답 실패 시 */}
+        {!isLoading && error && (
+          <div className="error-box" role="alert">
+            <p>종목을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+            <button type="button" className="text-button" onClick={retry} disabled={isLoading}>
+              다시 시도
+            </button>
+          </div>
+        )}
+
+        {/* 종목이 없을 시 */}
         {!isLoading && totalElements === 0 && (
           <div className="empty-box">
             <p>조건에 맞는 종목이 없습니다. 검색어를 바꾸거나 태그 선택을 줄여보세요.</p>
