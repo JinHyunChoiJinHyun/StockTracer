@@ -142,12 +142,17 @@ def _calculate_score(df:pd.DataFrame) -> pd.Series:
     # 금액 순위 백분위 (0~45점) -> 절대 금액 크기 계산 (얼마나 많은 현금을 넣었는가)
     amount_score = df["major_net"].where(df["major_net"] > 0).rank(pct=True).fillna(0.0) * 45 # 양수면 크기 순으로 rank 음수면 0
 
-    # 강도 순위 백분위 (0~25점) -> 전체 거래대금 대비 순매수 비율 (메이저 세력이 몇 % 독식했는가)
-    if df["net_ratio"].notna().any():
-        ratio_score = df["net_ratio"].where(df["major_net"] > 0).rank(pct=True).fillna(0.0) * 25
-    else:
-        # 거래대금이 없으면 금액 점수로 대체 배분 (45로 나눠서 정규화 후 곱셈)
-        ratio_score = amount_score / 45 * 25
+    # 순매수 강도 순위 백분위 (0~25점) -> 전체 거래대금 대비 순매수 비율 (메이저 세력이 몇 % 독식했는가)
+    # 순매수 종목 대상으로 net_ratio 순위 계산 (순매도 / NaN은 순위 제외)
+    net_ratio_rank = df["net_ratio"].where(df["major_net"] > 0).rank(pct=True)
+
+    # 순위가 NaN인 경우 대체값
+    # major_net > 0 (순매수인데 net_ratio가 NaN) → 금액 점수 비율로 대체
+    # major_net <= 0 또는 NaN (순매도·데이터 없음) → 0
+    net_ratio_fallback = (amount_score/45).where(df["major_net"] > 0, 0.0)
+
+    # 순위가 있으면 순위, 없으면 대체값을 사용
+    ratio_score = net_ratio_rank.fillna(net_ratio_fallback) * 25
 
     # 수급 주체 조합 (0~30점) -> 쌍끌이 (메이저 투자자가 들어왔는지) + 손바뀜 (개인 투자자가 빠져나갔는지)
     combo_score = (
