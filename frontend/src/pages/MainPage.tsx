@@ -23,6 +23,7 @@ function MainPage() {
   const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 (1부터 시작)
 
   // 응답
+  const[error, setError] = useState("");
   const [baseDate, setBaseDate] = useState("") // 분석 기준일
   const [stocks, setStocks] = useState<StockSummary[]>([]);  // 현재 페이지 종목
   const [totalElements, setTotalElements] = useState(0); // 조건에 맞는 전체 종목 수
@@ -32,30 +33,39 @@ function MainPage() {
  
   // ----- 처음 화면이 열릴 때 종목 목록 불러오기 -----
   useEffect(() => {
-    let ignore = false;
+    let ignore = false; // 서로 다른 effect 실행에 속한 별개의 변수
 
     async function loadStocks() {
-      const res = await getMainStocks({
-        keyword: searchText,
-        tags: selectedTags,
-        sort: sortKey,
-        page: currentPage - 1,
-        size: 20
-      });
+      setIsLoading(true);
 
-      if (ignore) {
-        return;
+      try{
+        const res = await getMainStocks({
+          keyword: searchText,
+          tags: selectedTags,
+          sort: sortKey,
+          page: currentPage - 1,
+          size: 20
+        });
+        setBaseDate(res.baseDate);
+        setStocks(res.stocks);
+        setTotalElements(res.totalElements);
+        setTotalPages(res.totalPages);
+        setIsLoading(false);
+      } catch(error){
+        // 에러가 발생하더라도 ignore 상태면 무시
+        if (ignore) {
+          return;
+        }
+        setError("주섹 데이터를 불러오지 못했습니다.")
+      } finally{
+        if(!ignore) {
+          setIsLoading(false);
+        }
       }
-      
-      setBaseDate(res.baseDate);
-      setStocks(res.stocks);
-      setTotalElements(res.totalElements);
-      setTotalPages(res.totalPages);
-      setIsLoading(false);
     }
     loadStocks();
 
-    // 응답 중 새로운 요청이 있는 경우 마지막 요청의 응답만 화면에 반영
+    // 응답 중 위 함수가 재실행 될 경우 ignore -> true
     return () => {
       ignore = true;
     };

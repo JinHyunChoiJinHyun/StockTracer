@@ -11,7 +11,7 @@ import type {
   MainPageResponse,
 } from "../types/stock";
 
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"; // vite-env에서 설정
 
 // -----------------------------------------------
 // Main Page 종목 목록
@@ -29,8 +29,13 @@ export async function getMainStocks(
   params.append("size", String(query.size));
   
   const response = await fetch(`${API_BASE_URL}/api/v1/main/stocks?${params.toString()}`);
+
+  // 서버 응답 실패 시 에러 반환
+  if (!response.ok){
+    throw new Error(`API 요청 실패: ${response.status}`)
+  }
+  
   const data: MainPageResponse = await response.json();
-  console.log(data)
   return data;
 }
 
