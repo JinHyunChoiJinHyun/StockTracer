@@ -38,7 +38,7 @@ function MainPage() {
 
     async function loadStocks() {
       setIsLoading(true);
-      setError(null) // 재시도 시 이전 에러 삭제
+      setError("") // 재시도 시 이전 에러 삭제
       try{
         const res = await getMainStocks({
           keyword: searchText,
